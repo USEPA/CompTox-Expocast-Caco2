@@ -1,0 +1,261 @@
+"Table 2. Regional Intestinal In Vivo Effective Permeability (Peff) of Drugs in Humans; P-SI, proximal small intestine; D-SI, distal small intestine; Prox-B, proximal balloon perfusion system; Triple-L, triple lumen perfusion system; Double-L, double
+lumen perfusion system; Loc-I-Gut, double-balloon perfusion system; Conc., concentration entering the perfused segment; %CV, coefficient of variation.",,,,,,,
+Substance,Organ,Perfusion System,Conc. (mM),Peff (x10-4 cm/s),% coefficient of variation (CV),Reference,chemtype
+Amiloride,P-SI,Loc-I-Gut,0.11,1.6,117,89,pharmaceutical
+Amiodarone,P-SI,Double-L,0.76,0.9,17,90,pharmaceutical
+Amoxicillin,P-SI,Loc-I-Gut,0.82,0.3,121,89,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,0.05,3.3,74,91,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,0.05,4.1,100,89,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,0.05,4.5,55,38,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,0.05,5.6,29,62,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,0.05,5.9,51,92,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,10.6,5.7,60,93,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,10.6,5.3,47,51,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,10.6,8.4,57,76,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,10.6,2.1,80,94,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,10.6,2.2,48,95,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,10.6,4,64,95,pharmaceutical
+Antipyrine,P-SI,Loc-I-Gut,10.6,5,32,96,pharmaceutical
+Antipyrine,Rectum,Loc-I-Gut,0.1,0.8,37,97,pharmaceutical
+Atenolol,P-SI,Loc-I-Gut,0.038,0.2,100,5,pharmaceutical
+Carbamazepine,P-SI,Loc-I-Gut,0.084,4.3,63,5,pharmaceutical
+Cephalexin,P-SI,Loc-I-Gut,0.01,1.6,n/a,5,pharmaceutical
+Cimetidine,P-SI,Loc-I-Gut,1,0.3,53,98,pharmaceutical
+Creatinine,P-SI,Loc-I-Gut,5,0.3,55,99,pharmaceutical
+Cyclosporin A,P-SI,Loc-I-Gut,0.0042,1.6,32,100,pharmaceutical
+Desipramine,P-SI,Loc-I-Gut,0.24,4.5,41,5,pharmaceutical
+Digoxin,P-SI,Prox-B,n/a,0.3,38,101,pharmaceutical
+Enalapril,P-SI,Loc-I-Gut,0.01,1.6,n/a,5,pharmaceutical
+Enalaprilat,P-SI,Loc-I-Gut,28.7,0.2,150,5,pharmaceutical
+Fexofenadine,P-SI,Loc-I-Gut,0.053,0.11,100,91,pharmaceutical
+Fluvastatin,P-SI,Loc-I-Gut,0.163,2.4,91,94,pharmaceutical
+Furosemide,P-SI,Loc-I-Gut,0.2,0.05,80,38,pharmaceutical
+Furosemide,P-SI,Loc-I-Gut,0.2,0.2,41,78,pharmaceutical
+Griseofulvin,P-SI,Triple-L,0.028,6.3,44,102,pharmaceutical
+Griseofulvin,D-SI,Triple-L,0.028,9.8,27,102,pharmaceutical
+Hydrochlorothiazide,P-SI,Loc-I-Gut,0.6,0.04,125,5,pharmaceutical
+Inogatran,P-SI,Loc-I-Gut,n/a,0.03,n/a,5,pharmaceutical
+Isotretinoin,P-SI,Loc-I-Gut,n/a,1,n/a,5,pharmaceutical
+Ketoprofen,P-SI,Loc-I-Gut,0.67,8.7,39,5,pharmaceutical
+Levodopa,P-SI,Loc-I-Gut,2.5,3.4,76,76,pharmaceutical
+Lisinopril,P-SI,Loc-I-Gut,0.042,0.3,n/a,5,pharmaceutical
+Losartan,P-SI,Loc-I-Gut,0.4,1.2,96,5,pharmaceutical
+Metformin,P-SI,Prox-B,5.3,0.35,59,103,pharmaceutical
+Metformin,D-SI,Prox-B,5.3,0.33,31,103,pharmaceutical
+Metoprolol,P-SI,Prox-B,0.075,0.9,26,104,pharmaceutical
+Metoprolol,P-SI,Prox-B,0.15,1,53,104,pharmaceutical
+Metoprolol,P-SI,Prox-B,0.225,1,38,104,pharmaceutical
+Metoprolol,D-SI,Prox-B,0.075,1.1,26,104,pharmaceutical
+Metoprolol,D-SI,Prox-B,0.15,1.5,21,104,pharmaceutical
+Metoprolol,D-SI,Prox-B,0.225,1.5,41,104,pharmaceutical
+Metoprolol,P-SI,Loc-I-Gut,0.6,1.3,77,5,pharmaceutical
+Naproxen,P-SI,Loc-I-Gut,1.8,8.5,58,5,pharmaceutical
+Oxprenolol,P-SI,Prox-B,0.5,2.5,23,105,pharmaceutical
+Oxprenolol,D-SI,Prox-B,0.5,1.9,23,105,pharmaceutical
+Paracetamol,P-SI,Triple-L,1.66,4,55,106,pharmaceutical
+Paracetamol,D-SI,Triple-L,1.66,6,36,106,pharmaceutical
+Penicillin,V,Rectum Loc-I-Gut (pH6),14.3,0.06,285,97,pharmaceutical
+Penicillin,V,Rectum Loc-I-Gut (pH7.4),14.3,0.11,111,97,pharmaceutical
+Piroxicam,P-SI,Loc-I-Gut,0.1,6.7,58,5,pharmaceutical
+Propranolol,P-SI,Loc-I-Gut,0.003,2.7,44,98,pharmaceutical
+Propranolol,P-SI,Loc-I-Gut,0.003,2.9,76,5,pharmaceutical
+Propranolol,P-SI,Loc-I-Gut,0.003,3.9,100,98,pharmaceutical
+Quercetin,P-SI,Loc-I-Gut,0.057,8.9,80,92,pharmaceutical
+Ranitidine,P-SI,Loc-I-Gut,0.5,0.3,90,98,pharmaceutical
+Ranitidine,P-SI,Triple-L,0.47,0.3,71,107,pharmaceutical
+Ranitidine,D-SI,Triple-L,0.47,0.1,64,107,pharmaceutical
+R-Verapamil,P-SI,Loc-I-Gut,0.004,2.7,46,95,pharmaceutical
+R-Verapamil,P-SI,Loc-I-Gut,0.04,4.7,52,95,pharmaceutical
+R-Verapamil,P-SI,Loc-I-Gut,0.12,6.8,35,5,pharmaceutical
+S-Verapamil,P-SI,Loc-I-Gut,0.004,2.3,41,95,pharmaceutical
+S-Verapamil,P-SI,Loc-I-Gut,0.04,4.7,59,95,pharmaceutical
+S-Verapamil,P-SI,Loc-I-Gut,0.12,6.8,36,5,pharmaceutical
+Sulforaphane,P-SI,Loc-I-Gut,0.011,18.7,67,92,pharmaceutical
+Talinolol,P-SI,Triple-L,0.17,0.3,172,108,pharmaceutical
+Talinolol,D-SI,Triple-L,0.17,0.3,171,108,pharmaceutical
+Terbutaline,P-SI,Loc-I-Gut,0.02,0.3,50,109,pharmaceutical
+Urea,P-SI,Loc-I-Gut,50,1.4,25,99,pharmaceutical
+Valacyclovir,P-SI,Loc-I-Gut,1.7,n/a,5,,pharmaceutical
+alpha-Methyldopa,P-SI,Loc-I-Gut,5.2,0.1,30,5,pharmaceutical
+alpha-Methyldopa,P-SI,Triple-L,0.1,0.25,70,110,pharmaceutical
+alpha-Methyldopa,P-SI,Triple-L,1,0.19,20,110,pharmaceutical
+alpha-Methyldopa,P-SI,Triple-L,10,0.07,100,110,pharmaceutical
+Alanine,P-SI,Prox-B,10,9.7,n/a,149,amino acid
+Alanine,P-SI,Double-L,25,14.6,n/a,150,amino acid
+Alanine,P-SI,Double-L,75,10.9,n/a,150,amino acid
+Alanine,P-SI,Double-L,150,8.2,n/a,150,amino acid
+Alanine,P-SI,Double-L,300,4,n/a,150,amino acid
+Glycine,Duodenum,Double-L,100,2.2,n/a,147,amino acid
+Glycine,P-SI,Double-L,20,8.3,n/a,147,amino acid
+Glycine,P-SI,Double-L,50,7.5,n/a,147,amino acid
+Glycine,P-SI,Double-L,100,5.8,n/a,147,amino acid
+Glycine,D-SI,Double-L,100,3.7,n/a,147,amino acid
+Glycine,P-SI,Prox-B,10,4.4,n/a,149,amino acid
+Glycine,P-SI,Prox-B,20,5.3,n/a,149,amino acid
+Glycine,P-SI,Prox-B,50,3.9,n/a,149,amino acid
+Glycine,P-SI,Double-L,10,10.3,n/a,151,amino acid
+Glycine,P-SI,Double-L,25,9.9,n/a,151,amino acid
+Glycine,P-SI,Double-L,50,7.7,n/a,151,amino acid
+Glycine,P-SI,Double-L,75,5.8,n/a,151,amino acid
+Glycine,P-SI,Double-L,100,5.3,16,152,amino acid
+Glycine,P-SI,Prox-B,20,3.1,n/a,153,amino acid
+Glycine,P-SI,Triple-L,8.9,5.4,n/a,154,amino acid
+Glycine,P-SI,Double-L,10,11.1,n/a,150,amino acid
+Glycine,P-SI,Double-L,25,9.4,n/a,150,amino acid
+Glycine,P-SI,Double-L,50,7.3,n/a,150,amino acid
+Glycine,P-SI,Double-L,75,6.6,n/a,150,amino acid
+Glycine,P-SI,Double-L,150,6.7,n/a,150,amino acid
+Glycine,P-SI,Double-L,300,4.7,n/a,150,amino acid
+Histidine,P-SI,Double-L,100,5.3,n/a,115,amino acid
+Leucine,P-SI,Double-L,10,16.7,n/a,151,amino acid
+Leucine,P-SI,Double-L,20,14.3,n/a,151,amino acid
+Leucine,P-SI,Double-L,40,7.3,n/a,151,amino acid
+Leucine,P-SI,Double-L,60,6,n/a,151,amino acid
+Leucine,P-SI,Loc-I-Gut,40,6.2,n/a,5,amino acid
+Lysine,P-SI,Triple-L,10.5,3.7,n/a,154,amino acid
+Methionine,P-SI,Double-L,6,21,14,148,amino acid
+Methionine,P-SI,Double-L,12,17.2,9,148,amino acid
+Methionine,P-SI,Double-L,25,11.5,13,148,amino acid
+Methionine,P-SI,Double-L,50,7.5,13,148,amino acid
+Methionine,P-SI,Double-L,100,4.8,8,148,amino acid
+Methionine,D-SI,Double-L,6,17.3,18,147,amino acid
+Methionine,D-SI,Double-L,12,9.9,14,147,amino acid
+Methionine,D-SI,Double-L,25,4.8,16,147,amino acid
+Methionine,D-SI,Double-L,50,3.5,19,147,amino acid
+Methionine,D-SI,Double-L,100,2.2,13,147,amino acid
+Methionine,P-SI,Double-L,100,3.5,13,116,amino acid
+Phenylalanine,P-SI,Loc-I-Gut,0.06,4.3,51,155,amino acid
+Phenylalanine,P-SI,Loc-I-Gut,0.06,4.1,n/a,5,amino acid
+Alanylglutamine,P-SI,Double-L,20,12.5,n/a,157,dipeptide
+Alanylglutamine,P-SI,Double-L,40,8.7,n/a,157,dipeptide
+Alanylglutamine,P-SI,Double-L,60,6.2,n/a,157,dipeptide
+Alanylglutamine,P-SI,Double-L,80,5.2,n/a,157,dipeptide
+Glycylglutamine,P-SI,Double-L,20,16.6,n/a,157,dipeptide
+Glycylglutamine,P-SI,Double-L,40,11.4,n/a,157,dipeptide
+Glycylglutamine,P-SI,Double-L,60,10.1,n/a,157,dipeptide
+Glycylglutamine,P-SI,Double-L,80,9.1,n/a,157,dipeptide
+Glycylglycine,Duodenum,Double-L,50,5.2,n/a,147,dipeptide
+Glycylglycine,P-SI,Double-L,20,20.5,n/a,147,dipeptide
+Glycylglycine,P-SI,Double-L,25,20.5,n/a,147,dipeptide
+Glycylglycine,P-SI,Double-L,50,18,n/a,147,dipeptide
+Glycylglycine,D-SI,Double-L,50,11.3,n/a,147,dipeptide
+Glycylglycine,P-SI,Double-L,20,16.7,5,151,dipeptide
+Glycylglycine,P-SI,Double-L,50,9.9,n/a,151,dipeptide
+Glycylglycine,P-SI,Double-L,75,8.3,n/a,151,dipeptide
+Glycylglycine,P-SI,Double-L,100,6.5,n/a,151,dipeptide
+Glycylglycine,P-SI,Prox-B,10,4.9,n/a,153,dipeptide
+Glycylalanine,P-SI,Prox-B,10,10,n/a,159,dipeptide
+Glycylalanine,P-SI,Prox-B,20,11,n/a,159,dipeptide
+Glycylalanine,P-SI,Prox-B,40,16.3,n/a,159,dipeptide
+Glycylalanine,P-SI,Prox-B,80,7.1,n/a,159,dipeptide
+Glycylalanine,P-SI,Prox-B,140,5,n/a,159,dipeptide
+Glycylleucine,Duodenum,Double-L,50,4.2,n/a,147,dipeptide
+Glycylleucine,P-SI,Double-L,50,20.5,n/a,147,dipeptide
+Glycylleucine,P-SI,Double-L,100,11,n/a,147,dipeptide
+Glycylleucine,D-SI,Double-L,50,20.5,n/a,147,dipeptide
+Glycylleucine,P-SI,Double-L,20,21,12,151,dipeptide
+Glycylleucine,P-SI,Double-L,30,16.7,n/a,151,dipeptide
+Glycylleucine,P-SI,Double-L,40,14.9,n/a,151,dipeptide
+Glycylleucine,P-SI,Double-L,60,8.9,n/a,151,dipeptide
+Glycylleucine,P-SI,Prox-B,10,3.7,n/a,153,dipeptide
+Folic acid,P-SI,Triple-L,0.18,2.5,23,161,vitamin_or_ion
+Lithium,P-SI,Double-L,5,3.2,n/a,166,vitamin_or_ion
+Lithium,P-SI,Double-L,10,3,n/a,166,vitamin_or_ion
+Lithium,D-SI,Double-L,5,1.8,n/a,166,vitamin_or_ion
+Lithium,D-SI,Double-L,10,1.8,n/a,166,vitamin_or_ion
+Lithium,Colon,Triple-L,5,0,n/a,166,vitamin_or_ion
+Lithium,Colon,Triple-L,10,0,n/a,166,vitamin_or_ion
+Potassium,P-SI,Double-L,5,6.6,n/a,166,vitamin_or_ion
+Potassium,D-SI,Double-L,5,4.1,n/a,166,vitamin_or_ion
+Potassium,Colon,Double-L,5,0,n/a,166,vitamin_or_ion
+Pyridoxine (B6),P-SI,Triple-L,0.73,3.1,38,162,vitamin_or_ion
+Vitamin C,P-SI,Triple-L,0.85,1.3,36,161,vitamin_or_ion
+Acetate,P-SI,Triple-L,15,2.6,n/a,171,fatty acid
+Acetate,D-SI,Triple-L,12,2.8,n/a,172,fatty acid
+Acetate,D-SI,Triple-L,40,1.3,n/a,172,fatty acid
+Acetate,D-SI,Triple-L,60,1.4,n/a,172,fatty acid
+Buturate,P-SI,Triple-L,15,3.3,n/a,171,fatty acid
+Buturate,D-SI,Triple-L,12,5,n/a,172,fatty acid
+Butyrate,D-SI,Triple-L,40,2.1,n/a,172,fatty acid
+Butyrate,D-SI,Triple-L,60,1.7,n/a,172,fatty acid
+Caprate,Rectum,Loc-I-Gut,18,1.4,50,97,fatty acid
+Hexansyra,P-SI,Triple-L,0.3,3.7,90,173,fatty acid
+Linolsyra,P-SI,Loc-I-Gut,0.5,3.8,6,174,fatty acid
+Propionate,P-SI,Triple-L,15,2.5,n/a,171,fatty acid
+Propionate,D-SI,Triple-L,12,3.3,n/a,172,fatty acid
+Propionate,D-SI,Triple-L,40,1.5,n/a,172,fatty acid
+Propionate,D-SI,Triple-L,60,1.7,n/a,172,fatty acid
+Propionate,Colon,Triple-L,30,0.7,11,170,fatty acid
+Propionate,Colon,Triple-L,60,0.7,8,170,fatty acid
+Propionate,Colon,Triple-L,90,0.6,3,170,fatty acid
+Fructose,P-SI,Triple-L,20,5.2,42,179,monosaccharide
+Galactose,P-SI,Double-L,200,5.9,20,152,monosaccharide
+Galactose,P-SI,Double-L,55.5,10.9,n/a,114,monosaccharide
+Galactose,P-SI,Double-L,138.8,6.1,n/a,114,monosaccharide
+Galactose,P-SI,Double-L,277.5,2.9,n/a,114,monosaccharide
+Glucose,P-SI,Double-L,200,5.3,24,152,monosaccharide
+Glucose,P-SI,Double-L,150,7.5,23,116,monosaccharide
+Glucose,P-SI,Double-L,55.5,10.9,n/a,114,monosaccharide
+Glucose,P-SI,Double-L,138.8,8,n/a,114,monosaccharide
+Glucose,P-SI,Double-L,277.5,4,n/a,114,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,5.6,196,99,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,4.9,17,174,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,13.9,50,51,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,16,63,76,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,3.9,60,95,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,7.1,140,95,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,6.6,45,96,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,10,80,38,monosaccharide
+Glucose,P-SI,Loc-I-Gut,10,7.2,79,109,monosaccharide
+Glucose,P-SI,Loc-I-Gut,80,1.6,43,109,monosaccharide
+Glucose,P-SI,Prox-B,50,11.2,26,180,monosaccharide
+Glucose,D-SI,Prox-B,50,6.3,35,180,monosaccharide
+Glucose,P-SI,Triple-L,15,22.1,n/a,154,monosaccharide
+Glucose,P-SI,Triple-L,20,16.7,n/a,154,monosaccharide
+Glucose,P-SI,Triple-L,67,8.6,n/a,154,monosaccharide
+Glucose,P-SI,Triple-L,79,7.4,n/a,154,monosaccharide
+Xylose,P-SI,Prox-B,10,2.5,20,181,monosaccharide
+Xylose,D-SI,Prox-B,10,1.3,14,181,monosaccharide
+Xylose,P-SI,Prox-B,30,0.5,69,182,monosaccharide
+Chenodeoxycholic acid,Colon,Double-L,1,0.8,n/a,189,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,Colon,Double-L,3,1,n/a,189,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,Colon,Double-L,5,0.3,n/a,189,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,P-SI,Prox-B,0.25,6.7,n/a,181,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,P-SI,Prox-B,0.5,6.7,n/a,181,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,P-SI,Prox-B,0.75,5.8,n/a,181,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,P-SI,Prox-B,1,5.1,n/a,181,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,D-SI,Prox-B,0.25,8.8,n/a,181,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,D-SI,Prox-B,0.5,7.1,n/a,181,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,D-SI,Prox-B,0.75,10,n/a,181,steroids_cholesterol_bioacids
+Chenodeoxycholic acid,D-SI,Prox-B,1,8.8,n/a,181,steroids_cholesterol_bioacids
+Cholic acid,D-SI,Prox-B,0.5,5.7,n/a,181,steroids_cholesterol_bioacids
+Cholic acid,P-SI,Prox-B,0.5,3.9,n/a,181,steroids_cholesterol_bioacids
+Cholic acid,Colon,Double-L,10,0.2,n/a,189,steroids_cholesterol_bioacids
+Cortisol acetate,Duodenum,Double-L,0.12,14.3,n/a,190,steroids_cholesterol_bioacids
+Deoxycholic acid,D-SI,Prox-B,0.5,6.7,n/a,181,steroids_cholesterol_bioacids
+Deoxycholic acid,Colon,Double-L,1,0.5,n/a,189,steroids_cholesterol_bioacids
+Deoxycholic acid,Colon,Double-L,3,0.2,n/a,189,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,P-SI,Prox-B,0.25,0.5,n/a,181,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,P-SI,Prox-B,0.5,0.5,n/a,181,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,P-SI,Prox-B,0.75,0.5,n/a,181,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,P-SI,Prox-B,1,0.5,n/a,181,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,D-SI,Prox-B,0.25,3.9,n/a,181,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,D-SI,Prox-B,0.5,2.9,n/a,181,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,D-SI,Prox-B,0.75,2.2,n/a,181,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,D-SI,Prox-B,1,1.8,n/a,181,steroids_cholesterol_bioacids
+Glycochenodeoxycholic acid,D-SI,Prox-B,0.5,6.5,n/a,181,steroids_cholesterol_bioacids
+Hydrocortisone,P-SI,Double-L,0.28,6.4,48,191,steroids_cholesterol_bioacids
+Hydrocortisone,Duodenum,Double-L,0.28,8.8,18,190,steroids_cholesterol_bioacids
+Hydrocortisone,P-SI,Double-L,0.28,11.1,15,190,steroids_cholesterol_bioacids
+Hydrocortisone,D-SI,Double-L,0.28,5.3,22,190,steroids_cholesterol_bioacids
+Hydrocortisone,D-SI,Double-L,0.28,5.6,31,190,steroids_cholesterol_bioacids
+Taurocholic acid,D-SI,Prox-B,0.25,8.6,n/a,181,steroids_cholesterol_bioacids
+Taurocholic acid,D-SI,Prox-B,0.5,7,n/a,181,steroids_cholesterol_bioacids
+Taurocholic acid,D-SI,Prox-B,0.75,7.3,n/a,181,steroids_cholesterol_bioacids
+Taurocholic acid,D-SI,Prox-B,1,3.8,n/a,181,steroids_cholesterol_bioacids
+Triamcinolone,Duodenum,Double-L,0.19,0.6,n/a,189,steroids_cholesterol_bioacids
+Triamcinolone,P-SI,Double-L,0.19,0.3,n/a,190,steroids_cholesterol_bioacids
+Triamcinolone,D-SI,Double-L,0.19,0.5,n/a,190,steroids_cholesterol_bioacids
+Triamcinolone acetonide,Duodenum,Double-L,0.11,4.2,n/a,190,steroids_cholesterol_bioacids
+Triamcinolone acetonide,P-SI,Double-L,0.11,6.8,n/a,190,steroids_cholesterol_bioacids
+Triamcinolone acetonide,D-SI,Double-L,0.11,9.9,n/a,190,steroids_cholesterol_bioacids

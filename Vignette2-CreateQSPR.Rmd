@@ -1,0 +1,886 @@
+---
+title: "Honda et al. (unsubmitted): Analysis and Figure Generation"
+author: "Greg Honda"
+date: "August 3, 2020"
+output: rmarkdown::html_vignette
+vignette: >
+ %\VignetteIndexEntry{Honda et al. (unsubmitted): Analysis and Figure Generation}
+ %\VignetteEngine{knitr::rmarkdown}
+ %\VignetteEncoding{UTF-8}
+---
+wambaugh.john@epa.gov
+
+## Abstract
+Apical-to-basolateral (PAB) and basolateral-to-apical (PBA) measurements were 
+made in the Caco-2 assay for 484 environmental and pharmaceutical chemicals. 
+After filtering, 310 chemicals had a useable PAB and 396 had a useable PBA. 
+Replicates (> 30) were measured for the control chemicals Warfarin, Talinolol, 
+and Ranitidine. Measurement uncertainty was high (SD: 0.3 log10 units) for the 
+low permeability control (Ranitidine). Of our measured PAB, > 80% had high PAB 
+(> 10x10-6 cm/s). Our measured PAB were combined with literature values to 
+develop a classification quantitative-structure-property relationship (QSPR) 
+model, with a balanced accuracy of 80% for the test set. Measured PAB were also 
+used to predict in vivo oral bioavailability (Fbio,h)in human for 
+pharmaceuticals, and performed slightly better (R2: -0.03, RMSE: 0.30) than 
+assuming a fixed value for PAB. Additionally, measured PAB were used for 
+prediction of in vivo oral bioavailability in rat, which resulted in improved 
+prediction of maximum concentration (previous R2: 0.32, updated R2: 0.70). 
+Finally, measurement uncertainty was accounted for in estimates of 
+oral-equivalent dose (OED) from ToxCast in vitro assays for a simulated 
+population using a Monte-Carlo method. OED were subsequently compared with 
+exposure estimates, and the influence of different extrapolation assumptions on 
+the bioactivity-to-exposure ratio (BER) was evaluated. Generally, the large 
+measurement uncertainty for low PAB makes the use of Caco-2 data for accurate 
+prediction of point values difficult. However, accounting for uncertainty 
+enables the upper limits for oral bioavailability to be accurately represented 
+in calculation of OED.
+
+## Prepare for session
+
+### Clear memory
+```{r setup}
+# Delete all objects from memory:
+rm(list=ls())
+```
+
+### Set the figure size and working directory
+```{r knitr_setup}
+loc.wd <- "C:/Users/jwambaug/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Research Projects/Caco2/Honda_Caco2"
+knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
+knitr::opts_knit$set(root.dir = loc.wd)
+```
+
+###### qspr #######
+
+### Load the relevant libraries
+```{r r_setup}
+
+packages <- c("ggplot2","randomForest","caret","OneR", "readxl", "httk")
+sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary here
+
+```
+# Load and organize Caco2 2 data from chembl
+```{r qspr_loadchembl, eval=FALSE}
+chembl <- NULL
+for (this.sheet in c("Papp_unspec_direction","P_only","Papp_ab","P_ab"))
+  chembl <- rbind(chembl, 
+    as.data.frame(read_excel(paste0(loc.wd,
+                                    "/r_data/lit_data/chembl_caco2_2023_04_19.xlsx"),
+                             sheet=this.sheet)))
+dim(chembl)
+
+chembl$DTXSID <- chembl$DTXSID_by_SMILES
+chembl[is.na(chembl$DTXSID),"DTXSID"] <- 
+  chembl[is.na(chembl$DTXSID),"DTXSID_by_name"]
+# Remove chemicals with no DTXSID:
+#chembl <- subset(chembl,!is.na(DTXSID))
+#dim(chembl)
+
+# Harmonize observation types:
+for (this.type in unique(chembl$`Standard Type`))
+{
+  if (this.type %in% c("logPapp","LogP app"))
+  {
+    chembl[chembl[,"Standard Type"]%in%this.type,"QSPR.Value"] <- 
+      10^(chembl[chembl[,"Standard Type"]%in%this.type,"Standard Value"])
+    chembl[chembl[,"Standard Type"]%in%this.type,"QSPR.Type"] <- "Papp"
+  } else if (this.type %in% c("Papp",
+                              "Permeability",
+                              "permeability",
+                              "Caco-2 Papp",
+                              "Papps",
+                              "Pc",
+                              "Permeability coefficient",
+                              "Permeability rate",
+                              "Caco-2 A-B"))
+  {
+    chembl[chembl$`Standard Type`%in%this.type,"QSPR.Value"] <- 
+      chembl[chembl$`Standard Type`%in%this.type,"Standard Value"]
+    chembl[chembl$`Standard Type`%in%this.type,"QSPR.Type"] <- "Papp"        
+  }
+}
+# Omit those that don't match:
+chembl <- subset(chembl,QSPR.Type %in% "Papp")
+dim(chembl)
+
+# Harmonize units to 10^-6 cm/s:
+for (this.unit in unique(chembl[,"Standard Units"]))
+{
+  if (this.unit %in% c("10^-6 cm/s", "ucm/s", "10e-6 cm s-1",
+                                       "10\'-6 cm/s", "10\'-6cm/s",
+                                       "10\'6cm/s", "10-6 cm s-1",
+                                       "10\'-6/s", "10^-6/cm", "cm\'-6/s",
+                                       "10\'-8m/s"))
+  {
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  } else if (this.unit %in% c("10\'-4 cm/s")) {
+    chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] <- 
+      chembl[chembl[,"Standard Units"]%in% this.unit,"QSPR.Value"] * 100
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  } else if (this.unit %in% c("10^-5 cm/s","10\'-5 cm/s")) {
+    chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] <- 
+      chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] * 10
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  } else if (this.unit %in% c("10^-7 cm/s", "10\'-7 cm/s",
+                                              "nm/s")) {
+    chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] <- 
+      chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] / 10
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  }  else if (this.unit %in% c("10\'-8cm/s", "10^-8cm/s")) {
+    chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] <- 
+      chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] / 100
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  } else if (this.unit %in% c("10\'-9cm/s")) {
+    chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] <- 
+      chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] / 1000
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  } else if (this.unit %in% c("10^-5 cm/min")) {
+    chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] <- 
+      chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] * 10 / 60
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  } else if (this.unit %in% c("10e4*cm min-1","10\'-4 cm/min")) {
+    chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] <- 
+      chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] * 100 / 60
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  } else if (this.unit %in% c("10\'-6cm/min")) {
+    chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] <- 
+      chembl[chembl[,"Standard Units"] %in% this.unit,"QSPR.Value"] / 60
+    chembl[chembl[,"Standard Units"] %in% this.unit,
+           "QSPR.Units"] <- "10^-6 cm/s"
+  }
+}
+# Omit those that don't match:
+chembl <- subset(chembl,QSPR.Units %in% "10^-6 cm/s")
+dim(chembl)
+
+save(chembl,file=paste0(loc.wd,"/r_data/processed/chembl_caco2_MAY2023.RData")) 
+```
+
+
+```{r qspr_compiletrainingset}
+  # Load data
+  load(paste0(loc.wd,"/r_data/processed/our_caco2_25MAR2019.RData"))
+  load(paste0(loc.wd,"/r_data/processed/lit_caco2_26MAR2019.RData"))
+  load(paste0(loc.wd,"/r_data/processed/chembl_caco2_MAY2023.RData"))
+#  caco2.dt2 <- caco2.publish
+  caco2.dt2$Data.Origin <- "EPA"
+  colnames(lit.caco2.dt)[colnames(lit.caco2.dt)=="repref"] <- "Data.Origin"
+
+  # Merge data:
+  train.set <- as.data.frame(caco2.dt2)[,c("dtxsid","Pab","Data.Origin")]
+  colnames(lit.caco2.dt)[colnames(lit.caco2.dt)=="lit_pab"] <- "Pab"
+  train.set <- rbind(train.set,as.data.frame(lit.caco2.dt)[,
+                c("dtxsid","Pab","Data.Origin")])
+  train.set$SMILES <- NA
+  train.set$Molecule.ChEMBL.ID <- NA
+  colnames(chembl)[colnames(chembl)=="DTXSID"] <- "dtxsid"
+  colnames(chembl)[colnames(chembl)=="QSPR.Value"] <- "Pab"
+  colnames(chembl)[colnames(chembl)=="Smiles"] <- "SMILES"
+  colnames(chembl)[colnames(chembl)=="Molecule ChEMBL ID"] <- "Molecule.ChEMBL.ID"
+#  colnames(chembl)[colnames(chembl)=="Document ChEMBL ID"] <- "Data.Origin"
+  chembl[is.na(chembl$dtxsid),"dtxsid"] <- 
+    chembl[is.na(chembl$dtxsid),"Molecule.ChEMBL.ID"]
+  chembl$Data.Origin <- "ChEMBL"
+  train.set <- rbind(train.set,chembl[,
+                 c("dtxsid","Pab","Data.Origin","SMILES","Molecule.ChEMBL.ID")])
+  dim(train.set)
+  
+  # Set precision:
+  train.set[,"Pab"] <- signif(as.numeric(train.set[,"Pab"]),4)
+ 
+  # Remove bad observations:
+  train.set <- subset(train.set, !is.na(Pab))
+  train.set <- subset(train.set, Pab>0)
+  
+  # Get rid of duplicate rows:
+  train.set <- subset(train.set, !duplicated(train.set))
+  dim(train.set)
+```
+We use the DTXSID's to retrieve "QSAR Ready Smiles" from the CompTox Chemicals
+Dashboard (CCD). We then write them to a .SMI file for use by descriptor
+predictors.
+```{r qspr_writeoutdtxsidsforCCD}
+  write.table(subset(train.set,regexpr("DTXSID",dtxsid)!=-1)$dtxsid, 
+                     file=paste0(loc.wd,"/r_data/DataDTXIDsforDashboard.txt"), 
+               row.names=FALSE,
+               col.names=FALSE,
+               quote=FALSE)
+```
+
+# Make a file of SMILES for predicting properties:
+SMILES are text descriptions of chemical structure according to the
+Simplified molecular-input line-entry system ("SMILES"). See Weininger (1988) (doi:10.1021/ci00057a005).
+```{r qspr_mergesmiles}
+  CCD <- as.data.frame(
+    read_excel(paste0(loc.wd,"/r_data/smilesfromCCD.xlsx"),sheet=2))
+  dim(CCD)
+  # Get rid of multiple values:
+  CCD$QSAR_READY_SMILES <- sapply(CCD[,"QSAR_READY_SMILES"],
+                                  function(x) strsplit(x, ",")[[1]][1])
+  # Get rid of quotation marks:
+  CCD$QSAR_READY_SMILES <- gsub("\"","",CCD$QSAR_READY_SMILES)
+  # Get rid of blank SMILES:
+  CCD <- subset(CCD,!is.na(QSAR_READY_SMILES))
+  dim(CCD)
+  # Get rid of duplicate rows:
+  CCD <- subset(CCD,!duplicated(CCD))
+  dim(CCD)
+
+  dim(train.set)  
+  # Merge with train.set:
+  for (this.dtxsid in CCD$DTXSID)
+    train.set[train.set$dtxsid %in% this.dtxsid, "SMILES"] <-
+      CCD[CCD$DTXSID %in% this.dtxsid, "QSAR_READY_SMILES"]
+``` 
+
+# Try various data binning schemes:
+We will attempt to make a model for each and take the most accurate.
+```{r qspr_binmeasurments}
+  # Keep only training data with SMILES:
+  dim(train.set)
+  train.set <- subset(train.set,!is.na(SMILES))
+  dim(train.set)
+
+  # Divide Pab into Bins:
+  for (num.bins in 2:5)
+  {
+    train.set[,paste0("Pab",num.bins,"Bin")] <-
+      bin(train.set$Pab, nbins=num.bins, 
+          labels=1:num.bins, method="content")
+    nozeros <- train.set$Pab
+    nozeros[nozeros==0] <- 10^-6
+    train.set[,paste0("LogPab",num.bins,"Bin")] <-
+      bin(log10(nozeros), nbins=num.bins, 
+          labels=1:num.bins, method="clusters")
+  }
+```  
+
+Create a file with the SMILES for OPERA
+```{r qspr_makesmifile}  
+smiles <- train.set[,c("SMILES","dtxsid")]
+dim(smiles)
+smiles <- subset(smiles,!duplicated(smiles))
+dim(smiles)
+length(unique(smiles$dtxsid))
+  write.table(smiles,
+            col.names=FALSE,sep="\t",row.names=FALSE,
+            quote = FALSE,
+            file=paste0(loc.wd,"/r_data/trainset.smi"))
+```
+
+I prefer to use OPERA+PADEL over CDK, but it's another option we explored.
+CDK failed to generate properties for ~1/3 of the SMILES.
+```{r qspr_cdk_calcdescriptors, eval=FALSE}
+library(rcdk)
+mols <- parse.smiles(CCD[,"QSAR_READY_SMILES"])
+names(mols) <- CCD$DTXSID
+length(mols)
+mols <- mols[!unlist(lapply(mols,is.null))]
+length(mols)
+descs <- eval.desc(mols, get.desc.names())      
+class(descs)
+descs$DTXSID <- rownames(descs)
+all.desc <- merge(CCD,descs,by="DTXSID",all.x=TRUE)
+```
+
+# Read both OPERA predictions and Padel descriptors:
+```{r qspr_read_opera_padel_descriptors}
+opera <- read.csv(paste0(loc.wd,"/r_data/trainset-smi_OPERA2.9Pred.csv"))
+desc.cols <- rep(TRUE, dim(opera)[2])
+colnames(opera)[1] <- "dtxsid"
+sum(train.set$dtxsid%in%opera$dtxsid)
+desc.cols[regexpr("AD_",colnames(opera))!=-1] <- FALSE
+desc.cols[regexpr("_predRange",colnames(opera))!=-1] <- FALSE
+desc.cols[regexpr("Conf_index",colnames(opera))!=-1] <- FALSE
+opera <- subset(opera,!duplicated(opera))
+all.desc <- merge(train.set,opera[,desc.cols],all.x=TRUE,by="dtxsid")
+dim(all.desc)
+```
+# Ionization fractions:
+```{r qspr_calc_ionization}
+dim(all.desc)
+for (i in 1:dim(all.desc)[1])
+{
+  out <- calc_ionization(pH=7.4, pKa_Donor=all.desc[i,"pKa_a_pred"],pKa_Accept=all.desc[i,"pKa_b_pred"])
+  for (this.col in names(out)) all.desc[i,this.col] <- out[[this.col]]
+}
+dim(all.desc)
+```
+
+# Make a test set that represents the range of the data:
+```{r qspr_maketestset}
+  rm(train.set)
+  # Separate out test set:
+  TEST.FRAC <- 0.1
+  all.desc$Test <- 0
+  # Try to ensure reproducible pseudo-random sampling of test set chemicals:
+  set.seed(12052012)
+  for (this.bin in 1:5)
+  {
+    this.bin.rows <- which(all.desc$Pab5Bin == this.bin)
+    test.rows <- sample(this.bin.rows,
+                        round(TEST.FRAC*length(this.bin.rows)))
+    all.desc[test.rows,"Test"] <- 1
+  }
+  dim(all.desc)
+  dim(subset(all.desc, Test==0))
+  dim(subset(all.desc, Test==1))
+  
+  test.set <- subset(all.desc,Test==1)
+  train.set <- subset(all.desc,Test==0)
+  save(test.set,file=paste0(loc.wd,"/r_data/testset.RData"))
+  save(train.set,file=paste0(loc.wd,"/r_data/trainset.RData"))
+  write.table(train.set,sep="\t",row.names=FALSE,
+            file=paste0(loc.wd,"/r_data/trainset.txt"))
+  all.caco2 <- all.desc[,c("dtxsid","Pab","Data.Origin","Test")]
+  save(all.caco2,file=paste0(loc.wd,"/r_data/alldata.RData"))
+    write.table(subset(all.caco2,!is.na(dtxsid)), 
+                     file=paste0(loc.wd,"/r_data/AllCaco2PabData_10e-6cmps.txt"), 
+              row.names=FALSE,
+              sep="\t")
+```
+```{r qspr_resultsforpaper}
+print(paste0(dim(test.set)[1]," chemicals in test set."))
+print(paste0(dim(subset(test.set,Data.Origin=="EPA"))[1]," EPA chemicals in test set."))
+print(paste0(dim(subset(test.set,Data.Origin=="Lanevskij"))[1]," Lanevskij chemicals in test set."))
+print(paste0(dim(subset(test.set,Data.Origin=="Obringer"))[1]," Obringer chemicals in test set."))
+print(paste0(dim(subset(test.set,regexpr("ChEMBL",Data.Origin)!=-1))[1]," ChEMBL chemicals in test set."))
+
+print(paste0(dim(train.set)[1]," chemicals in training set."))
+print(paste0(dim(subset(train.set,Data.Origin=="EPA"))[1]," EPA chemicals in training set."))
+print(paste0(dim(subset(train.set,Data.Origin=="Lanevskij"))[1]," Lanevskij chemicals in training set."))
+print(paste0(dim(subset(train.set,Data.Origin=="Obringer"))[1]," Obringer chemicals in training set."))
+print(paste0(dim(subset(train.set,regexpr("ChEMBL",Data.Origin)!=-1))[1]," ChEMBL chemicals in training set."))
+```
+  #Cleaning out low variance variables:
+```{r qspr_reducedescriptors_lowvar}
+  all.desc <- train.set[,!(colnames(train.set) %in% 
+                          c("dtxsid",
+                          "Data.Origin",
+                          "SMILES",
+                          "Molecule.ChEMBL.ID",
+                          "dtxsid.1",
+                          "Pab",
+                          "Pab2Bin",
+                          "LogPab2Bin",
+                          "Pab3Bin",
+                          "LogPab3Bin",
+                          "Pab4Bin",
+                          "LogPab4Bin",
+                          "Pab5Bin",
+                          "LogPab5Bin",
+                          "Test"))]
+  dim(all.desc)
+
+  deletevarlist=NULL
+  varthresh <- 0.05
+  for(this.col in 1:dim(all.desc)[2])
+  {
+    col <- all.desc[,this.col]
+    test.row <- which(!is.na(col) & !is.nan(col))[1]
+    if (all(is.na(col))) 
+    { 
+       deletevarlist <- c(deletevarlist, colnames(all.desc)[this.col]) 
+    }
+    else if (all(is.nan(col)))
+    { 
+      deletevarlist <- c(deletevarlist, colnames(all.desc)[this.col])
+    }
+    else if (length(unique(col[!is.na(col) & !is.nan(col)]))==1)
+    {
+      deletevarlist <- c(deletevarlist, colnames(all.desc)[this.col]) 
+    }
+    else if (is.numeric(all.desc[test.row,this.col]))
+    {
+      if (abs(sd(col, na.rm=TRUE)/mean(col, na.rm=TRUE)) < varthresh | 
+         is.na(sd(col, na.rm=TRUE) | 
+         sd(col, na.rm=TRUE)==0)) #Note, used abs here
+      deletevarlist=c(deletevarlist, colnames(all.desc)[this.col])
+    }
+  }            
+  reduced.desc <- all.desc[,!(colnames(all.desc)%in%deletevarlist)]
+  for (i in 1:dim(reduced.desc)[2]) reduced.desc[,i] <-
+    as.numeric(reduced.desc[,i])
+  dim(reduced.desc)
+```
+Identify the mean and standard deviation of the training set parameters for
+later calculation of domain of applicability as well as replacing any NA
+values:
+```{r qspr_mean_sd1}
+# Save mean and standard deviation
+  train_msd<- reduced.desc[1:2,]
+for(i in 1:dim(train_msd)[2]){
+  train_msd[1,i] <- (mean(reduced.desc[,i],na.rm=TRUE))
+  train_msd[2,i] <- (sd(reduced.desc[,i],na.rm=TRUE))
+}
+save(train_msd, file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
+```
+
+```{r qspr_removeNAs}
+# Replace NA's with mean of training set:
+  for (i in 1:dim(train_msd)[2])
+  {
+    if (is.numeric(train_msd[1,i]))
+    {
+      reduced.desc[is.na(reduced.desc[,i]),i] <- train_msd[1,i]
+    }
+  }
+```
+
+# Now get rid of the descriptors that are highly correlated:
+```{r qspr_reducedescriptors_highcorr}
+  dim(reduced.desc)
+  
+  # Identify the remaining numerical columns for correlation analysis:
+  numericcols <- sapply(reduced.desc[1,],is.numeric)
+  corrmat=cor(reduced.desc[,numericcols], method="spearman")
+  sort(corrmat[,1])
+  
+###Reduce total number of predictors by identifying highly(>0.9) correlated predictors
+#Note; moving over to the findCorrelation tool, which uses the average overall correlation as the metric instead of the
+#the correlation with HLH. This ends up with slightly more predictors 
+  CorrelationThreshold=0.9
+  Losers=suppressMessages(findCorrelation(
+    corrmat, 
+    cutoff = 0.9, 
+    exact=TRUE, 
+    names=TRUE,
+    verbose=TRUE))
+  reduced.desc <- reduced.desc[,!(colnames(reduced.desc) %in% Losers)]
+  dim(reduced.desc)
+  
+  save(reduced.desc,file=paste0(loc.wd,"/r_data/trainingdata-reduced.RData"))
+```
+```{r qspr_tenfoldCV}
+######Conduct 5 fold cross validation on overall dataset using caret
+control <- trainControl(method="repeatedcv", number = 5, repeats = 10, savePredictions = "all")
+seed <- 12345
+metric <- "Accuracy"
+```
+
+
+# Build qsprs:
+```{r qspr_train}
+set.seed(seed)
+classmod <- list()
+for (this.model in c("Pab2Bin",
+                     "LogPab2Bin",
+                     "Pab3Bin",
+                     "LogPab3Bin",
+                     "Pab4Bin",
+                     "LogPab4Bin",
+                     "Pab5Bin",
+                     "LogPab5Bin"))
+{
+  print(this.model)
+  out <- tuneRF(x=reduced.desc, 
+                y=train.set[,this.model],
+                mtryStart=floor(dim(reduced.desc)[2]^(1/2)), #j is sizes 
+                ntreeTry=500,
+                stepFactor=1.25,
+                improve=0.005,
+                trace=FALSE, 
+                plot=FALSE, 
+                dBest=FALSE)
+  bestmtry <- out[which(out[,2]==min(out[,2])),1]
+  if (length(bestmtry)>1) {bestmtry= max(bestmtry)}
+  tunegrid <- expand.grid(.mtry=bestmtry)
+  set.seed(seed)
+  classmod[[this.model]] <-train(x=reduced.desc,
+                   y=train.set[,this.model], 
+                   method="rf", 
+                   metric=metric, 
+                   trControl=control, 
+                   tuneGrid = tunegrid)
+  
+  classmod[[this.model]]$bestTune
+  classmod[[this.model]]$finalModel
+  classmod[[this.model]]$trainingData
+  classmod[[this.model]]$results # the average across all cross-validations and reps
+  hist(classmod[[this.model]]$resample$Accuracy)
+}
+save(classmod, train.set, test.set, reduced.desc, file=paste0(loc.wd,"/r_data/classmodels.RData"))
+```
+
+```{r qspr_testset1}
+load(file=paste0(loc.wd,"/r_data/testset.RData"))
+# Replace NA's with mean of training set:
+for (this.col in colnames(train_msd))
+{
+  if (is.numeric(train_msd[1,this.col]))
+  {
+    test.set[is.na(test.set[,this.col]),this.col] <- train_msd[1,this.col]
+  }
+}
+
+for (this.model in names(classmod))
+{
+  classmod[[this.model]]$testsetpred <- predict(classmod[[this.model]],
+                                                test.set[,colnames(reduced.desc)])
+  classmod[[this.model]]$confusion <- confusionMatrix(data = classmod[[this.model]]$testsetpred, reference = test.set[,this.model])
+  classmod[[this.model]]$testsummary <- postResample(pred = classmod[[this.model]]$testsetpred,obs = test.set[,this.model])
+}
+```
+
+# Summarize the results for different data binning strategies:
+```{r qspr_results}
+qspr.summary <- as.data.frame(lapply(classmod,function(x) signif(x$testsummary,3)))
+for (this.model in colnames(qspr.summary))
+{
+  for (this.bin in sort(unique(train.set[,this.model])))
+  {
+    qspr.summary[paste0("Bin",this.bin),this.model] <-
+      paste0(signif(median(train.set[train.set[,this.model]==this.bin,"Pab"]),3),
+                   " (",
+                   signif(quantile(train.set[train.set[,this.model]==this.bin,"Pab"], 0.025),3),
+                   " - ",
+                   signif(quantile(train.set[train.set[,this.model]==this.bin,"Pab"], 0.975),3),
+                   ")")
+  }
+}
+save(qspr.summary,file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))
+```
+```{r qspr_resultstable}
+load(paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))
+knitr::kable(qspr.summary, 
+             caption = "Summary of test set performance of RF models as a function of how Caco2 data are subdivided into categories. Row's labeled \"Bin[Number]\" give the median and 95% interval for the measurments withing each bin.",
+             floating.environment="sidewaystable") 
+write.csv(qspr.summary,file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.csv"))
+```
+
+Although the models with two bins are the most accurate, the 95% intervals for
+both those bins are quite close, meaning that there is not much power to
+distinguish between the chemicals for those models. The clustered three bin 
+model (LogPab3Bin) model has reasonable accuracy and makes predictions that are
+roughly log10 distributed (median ~0.2, ~2, ~20). The 95% quantiles for the
+lower and higher bins are distinctly separated from each other. So we will
+focus on making an optimized model using the "LogPab3Bin" categories. We use
+recursive feature elimination to reduce erroneous predictors and making the
+loadings on true key predictors more clear.
+```{r qspr_rfe}
+load(file=paste0(loc.wd,"/r_data/classmodels.RData"))
+chosen.model <- "LogPab3Bin"
+# 5-fold cross-validation performed over ten replicates of allocating the folds:
+ctrl <- suppressMessages(rfeControl(functions = rfFuncs,
+                   method = "repeatedcv",
+                   repeats = 10,
+                   verbose = TRUE,
+                   rerank=TRUE,
+                   number=5))
+
+# Examine subsets of parameters from 10 to the full set (of reduced descriptors) in increments of 5
+subsets <- c(seq(2,8,2),seq(10,35,5))
+set.seed(12345)
+rfeClass <- suppressMessages(rfe(x=reduced.desc,
+                y=train.set[,chosen.model],
+               # testX=test.set[,colnames(reduced.desc)],
+               # testY=test.set[,chosen.model],
+                rfeControl = ctrl,
+                sizes=subsets,
+                metric="Accuracy",
+                maximize=TRUE))
+
+save(rfeClass, train.set, reduced.desc, chosen.model,
+     file=paste0(loc.wd,"/r_data/recursive_feature_elimination.RData"))
+```
+
+# Find the optimal number of parameters:
+```{r qspr_parsimony}
+load(paste0(loc.wd,"/r_data/recursive_feature_elimination.RData"))
+
+ggplot(rfeClass$results) + 
+  geom_line(aes(x=Variables, y=Accuracy)) +
+  xlab("Number of Descriptors") + 
+  ylab("Model Accuracy")#+
+ # geom_vline(xintercept=num.opt.desc, color="blue",linetype="dashed")
+```
+
+We inspect the above graph and make a judgement call to identify what we feel
+is "optimal". We trade accuracy for parsimony (fewer parameters is
+generally more parsimonious).
+```{r qspr_manualrfesize}
+num.opt.desc <- 25 # JFW, June 2023
+
+FigRFE <- ggplot(rfeClass$results) + 
+  geom_line(aes(x=Variables, y=Accuracy)) +
+  xlab("Number of Descriptors") + 
+  ylab("Model Accuracy") +
+  geom_vline(xintercept=num.opt.desc, color="blue",linetype="dashed")
+ggsave(FigRFE, 
+       file = paste0(loc.wd, "/r_data/results_for_paper/FigRFE.tiff"),
+       height = 3, width = 3, dpi = 600, compression = "lzw")
+print(FigRFE)
+
+desc.set <- subset(rfeClass$variables,Variables==num.opt.desc)
+#use aggregate to calculate mean ranking score (under column "Overall")
+desc.set <- aggregate(desc.set[, c("Overall")], list(desc.set$var), mean)
+
+#order from highest to low, and select first 10:
+desc.order <- order(desc.set[, c("x")], decreasing = TRUE)[1:num.opt.desc]
+opt.desc <-desc.set[desc.order, 1]
+
+save(opt.desc,num.opt.desc, 
+     file=paste0(loc.wd,"/r_data/optimal_parameters.RData"))
+```
+
+```{r qspr_buildoptmodel}
+load(file=paste0(loc.wd,"/r_data/optimal_parameters.RData"))
+#Now, fit classification model with classvars
+metric <- "Accuracy"
+set.seed(seed)
+out <- suppressMessages(tuneRF(x=reduced.desc[,opt.desc], 
+              y=train.set[,chosen.model],
+              mtryStart=floor(num.opt.desc^(1/2)), #j is sizes 
+              ntreeTry=1000,
+              stepFactor=1.25,
+              improve=0.005,
+              trace=TRUE, 
+              plot=TRUE, 
+              dBest=FALSE))
+bestmtry <- out[which(out[,2]==min(out[,2])),1]
+if (length(bestmtry)>1)
+{
+  bestmtry= max(bestmtry)
+}
+tunegrid <- expand.grid(.mtry=bestmtry)
+set.seed(12345)
+classmodopt <- suppressMessages(train(
+  x=reduced.desc[,opt.desc],
+  y=train.set[,chosen.model], 
+  method="rf",  
+  metric=metric, 
+  trControl=control, 
+  tuneGrid = tunegrid))
+save(classmodopt, train.set, reduced.desc, opt.desc, chosen.model,
+     file=paste0(loc.wd,"/r_data/optimal_model.RData"))
+```
+
+Get optimal model results for paper
+```{r qspr_optmodelresults}
+load(paste0(loc.wd,"/r_data/optimal_model.RData"))
+
+print(paste0(length(opt.desc)," parameters used for model"))
+classmodopt$results
+hist(classmodopt$resample$Accuracy)
+classmodopt$finalModel
+plot(varImp(classmodopt,estimate="Accuracy",scale=TRUE))
+
+tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigVarImportance.tiff"),
+       height = 3*200, width = 3*200, compression = "lzw")
+plot(varImp(classmodopt,estimate="Accuracy",scale=TRUE))
+dev.off()
+```
+
+Evaluate the optimal model with the test set:
+```{r qspr_testset2}
+load(file=paste0(loc.wd,"/r_data/optimal_model.RData"))
+load(file=paste0(loc.wd,"/r_data/testset.RData"))
+load(file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
+
+# Replace NA's with mean of training set:
+for (this.col in colnames(train_msd))
+{
+  if (is.numeric(train_msd[1,this.col]))
+  {
+    test.set[is.na(test.set[,this.col]),this.col] <- train_msd[1,this.col]
+  }
+}
+
+opt.testsetpred <- predict(classmodopt,
+                       test.set[,opt.desc])
+opt.confusion <- confusionMatrix(data = opt.testsetpred,
+                                 reference = test.set[,chosen.model])
+opt.testsummary <- postResample(pred = opt.testsetpred,
+                                obs = test.set[,chosen.model])
+print(opt.confusion)
+
+save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
+     file=paste0(loc.wd,"/r_data/optimal_model_test_set_performance.RData"))                          
+```
+
+# Make a file of SMILES for Caco2 Predictions:
+The table httk::chem.physical_and_invitro.data includes the QSAR_READY_SMILES
+from the CCD in the column SMILES.desalt. We will use these to get descriptors
+needed to predict Caco2 Pab for all the chemicals.
+```{r qspr_makenewpredictionccdfile}
+  httk.chems <- httk::chem.physical_and_invitro.data[,"DTXSID"]
+  tox21.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List TOX21SL-2023-05-05.csv"))$DTXSID
+  toxcast.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List TOXCAST-2023-05-05.csv"))$DTXSID
+  pfas1.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List EPAPFAS75S1-2023-05-05.csv"))$DTXSID
+  pfas2.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List EPAPFAS75S2-2023-05-05.csv"))$DTXSID  
+  consumer.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List EPACONS-2023-05-05.csv"))$DTXSID 
+  cvt.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/cvt_test_substances.csv"))$dsstox_substance_id
+  new.httk.chems <- read.table(paste0(
+    loc.wd,"/r_data/chemical_lists/HTTK-status-all.txt"),header=TRUE)$DTXSID
+  apcra.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/APCRA_Chelsea.csv"))$DTXSID 
+  nhanes.chems <- as.data.frame(read_excel(paste0(
+    loc.wd,"/r_data/chemical_lists/NHANES_finalBloodSerumChems_2023-05-05.xlsx")))$DTXSID
+  dawsonpfas.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/S3_Dawsonetal_PFAS_HL_101122.csv"))
+  # only want ones in domain of applicability:
+  dawsonpfas.chems <-length(unique(subset(dawsonpfas.chems,AMAD==1)$DTXSID))
+  
+ chems.to.predict <- sort(unique(c(httk.chems,
+                                   tox21.chems,
+                                   toxcast.chems,
+                                   pfas1.chems,
+                                   pfas2.chems,
+                                   consumer.chems,
+                                   cvt.chems,
+                                   new.httk.chems,
+                                   apcra.chems,
+                                   nhanes.chems,
+                                   dawsonpfas.chems)))
+ 
+ # don't need predictions for chemicals we already had predictions for
+ chems.to.predict <- chems.to.predict[!chems.to.predict %in% opera$dtxsid]
+ chems.to.predict <- chems.to.predict[!is.na(chems.to.predict)]
+ chems.to.predict <- chems.to.predict[regexpr("DTXSID",chems.to.predict)!=-1]
+ chems.to.predict <- gsub(
+   "https://comptox.epa.gov/dashboard/chemical/details/","",
+    chems.to.predict)
+ chems.to.predict <- gsub("\\|c:10\t","",chems.to.predict)
+ chems.to.predict <- sort(unique(chems.to.predict))
+ length(chems.to.predict)
+
+   write.table(chems.to.predict, 
+               file=paste0(loc.wd,"/r_data/QSPRPredictionDTXIDsforDashboard.txt"),
+               row.names=FALSE,
+               col.names=FALSE,
+               quote=FALSE)
+```
+
+```{r qspr_makenewpredictionsmifile}
+  CCD <- read.csv(paste0(loc.wd,"/r_data/QSPRPredictionsmilesfromCCD.csv"))
+  dim(CCD)
+  # Get rid of multiple values:
+  CCD$QSAR_READY_SMILES <- sapply(CCD[,"QSAR_READY_SMILES"],
+                                  function(x) strsplit(x, ",")[[1]][1])
+  # Get rid of quotation marks:
+  CCD$QSAR_READY_SMILES <- gsub("\"","",CCD$QSAR_READY_SMILES)
+  # Get rid of blank SMILES:
+  CCD <- subset(CCD, !is.na(QSAR_READY_SMILES))
+  CCD <- subset(CCD, DTXSID != "N/A")
+  CCD <- subset(CCD, QSAR_READY_SMILES != "N/A")
+  dim(CCD)
+  # Get rid of duplicate rows:
+  CCD <- subset(CCD,!duplicated(CCD))
+  dim(CCD)
+
+  write.table(CCD[,c("QSAR_READY_SMILES","DTXSID")],
+            col.names=FALSE,sep="\t",
+            row.names=FALSE,
+            quote = FALSE,
+            file=paste0(loc.wd,"/r_data/QSPRPrediction.smi"))
+```
+Reload the finale model here in case we're making predictions in a subsequent
+session:
+```{r qspr_loadoptimalmodel}
+load(paste0(loc.wd,"/r_data/optimal_model.RData"))
+```
+# Read both OPERA predictions and Padel descriptors for httk library
+```{r qspr_read_newpredictions_opera_padel_descriptors}
+httk.desc <- read.csv(paste0(loc.wd,"/r_data/QSPRPrediction-smi_OPERA2.9Pred.csv"))
+dim(httk.desc)
+
+#for comparing data vs. qspr let's add in all the training/test chemicals:
+data.desc <- read.csv(paste0(loc.wd,"/r_data/trainset-smi_OPERA2.9Pred.csv"))
+httk.desc <- rbind(httk.desc, data.desc)
+dim(httk.desc)
+
+httk.desc$MoleculeID <- gsub("\\|c:10\t","",httk.desc$MoleculeID)
+
+# Ionization fractions:
+for (i in 1:dim(httk.desc)[1])
+{
+  out <- calc_ionization(pH=7.4, 
+                         pKa_Donor=all.desc[i,"pKa_a_pred"],
+                         pKa_Accept=all.desc[i,"pKa_b_pred"])
+  for (this.col in names(out)) httk.desc[i,this.col] <- out[[this.col]]
+}
+dim(httk.desc)
+httk.ids <- httk.desc[,"MoleculeID"]
+httk.desc <- httk.desc[,opt.desc]
+dim(httk.desc)
+```
+Replace NA's with mean of training set:
+```{r qspr_replacehttkNAs}
+load(paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
+
+for (this.col in opt.desc)
+{
+  if (is.numeric(train_msd[1,this.col]))
+  {
+    httk.desc[is.na(httk.desc[,this.col]),this.col] <- train_msd[1,this.col]
+  }
+}
+```
+
+USe the Roy et al. (2015) method to determine applicability domain:
+```{r qspr_royapplicabilitydomain}
+httk.Ski <- httk.desc
+httk.Ski[] <- NA
+
+# Roy et al. Algorithm Step a:
+for (this.col in opt.desc)
+{
+  httk.Ski[,this.col] <- abs(httk.desc[this.col] - train_msd[1,this.col]) /
+    train_msd[2,this.col]
+}
+# Roy et al. Algorithm Step b (no extreme descriptors):
+httk.Si.max.k <- apply(httk.Ski, 1, max)
+httk.AD <- rep(NA,length(httk.Si.max.k))
+httk.AD[httk.Si.max.k <= 3] <- 1 # Inside applicability domain
+# Roy et al. Algorithm Step c (all extreme descriptors:
+httk.Si.min.k <- apply(httk.Ski,1,min)
+httk.AD[httk.Si.max.k > 3 &
+        httk.Si.min.k > 3] <- 0 # Outside applicability domain
+# Roy et al. Algorithm Step d (some extreme descriptors):
+httk.S.new.k <- apply(httk.Ski, 1, mean) + 1.28*apply(httk.Ski, 1, sd)
+httk.AD[httk.Si.max.k > 3 &
+        httk.Si.min.k <= 3 &
+        httk.S.new.k <= 3] <- 1 # Inside applicability domain
+httk.AD[httk.Si.max.k > 3 &
+        httk.Si.min.k <= 3 &
+        httk.S.new.k > 3] <- 0 # Outside applicability domain
+print(paste0(sum(httk.AD)," HTTK chemicals (",
+             signif(sum(httk.AD)/length(httk.AD),3)*100,
+             "%) are in the Roy et al. (2015) estimated domain of applicability"))
+```
+
+Use optimal model to predict across HTTK library
+```{r qspr_makehttkpredictions}
+httk.pred <- predict(classmodopt, httk.desc)
+httk.caco2.qspr <- data.frame(DTXSID=httk.ids, 
+                              Pab.Class.Pred=httk.pred,
+                              Pab.Pred.AD = httk.AD)
+httk.caco2.qspr <- merge(httk.caco2.qspr,chem.physical_and_invitro.data[,c("DTXSID","CAS")],by="DTXSID",all.x=TRUE)
+
+for (this.bin in sort(as.character(unique(httk.caco2.qspr$Pab.Class.Pred))))
+{
+  bin.value <- qspr.summary[paste0("Bin",this.bin),chosen.model]
+  bin.value <- gsub(" \\(",",",bin.value)
+  bin.value <- gsub(" - ",",",bin.value)
+  bin.value <- gsub("\\)","",bin.value)
+  httk.caco2.qspr[as.character(httk.caco2.qspr$Pab.Class.Pred)==this.bin,
+                  "Pab.Quant.Pred"] <- bin.value
+}
+
+save(httk.caco2.qspr,
+     file=paste0(loc.wd,"/r_data/httk_qspr_preds.RData")) 
+```
