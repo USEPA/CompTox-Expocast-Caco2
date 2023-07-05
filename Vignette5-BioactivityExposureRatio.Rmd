@@ -1,0 +1,398 @@
+---
+title: "Honda et al. (unsubmitted): Analysis and Figure Generation"
+author: "Greg Honda"
+date: "August 3, 2020"
+output: rmarkdown::html_vignette
+vignette: >
+ %\VignetteIndexEntry{Honda et al. (unsubmitted): Analysis and Figure Generation}
+ %\VignetteEngine{knitr::rmarkdown}
+ %\VignetteEncoding{UTF-8}
+---
+wambaugh.john@epa.gov
+
+## Abstract
+Apical-to-basolateral (PAB) and basolateral-to-apical (PBA) measurements were 
+made in the Caco-2 assay for 484 environmental and pharmaceutical chemicals. 
+After filtering, 310 chemicals had a useable PAB and 396 had a useable PBA. 
+Replicates (> 30) were measured for the control chemicals Warfarin, Talinolol, 
+and Ranitidine. Measurement uncertainty was high (SD: 0.3 log10 units) for the 
+low permeability control (Ranitidine). Of our measured PAB, > 80% had high PAB 
+(> 10x10-6 cm/s). Our measured PAB were combined with literature values to 
+develop a classification quantitative-structure-property relationship (QSPR) 
+model, with a balanced accuracy of 80% for the test set. Measured PAB were also 
+used to predict in vivo oral bioavailability (Fbio,h)in human for 
+pharmaceuticals, and performed slightly better (R2: -0.03, RMSE: 0.30) than 
+assuming a fixed value for PAB. Additionally, measured PAB were used for 
+prediction of in vivo oral bioavailability in rat, which resulted in improved 
+prediction of maximum concentration (previous R2: 0.32, updated R2: 0.70). 
+Finally, measurement uncertainty was accounted for in estimates of 
+oral-equivalent dose (OED) from ToxCast in vitro assays for a simulated 
+population using a Monte-Carlo method. OED were subsequently compared with 
+exposure estimates, and the influence of different extrapolation assumptions 
+on the bioactivity-to-exposure ratio (BER) was evaluated. Generally, the large 
+measurement uncertainty for low PAB makes the use of Caco-2 data for accurate 
+prediction of point values difficult. However, accounting for uncertainty 
+enables the upper limits for oral bioavailability to be accurately represented 
+in calculation of OED.
+
+## Prepare for session
+
+### Clear memory
+```{r setup}
+# Delete all objects from memory:
+rm(list=ls())
+```
+
+### Set the figure size
+```{r knitr_setup}
+loc.wd <- "C:/Users/jwambaug/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Research Projects/Caco2/Honda_Caco2"
+knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
+knitr::opts_knit$set(root.dir = loc.wd)
+```
+
+### Load the relevant libraries
+```{r r_setup}
+
+packages <- c("ggplot2","hexbin","dplyr","gplots","httk","RColorBrewer",
+        "viridis","data.table","magrittr","readxl",
+        "stringr","gridExtra","stringi","RMySQL","DBI","grid","xlsx","lattice",
+        "gtable","ggpubr","randomForest","caret","recipes","quantregForest",
+        "tcpl","scales")
+sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary her
+```
+
+### Load custom scripts for analysis
+```{r load_useful_scripts}
+source(paste0(loc.wd,"/r_scripts/Honda_caco2_utilities.R"))
+#source('C:/Users/GHONDA/Documents/HTTKOralRoute/gh_ionization_functions.R')
+#source("C:/Users/GHONDA/Documents/R homebrew/chemprop_connect/query_dsstox.measchemprop.R")
+#source(paste0(loc.wd,"/r_scripts/rf_train.R"))
+#source(paste0(loc.wd,"/r_scripts/Honda_caco2_fullmodel.R"))
+
+
+```
+
+# BER plots
+```{r calc_mc_css_options}
+# collect httk chems for IVIVE
+chem.dt <- as.data.table(chem.physical_and_invitro.data)
+temp <- chem.dt[!is.na(DTXSID) &
+                  !is.na(logP) &
+                  !is.na(MP) &
+                  !is.na(Human.Funbound.plasma) &
+                  !is.na(Human.Clint),
+                .(DTXSID, CAS, Compound, logP, Human.Funbound.plasma, Human.Clint, Human.Caco2.Pab)
+                ]
+for(this.cas in temp[regexpr("<",Human.Clint) == -1 &
+                     Human.Clint != "ND" &
+                     Human.Funbound.plasma != "NF",CAS]){
+  parameters <- parameterize_steadystate(chem.cas = this.cas,
+                                         suppress.messages=TRUE)
+  temp[CAS == this.cas, adj.fuph := parameters$Funbound.plasma] %>% 
+    .[CAS == this.cas, clinth := parameters$Clint]
+  
+}
+use.dt <- temp[!is.na(adj.fuph) & !is.na(clinth), ]
+
+# Calculate css for different IVIVE assumptions
+set.seed(6252019)
+use.dt[, r1_mcaco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
+                                         which.quantile = c(0.025,0.05,0.25,0.5,
+                                                            0.75,0.95,0.975),
+                                         Caco2.options = list(Caco2.Pab.default = "1.6",
+                                                              Caco2.Fabs = TRUE,
+                                                              Caco2.Fgut = TRUE,
+                                                              overwrite.invivo = TRUE,
+                                                              keepit100 = FALSE),
+                                         output.units = "uM",
+                                         suppress.messages=TRUE)))),.(CAS)] %>% 
+  .[, r2_m100 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
+                                     which.quantile = c(0.025,0.05,0.25,0.5,
+                                                        0.75,0.95,0.975),
+                                     Caco2.options = list(Caco2.Pab.default = "1.6",
+                                                          Caco2.Fabs = FALSE,
+                                                          Caco2.Fgut = FALSE,
+                                                          overwrite.invivo = FALSE,
+                                                          keepit100 = TRUE),
+                                     output.units = "uM",
+                                         suppress.messages=TRUE)))),.(CAS)] #%>% 
+  # .[, r3_mcaco2_honda1 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
+  #                                            which.quantile = c(0.025,0.05,0.25,0.5,
+  #                                                               0.75,0.95,0.975),
+  #                                            Caco2.options = list(Caco2.Pab.default = "1.6",
+  #                                                                 Caco2.Fabs = TRUE,
+  #                                                                 Caco2.Fgut = TRUE,
+  #                                                                 overwrite.invivo = TRUE,
+  #                                                                 keepit100 = FALSE),
+  #                                            output.units = "uM",
+  #                                            calc.analytic.css.arg.list = list(
+  #                                              IVIVE = "Honda1"),
+  #                                        suppress.messages=TRUE)))),.(CAS)] %>% 
+  # .[, r4_mfabs_honda1 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
+  #                                           which.quantile = c(0.025,0.05,0.25,0.5,
+  #                                                              0.75,0.95,0.975),
+  #                                           Caco2.options = list(Caco2.Pab.default = "1.6",
+  #                                                                Caco2.Fabs = FALSE,
+  #                                                                Caco2.Fgut = FALSE,
+  #                                                                overwrite.invivo = FALSE,
+  #                                                                keepit100 = FALSE),
+  #                                           output.units = "uM",
+  #                                           calc.analytic.css.arg.list = list(
+  #                                              IVIVE = "Honda1"),
+  #                                        suppress.messages=TRUE)))),.(CAS)]
+save(use.dt, file = paste0(loc.wd, "/r_data/AEDtable.RData"))
+```
+###
+```{r ber_table}
+# load Css values
+load(file = paste0(loc.wd, "/r_data/AEDtable.RData"))
+
+# load ToxCast Summary file
+load(file = paste0(loc.wd, "/r_data/BER/toxcast_summary_15AUG2019.RData"))
+
+# load httk-seem3 data 
+load(file = paste0(loc.wd, "/r_data/BER/seem3_httk_chems_15AUG2019.RData"))
+
+# Merge with Toxcast data and convert q5AC50 to OED (aka AED)
+aed.dt <- toxcast.summary[use.dt, on = "CAS"]
+aed_r1_mcaco2 <- aed.dt[, lapply(unlist(r1_mcaco2), 
+                                 function(x) q5cnom/x), 
+                        .(CAS, DTXSID)][,c("gutabs", "IVIVE") := 
+list("bold('Caco-2')~bolditalic('F'['bio'])", "bold('Nominal Conc.')")]
+
+aed_r2_m100 <- aed.dt[, lapply(unlist(r2_m100), 
+                               function(x) q5cnom/x), 
+                      .(CAS, DTXSID)][,c("gutabs", "IVIVE") := 
+list("bold('100 Percent')~bolditalic('F'['abs/gut'])", "bold('Nominal Conc.')")]
+
+# aed_r3_mcaco2_honda1 <- aed.dt[, lapply(unlist(r1_mcaco2), function(x) q5cfree/x), .(CAS, DTXSID)][,c("gutabs", "IVIVE") := 
+#                                                                                                      list("bold('Caco-2')~bolditalic('F'['bio'])", "bold('Free Conc.')")]
+# aed_r4_mfabs_honda1 <- aed.dt[, lapply(unlist(r2_mfabs), function(x) q5cfree/x), .(CAS, DTXSID)][,c("gutabs", "IVIVE") := 
+#                                                                                                    list("bolditalic('In Vivo')~bolditalic('F'['bio'])", "bold('Free Conc.')")]
+aed.full <- rbind(aed_r1_mcaco2,
+                  aed_r2_m100)#,
+                  #aed_r3_mcaco2_honda1,
+                  #aed_r4_mfabs_honda1)
+setnames(aed.full, 3:9, c("q025", "q05", "q25", "q50", "q75", "q95", "q975"))
+aed.full[, gutabs := factor(gutabs, levels = c(
+  "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+  "bold('Caco-2')~bolditalic('F'['bio'])"))] %>% 
+  .[, IVIVE := factor(IVIVE, levels = c(
+    "bold('Nominal Conc.')", 
+    "bold('Free Conc.')"))]
+# Make sure we have HTTK for these chemicals and they are in domain:
+aed.full <- subset(aed.full,CAS%in%get_cheminfo())
+aed.full2 <- seem.dt[,.(DTXSID = dsstox_substance_id, 
+                        seem3, seem3.l95, 
+                        seem3.u95)][aed.full, on = "DTXSID"]
+aed.full2[, BER:=q95/seem3.u95]
+aed.full2[BER<1, cross.ber.min:=q95]
+aed.full2[BER<1, cross.ber.max:=seem3.u95]
+aed.full3 <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])" & 
+                         IVIVE == "bold('Nominal Conc.')", 
+                       .(r1 = rank(BER), CAS)][aed.full2, on = 'CAS']
+aed.full4 <- aed.full3[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])" & 
+                         IVIVE == "bold('Nominal Conc.')", 
+                       .(r2 = rank(BER), CAS)][aed.full3, on = 'CAS']
+aed.full4[,
+          c("Fbio", "Fabs", "Fgut", "Fhep") :=
+            calc_fbio.oral(chem.cas=CAS,suppress.messages=TRUE),by=CAS]
+save(aed.full4,file=paste0(loc.wd, "/r_data/BERtable.RData"))
+```
+
+
+
+### Bioactivty:Exposure Ratio Plots
+```{r BERplotsetup}
+# make BER plot theme
+gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
+                axis.text.y = element_text(size=10, color = "black",face="bold"),
+                legend.text = element_text(size = 10),
+                legend.title = element_text(size = 10),
+                legend.key.size = unit(10, "points"),
+                panel.background = element_rect(fill="white"),
+                axis.line = element_line(color="black"),
+                strip.background = element_blank(),
+                axis.ticks.y = element_line(color="black"),
+                legend.position = "top",
+                axis.line.x=element_line(color="black"),
+                axis.ticks.x=element_line(color="black"),
+                axis.text.x = element_text(size = 10,face="bold",color="black"),
+                plot.title = element_text(hjust=0,size=12,face="bold"))
+
+legend.dt <- data.table(x = 1:3, y = 1:3, 
+                        leg.labl = c("AED","Exposure", "Overlap"), 
+                        leg.color = c("purple", "yellow", "orange")) %>% 
+  .[, leg.labl := factor(leg.labl, levels = c("AED","Exposure", "Overlap"))]
+g1leg <- ggplot(legend.dt)+
+  geom_point(aes(x = x, y = y, color = leg.labl))+
+  scale_color_manual(labels = c("AED","Exposure", "Overlap"),
+                     values = c("purple","yellow","orange"))+
+  labs(color = "Value:")+
+  theme_bw()+
+  gtheme+
+  theme(legend.position = "bottom")
+gleg <- get_legend(g1leg)
+```
+
+```{r label_logscale}
+scientific_10 <- function(x) {                                  
+  out <- gsub("1e", "10^", scientific_format()(x))              
+  out <- gsub("\\+","",out)                                     
+  out <- gsub("10\\^01","10",out)                               
+  out <- parse(text=gsub("10\\^00","1",out))                    
+}  
+```
+
+```{r makehistogram}
+load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+hist.table.fabs <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                             c("DTXSID","Fabs")]
+hist.table.fabs$label <- "Fabs"
+colnames(hist.table.fabs)[2] <- "Value"
+hist.table.fgut <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                             c("DTXSID","Fgut")]
+hist.table.fgut$label <- "Fgut"
+colnames(hist.table.fgut)[2] <- "Value"
+hist.table.ber <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                            c("DTXSID","BER")]
+hist.table.ber$label <- "BER"
+colnames(hist.table.ber)[2] <- "Value"
+hist.table <- rbind(hist.table.fabs, hist.table.ber)
+save(hist.table,file=paste0(loc.wd, "/r_data/histograms.RData"))
+
+print(paste("We are assuming that systemic bioavailability of an oral dose is a function of three processes: first-pass hepatic metabolism (independent of gut permeability), gut absorption, and gut metabolism. Since HTTK already included first-pass hepatic metabolism, shifts in the predictions of HTTK will be due to only gut absorption (no longer 100%) and gut metabolims (no longer zero).",
+            "For the chemcials where we can calculate BER the median value of Fabs is predicted to be",
+            signif(median(hist.table.fabs$Value),3),
+            "and the median value of Fgut is",
+            signif(median(hist.table.fgut$Value),3),
+            ". This means for most chemicals we might expect Fbio to decrease only",
+            percent(signif(1 - signif(median(hist.table.fabs$Value),3)*
+                      signif(median(hist.table.fgut$Value),3),2)),
+      ". This reduction is less than one order of magnitude. Meanwhile the median BER is",
+      signif(median(hist.table.ber$Value,na.rm=TRUE),2),"or",
+      signif(log10(median(hist.table.ber$Value,na.rm=TRUE)),1),
+      "orders of magnitude.",
+      "For specific chemicals where Fabs is predicted to be low, the changes will be more pronounced.",
+      "Fabs is less than 50% for only",
+      sum(hist.table.fabs$Value<0.5),
+      "of chemicals where we can estimate BER."))
+colnames(hist.table.ber)[2] <- "Value"
+
+FigBERHistogram<-ggplot(hist.table, aes(x=Value, fill=label)) + 
+  geom_histogram(alpha=0.25, position="identity") +
+  labs(x = expression(bold('F'['abs']*' and Bioactivity:Exposure Ratio')), 
+        y = "Number of Chemicals") +
+  scale_x_log10(labels=scientific_10,limits=c(10^-5,10^7))+
+  scale_y_log10(labels=scientific_10)+
+scale_fill_discrete(name="",labels=c(expression('BER','F'['abs'],'F'['gut'])))+
+  gtheme+
+  scale_colour_viridis_d()
+print(FigBERHistogram)
+ggsave(FigBERHistogram, 
+       file = paste0(loc.wd, "/r_data/results_for_paper/BERhistogram.tiff"), 
+       dpi = 600, height = 5, width = 5, compression = "lzw")
+```
+
+```{r makerankcomparison}
+load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+rank.table <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                             c("DTXSID","r1")]
+rank.table <- cbind(rank.table, aed.full4[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                             "r2"])
+save(rank.table,file=paste0(loc.wd, "/r_data/ranks.RData"))
+
+FigBERRankCompare<-ggplot(rank.table, aes(x=r1, y=r2)) + 
+  geom_point(alpha=0.5, size=3) +
+  scale_colour_viridis_d()+
+  labs(y = expression(bold('BER Rank with F'['bio'])), 
+        x = "BER Rank with 100% Absorption")+
+  scale_x_log10() + scale_y_log10() +
+  gtheme
+print(FigBERRankCompare)
+ggsave(FigBERRankCompare, 
+       file = paste0(loc.wd, "/r_data/results_for_paper/BERrankcompare.tiff"), 
+       dpi = 600, height = 5, width = 5, compression = "lzw")
+```
+```{r clacmccsscheck}
+load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+css.table <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                             c("DTXSID","q50","Fgut", "Fabs")]
+css.table <- cbind(css.table, aed.full4[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                             "q50"])
+colnames(css.table)[5]<-"q50.2"
+css.table[,"Fbio.eff"] <- css.table[,"q50.2"]/css.table[,"q50"]
+css.table[,"Fgutchange"] <- css.table[,"Fgut"]*css.table[,"Fabs"]
+save(css.table,file=paste0(loc.wd, "/r_data/ranks.RData"))
+
+Figcsstest<-ggplot(css.table, aes(x=Fgutchange, y=Fbio.eff)) + 
+  geom_point(alpha=0.5, size=3) +
+  scale_colour_viridis_d()+
+  labs(y = "Fbio.eff", 
+        x = "Fbio")+
+ # scale_x_log10() + scale_y_log10() +
+  gtheme
+print(Figcsstest)
+ggsave(Figcsstest, 
+       file = paste0(loc.wd, "/r_data/results_for_paper/csstest.tiff"), 
+       dpi = 600, height = 5, width = 5, compression = "lzw")
+```
+
+
+
+```{r makezoomedBERfig}
+load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+g1 <- ggplot(subset(aed.full4,
+                    IVIVE=="bold('Nominal Conc.')"))+
+  facet_grid(rows= vars(gutabs), labeller = label_parsed) +
+  geom_point(aes(y = q95, x = r2), color = "purple") +
+  geom_point(aes(y = seem3.u95, x = r2), color = "yellow")+
+  geom_linerange(aes(ymin = cross.ber.min, 
+                     ymax = cross.ber.max, 
+                     x = r2), color = "orange")+
+ # geom_text(data = figtxt.dt,
+ #           mapping = aes(x = x1, y = y1, label = labl1),
+#            hjust = 0, parse = FALSE) +
+ # geom_text(data = figtxt.dt,
+##            mapping = aes(x = x2, y = y2, label = labl2),
+ #           hjust = 0, parse = TRUE)+
+  labs(x = "Bioactive:Exposure Ratio", 
+       y = expression(bold('log'['10']*'(mg/kgBW/day)')))+
+  theme_bw()+
+  xlim(1,500)+
+  scale_y_log10(limits=c(10^-8,10^2),labels=scientific_10)+
+  gtheme
+hlay <- t(t(c(rep(1,8),2)))
+g2 <- marrangeGrob(grobs = list(g1, gleg), nrow = 2, ncol = 1, top = NULL, layout_matrix = hlay)
+print(g2)
+ggsave(g2, 
+       file = paste0(loc.wd,
+                       "/r_data/results_for_paper/BERrankzoom.tiff"),
+       dpi = 600, height = 5, width = 7.5, compression = "lzw")
+```
+```{r makezoomedBERfig2}
+load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+FigBER <- ggplot(subset(aed.full4,
+                    !is.na(q95) &
+                    gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])"))+
+    geom_linerange(aes(ymin = seem3.u95, 
+                     ymax = q95, 
+                     x = r2), color = "grey")+
+  geom_linerange(aes(ymin = cross.ber.min, 
+                     ymax = cross.ber.max, 
+                     x = r2), color = "orange")+
+    geom_point(aes(y = q95, x = r2), color = "purple") +
+  geom_point(aes(y = seem3.u95, x = r2), color = "yellow")+
+
+  labs(x = "Bioactive:Exposure Ratio", 
+       y = expression(bold('log'['10']*'(mg/kgBW/day)')))+
+  theme_bw()+
+ # xlim(1,500)+
+  scale_y_log10(limits=c(10^-8,10^2),labels=scientific_10)+
+  gtheme
+print(FigBER)
+ggsave(FigBER, 
+       file = paste0(loc.wd,
+                       "/r_data/results_for_paper/BERranksinglepanel.tiff"),
+       dpi = 600, height = 5, width = 7.5, compression = "lzw")
+```
