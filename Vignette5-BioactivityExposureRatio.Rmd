@@ -292,7 +292,7 @@ css.table <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])
 css.table <- cbind(css.table, aed.full4[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              "q50"])
 colnames(css.table)[5]<-"q50.2"
-css.table[,"Fbio.eff"] <- css.table[,"q50.2"]/css.table[,"q50"]
+css.table[,"Fbio.eff"] <- css.table[,"q50"]/css.table[,"q50.2"]
 css.table[,"Fgutchange"] <- css.table[,"Fgut"]*css.table[,"Fabs"]
 save(css.table,file=paste0(loc.wd, "/r_data/ranks.RData"))
 
