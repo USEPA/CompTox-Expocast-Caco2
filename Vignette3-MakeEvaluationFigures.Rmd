@@ -45,7 +45,7 @@ rm(list=ls())
 
 ### Set the figure size
 ```{r knitr_setup}
-loc.wd <- "C:/Users/jwambaug/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Research Projects/Caco2/Honda_Caco2"
+loc.wd <- "C:/Users/jwambaug/git/comptox-caco2/Honda_Caco2"
 knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
 knitr::opts_knit$set(root.dir = loc.wd)
 ```
@@ -93,18 +93,22 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
                 plot.title = element_text(hjust=0,size=12,face="bold"))
 ```
 
-### Comparison of Caco2 Predictions with In Vivo Data:
+### Comparison of In Vivo Data with Predictions based on In vitro Caco2 Measurements 
 
-```{r caco2_qspr_eval}
+```{r caco2_inivtro_data}
 caco2.dt <- httk::honda2023.data
 dim(caco2.dt)
 colnames(caco2.dt)[colnames(caco2.dt)=="dtxsid"] <- "DTXSID"
+# Add column holding the QSPR predictons:
 caco2.dt <- merge(caco2.dt,honda2023.qspr,by="DTXSID")
 caco2.dt <- caco2.dt[!duplicated(caco2.dt),]
 dim(caco2.dt)
 caco2.dt$Pab.Pred.Med <- sapply(caco2.dt$Pab.Quant.Pred,function(x) as.numeric(strsplit(x,",")[[1]][1]))
 caco2.dt$Pab.Pred.Low <- sapply(caco2.dt$Pab.Quant.Pred,function(x) as.numeric(strsplit(x,",")[[1]][2]))
 caco2.dt$Pab.Pred.High <- sapply(caco2.dt$Pab.Quant.Pred,function(x) as.numeric(strsplit(x,",")[[1]][3]))
+  save(caco2.dt,
+       file=paste0(loc.wd, 
+                   "/r_data/processed/caco2dt.RData"))
 ```
 
 Load all the parameters needed to make calculations:
@@ -249,7 +253,7 @@ These calculations should match both the manuscript text and the code in calc_or
 ```   
 
 # Measured data from Lanevskij and Didziapetris (2019)
-```{r make_Cacopeff_fig}
+```{r make_caco_peff_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
       FigCacoPredPeff <- ggplot(invivo.table)+
         geom_point(aes(x = mpeff_lit, y = peffh, color=Class, shape=Class), 
@@ -269,7 +273,7 @@ print(FigCacoPredPeff)
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Measured data from Kim et al. (2014)
-```{r make_CacoFbiokim_fig}
+```{r make_Caco_Fbio_kim_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
       FigCacoPredFbioKim <- ggplot(invivo.table)+
         geom_point(aes(y = fbioh, x = kim_fbioh, color=Class, shape=Class), 
@@ -286,7 +290,7 @@ print(FigCacoPredFbioKim)
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Measured data collected by Varma et al. (2010)
-```{r make_CacoFabs_fig}
+```{r make_Caco_Fabs_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
 FigCacoPredFabs <- ggplot(invivo.table)+
         geom_point(aes(y = fah_darwichh, x = vo_Fa, color=Class, shape=Class), 
@@ -303,7 +307,7 @@ print(FigCacoPredFabs)
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Measured data collected by Varma et al. (2010)
-```{r make_CacoFgut_fig}
+```{r make_Caco_Fgut_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
   FigCacoPredFgut <- ggplot(invivo.table)+
         geom_point(aes(y = fgh_qg, x = vo_Fg, color=Class, shape=Class), 
@@ -320,43 +324,45 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Measured data collected by Varma et al. (2010) (ffp=fraction first pass)
-```{r make_CacoFhep_fig}
-load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
-  FigPredFhep <- ggplot(invivo.table)+
-        geom_point(aes(y = ffph, x = vo_Fh, color=Class, shape=Class), 
-                   alpha = 0.75,
-                   size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Pred.")~bolditalic("F"["hep,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["hep,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-    scale_colour_viridis_d()+
-        gtheme
-  print(FigPredFhep)
-  ggsave(FigPredFhep, file = paste0(loc.wd, "/r_data/results_for_paper/FigPredFhep.tiff"),
+```{r make_Caco_Fhep_fig}
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+  
+  FigCacoPredFhep <- ggplot(invivo.table) +
+  geom_point(aes(y = ffph, x = vo_Fh, color=Class, shape=Class), 
+                 alpha = 0.75,
+                 size=3) +
+  geom_abline(slope = 1, linetype = "dashed") +
+  labs(y = expression(bold("Pred.")~bolditalic("F"["hep,h"])),
+       x = expression(bold("Measured")~bolditalic("F"["hep,h"]))) +
+  lims(x = c(0,1), y = c(0,1)) +
+  scale_colour_viridis_d() +
+  gtheme
+  print(FigCacoPredFhep)
+  ggsave(FigCacoPredFhep, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFhep.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
 # Fbio calculated from measured data collected by Varma et al. (2010)
-```{r make_CacoFabsVarma_fig}
-load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+```{r make_Caco_Fabs_Varma_fig}
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+  
   FigCacoPredFbioVarma <- ggplot(invivo.table)+
-        geom_point(aes(y = fbioh, x = vo_F, color=Class, shape=Class), 
+    geom_point(aes(y = fbioh, x = vo_F, color=Class, shape=Class), 
                    alpha = 0.75,
                    size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-        scale_colour_viridis_d()+
-        gtheme
+    geom_abline(slope = 1, linetype = "dashed")+
+    labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,h"])),
+         x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
+    lims(x = c(0,1), y = c(0,1))+
+    scale_colour_viridis_d()+
+    gtheme
   print(FigCacoPredFbioVarma)
   ggsave(FigCacoPredFbioVarma, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioVarma.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Fbio for rats using Wambaugh et al. (2018) Fbio
 ```{r make_CacoFabsRat_fig}
-load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
   FigCacoPredFbioRat <- ggplot(invivo.table)+
         geom_point(aes(y = fbior, x = pk_fbior, color=Class, shape=Class), 
                    alpha = 0.75,
@@ -372,45 +378,48 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Fbio using both Kim et al. (2014) and Varma et al. (2010)
-```{r make_CacoFabsAll_fig}
-load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
+```{r make_Caco_Fabs_All_fig}
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
 
-varma.chems <- subset(invivo.table,!is.na(vo_F))[,
-                 c("DTXSID","Class","fbioh","vo_F")]
-kim.chems <- subset(invivo.table,!is.na(kim_fbioh))[,
+  varma.chems <- subset(invivo.table,!is.na(vo_F))[,
+                   c("DTXSID","Class","fbioh","vo_F")]
+  kim.chems <- subset(invivo.table,!is.na(kim_fbioh))[,
                  c("DTXSID","Class","fbioh","kim_fbioh")]
-colnames(varma.chems)[4] <- "invivo_fbioh"
-colnames(kim.chems)[4] <- "invivo_fbioh"
-varma.chems$Reference <- "Varma2010"
-kim.chems$Reference <- "Kim2014"
-fbio.table <- rbind(varma.chems,kim.chems)
-invivo.table <- fbio.table
-save(invivo.table,
-     file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare-fbioall.RData"))
+  colnames(varma.chems)[4] <- "invivo_fbioh"
+  colnames(kim.chems)[4] <- "invivo_fbioh"
+  varma.chems$Reference <- "Varma2010"
+  kim.chems$Reference <- "Kim2014"
+  fbio.table <- rbind(varma.chems,kim.chems)
+  invivo.table <- fbio.table
+  save(invivo.table,
+     file=paste0(loc.wd, 
+                 "/r_data/processed/caco2-invivo-compare-fbioall.RData"))
 
   FigCacoPredFbioAll <- ggplot(fbio.table)+
-        geom_point(aes(y = fbioh, x = invivo_fbioh, color=Class, shape=Class), 
+    geom_point(aes(y = fbioh, x = invivo_fbioh, color=Class, shape=Class), 
                    alpha = 0.75,
                    size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-        scale_colour_viridis_d()+
-        gtheme
+    geom_abline(slope = 1, linetype = "dashed")+
+    labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,h"])),
+         x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
+    lims(x = c(0,1), y = c(0,1))+
+    scale_colour_viridis_d()+
+    gtheme
   print(FigCacoPredFbioAll)
-  ggsave(FigCacoPredFbioAll, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioAll.tiff"),
+  ggsave(FigCacoPredFbioAll, 
+         file = paste0(loc.wd, 
+                       "/r_data/results_for_paper/FigCacoPredFbioAll.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Combine the evalaution figures of the components of Fbio for the paper:
 ```{r multipanelfigureforpaper}
-ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FigPredFhep, 
+ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FigCacoPredFhep, 
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
 tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioComponents.tiff"),
          height = 3*200, width = 3*200, compression = "lzw")
-ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FigPredFhep, 
+ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FigCacoPredFhep, 
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom"+
@@ -419,7 +428,7 @@ dev.off()
 ```
 ### QSPR Evaluation:
 
-```{r caco2_qspr_eval_fig}
+```{r caco2_qspr_pab_eval_fig}
 # Annotate chemical class:   
    caco2.dt$Class <- "Other"
    caco2.dt[caco2.dt$DTXSID%in%pharma$DSSTox_Substance_Id,"Class"] <-
@@ -439,7 +448,8 @@ dev.off()
         scale_colour_viridis_d()+
         gtheme
   print(FigQSPRPredPab)
-    ggsave(FigQSPRPredPab, file = paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredPab.tiff"),
+    ggsave(FigQSPRPredPab, file = paste0(loc.wd, 
+                                         "/r_data/results_for_paper/FigQSPRPredPab.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -575,139 +585,158 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,fbioh:=ffph*fgh_qg*fah_darwichh] %>% 
         .[,fbior:=ffpr*fgr_qg*fah_darwichr]
   
-  save(invivo.table, file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))    
+  save(invivo.table, file=paste0(loc.wd, 
+                                 "/r_data/processed/qspr-invivo-compare.RData"))    
 ```   
    
-```{r make_qsprpeff_fig}
+```{r make_qspr_peff_fig}
   load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
-      FigQSPRPredPeff <- ggplot(invivo.table)+
-        geom_point(aes(x = mpeff_lit, y = peffh, color=Class, shape=Class), 
-                   alpha = 0.75,
-                   size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Predicted log"["10"])*bolditalic("P"["eff,h"])~bold('(10'^'-4'~'cm/s)')),
-             x = expression(bold("Measured log"["10"])*bolditalic("P"["eff,h"])~bold('(10'^'-4'~'cm/s)')))+
-    #    lims(x = c(-2,2), y = c(-2,2)) +
-          scale_x_log10()+
-        scale_y_log10()+
-        scale_colour_viridis_d()+
-        gtheme
-print(FigQSPRPredPeff)
-    ggsave(FigQSPRPredPeff, file = paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredPeff.tiff"),
+
+  FigQSPRPredPeff <- ggplot(invivo.table)+
+    geom_point(aes(x = mpeff_lit, y = peffh, color=Class, shape=Class), 
+                alpha = 0.75,
+                size=3)+
+    geom_abline(slope = 1, linetype = "dashed")+
+    labs(y = expression(bold("Pred. ")*bolditalic("P"["eff,h"])~bold('(10'^'-4'~'cm/s)')),
+         x = expression(bold("Measured ")*bolditalic("P"["eff,h"])~bold('(10'^'-4'~'cm/s)')))+
+    scale_colour_viridis_d()+
+    scale_x_log10()+
+    scale_y_log10()+
+    gtheme +
+    theme(axis.title = element_text(size = 8)) 
+  print(FigQSPRPredPeff)
+  ggsave(FigQSPRPredPeff, file = 
+           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredPeff.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
-```{r make_QSPRFbio_fig}
-      FigQSPRPredFbioKim <- ggplot(invivo.table)+
-        geom_point(aes(y = fbioh, x = kim_fbioh, color=Class, shape=Class), 
-                   alpha = 0.75,
-                   size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-        scale_colour_viridis_d()+
-        gtheme
-print(FigQSPRPredFbioKim)
-    ggsave(FigQSPRPredFbioKim, file = paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFbioKim.tiff"),
+```{r make_QSPR_Fbio_kim_fig}
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+
+  FigQSPRPredFbioKim <- ggplot(invivo.table)+
+  geom_point(aes(y = fbioh, x = kim_fbioh, color=Class, shape=Class), 
+                 alpha = 0.75,
+                 size=3) +
+  geom_abline(slope = 1, linetype = "dashed") +
+  labs(y = expression(bold("Pred.")~bolditalic("F"["bio,h"])),
+       x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
+  lims(x = c(0,1), y = c(0,1))+
+  scale_colour_viridis_d()+
+  gtheme
+  print(FigQSPRPredFbioKim)
+  ggsave(FigQSPRPredFbioKim, file = 
+           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFbioKim.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-```{r make_QSPRFabs_fig}
+```{r make_QSPR_Fabs_fig}
   load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
-FigQSPRPredFabs <- ggplot(invivo.table)+
-        geom_point(aes(y = fah_darwichh, x = vo_Fa, color=Class, shape=Class), 
+
+  FigQSPRPredFabs <- ggplot(invivo.table) +
+    geom_point(aes(y = fah_darwichh, x = vo_Fa, color=Class, shape=Class), 
                    alpha = 0.75,
-                   size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Darwich Predicted")~bolditalic("F"["abs,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["abs,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-        scale_colour_viridis_d()+
-        gtheme 
-print(FigQSPRPredFabs)
-    ggsave(FigQSPRPredFabs, file = paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFabs.tiff"),
+                   size=3) +
+    geom_abline(slope = 1, linetype = "dashed") +
+    labs(y = expression(bold("Pred.")~bolditalic("F"["abs,h"])),
+         x = expression(bold("Measured")~bolditalic("F"["abs,h"]))) +
+    lims(x = c(0,1), y = c(0,1)) +
+    scale_colour_viridis_d() +
+    gtheme 
+
+  print(FigQSPRPredFabs)
+  ggsave(FigQSPRPredFabs, file = 
+           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFabs.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-```{r make_QSPRFgut_fig}
+```{r make_QSPR_Fgut_fig}
   load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
-FigQSPRPredFgut <- ggplot(invivo.table)+
-        geom_point(aes(y = fgh_qg, x = vo_Fg, color=Class, shape=Class), 
-                   alpha = 0.75,
-                   size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["gut,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["gut,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-        scale_colour_viridis_d()+
-        gtheme
+  
+  FigQSPRPredFgut <- ggplot(invivo.table)+
+  geom_point(aes(y = fgh_qg, x = vo_Fg, color=Class, shape=Class), 
+                 alpha = 0.75,
+                 size=3)+
+  geom_abline(slope = 1, linetype = "dashed")+
+  labs(y = expression(bold("Pred.")~bolditalic("F"["gut,h"])),
+       x = expression(bold("Measured")~bolditalic("F"["gut,h"])))+
+  lims(x = c(0,1), y = c(0,1))+
+  scale_colour_viridis_d()+
+  gtheme
   print(FigQSPRPredFgut)
-  ggsave(FigQSPRPredFgut, file = paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFgut.tiff"),
+  
+  ggsave(FigQSPRPredFgut, file = 
+           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFgut.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-```{r make_QSPRFhep_fig}
+```{r make_QSPR_Fhep_fig}
   load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
-FigQSPRPredFhep <- ggplot(invivo.table)+
-        geom_point(aes(y = ffph, x = vo_Fh, color=Class, shape=Class), 
+
+  FigQSPRPredFhep <- ggplot(invivo.table)+
+    geom_point(aes(y = ffph, x = vo_Fh, color=Class, shape=Class), 
                    alpha = 0.75,
-                   size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["hep,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["hep,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-        scale_colour_viridis_d()+
-        gtheme
+                   size=3) +
+    geom_abline(slope = 1, linetype = "dashed") +
+    labs(y = expression(bold("Pred.")~bolditalic("F"["hep,h"])),
+         x = expression(bold("Measured")~bolditalic("F"["hep,h"]))) +
+    lims(x = c(0,1), y = c(0,1)) +
+    scale_colour_viridis_d() +
+    gtheme
   print(FigQSPRPredFhep)
-  ggsave(FigQSPRPredFhep, file = paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFhep.tiff"),
+  ggsave(FigQSPRPredFhep, file = 
+           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFhep.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-```{r make_QSPRFabsVarma_fig}
+```{r make_QSPR_Fbio_Varma_fig}
   load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
-FigQSPRPredFbioVarma <- ggplot(invivo.table)+
-        geom_point(aes(y = fbioh, x = vo_F, color=Class, shape=Class), 
+  
+  FigQSPRPredFbioVarma <- ggplot(invivo.table)+
+    geom_point(aes(y = fbioh, x = vo_F, color=Class, shape=Class), 
                    alpha = 0.75,
                    size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-        scale_colour_viridis_d()+
-        gtheme
+    geom_abline(slope = 1, linetype = "dashed")+
+    labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,h"])),
+         x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
+    lims(x = c(0,1), y = c(0,1))+
+    scale_colour_viridis_d()+
+    gtheme
   print(FigQSPRPredFbioVarma)
-  ggsave(FigQSPRPredFbioVarma, file = paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFbioVarma.tiff"),
+  ggsave(FigQSPRPredFbioVarma, 
+         file = paste0(loc.wd, 
+                       "/r_data/results_for_paper/FigQSPRPredFbioVarma.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Fbio using both Kim et al. (2014) and Varma et al. (2010)
-```{r make_QSPRFabsAll_fig}
-load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+```{r make_QSPR_Fbio_all_fig}
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
 
-varma.chems <- subset(invivo.table,!is.na(vo_F))[,
-                 c("DTXSID","Class","fbioh","vo_F")]
-kim.chems <- subset(invivo.table,!is.na(kim_fbioh))[,
+  varma.chems <- subset(invivo.table,!is.na(vo_F))[,
+                   c("DTXSID","Class","fbioh","vo_F")]
+  kim.chems <- subset(invivo.table,!is.na(kim_fbioh))[,
                  c("DTXSID","Class","fbioh","kim_fbioh")]
-colnames(varma.chems)[4] <- "invivo_fbioh"
-colnames(kim.chems)[4] <- "invivo_fbioh"
-varma.chems$Reference <- "Varma2010"
-kim.chems$Reference <- "Kim2014"
-fbio.table <- rbind(varma.chems,kim.chems)
-invivo.table <- fbio.table
-save(invivo.table,
-     file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare-fbioall.RData"))
+  colnames(varma.chems)[4] <- "invivo_fbioh"
+  colnames(kim.chems)[4] <- "invivo_fbioh"
+  varma.chems$Reference <- "Varma2010"
+  kim.chems$Reference <- "Kim2014"
+  fbio.table <- rbind(varma.chems,kim.chems)
+  invivo.table <- fbio.table
+  save(invivo.table,
+       file=paste0(loc.wd, 
+                   "/r_data/processed/qspr-invivo-compare-fbioall.RData"))
 
   FigQSPRPredFbioAll <- ggplot(fbio.table)+
-        geom_point(aes(y = fbioh, x = invivo_fbioh, color=Class, shape=Class), 
+    geom_point(aes(y = fbioh, x = invivo_fbioh, color=Class, shape=Class), 
                    alpha = 0.75,
                    size=3)+
-        geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("QSPR Predicted")~bolditalic("F"["bio,h"])),
-             x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
-        lims(x = c(0,1), y = c(0,1))+
-        scale_colour_viridis_d()+
-        gtheme
+    geom_abline(slope = 1, linetype = "dashed")+
+    labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,h"])),
+         x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
+    lims(x = c(0,1), y = c(0,1))+
+    scale_colour_viridis_d()+
+    gtheme
   print(FigQSPRPredFbioAll)
-  ggsave(FigQSPRPredFbioAll, file = paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFbioAll.tiff"),
+  ggsave(FigQSPRPredFbioAll, file = 
+         paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFbioAll.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 ### Evaluation Statistics

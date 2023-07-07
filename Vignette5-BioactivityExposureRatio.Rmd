@@ -45,7 +45,7 @@ rm(list=ls())
 
 ### Set the figure size
 ```{r knitr_setup}
-loc.wd <- "C:/Users/jwambaug/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Research Projects/Caco2/Honda_Caco2"
+loc.wd <- "C:/Users/jwambaug/git/comptox-caco2/Honda_Caco2"
 knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
 knitr::opts_knit$set(root.dir = loc.wd)
 ```
@@ -99,47 +99,18 @@ set.seed(6252019)
 use.dt[, r1_mcaco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
                                          which.quantile = c(0.025,0.05,0.25,0.5,
                                                             0.75,0.95,0.975),
-                                         Caco2.options = list(Caco2.Pab.default = "1.6",
-                                                              Caco2.Fabs = TRUE,
-                                                              Caco2.Fgut = TRUE,
-                                                              overwrite.invivo = TRUE,
+                                         Caco2.options = list(overwrite.invivo = TRUE,
                                                               keepit100 = FALSE),
                                          output.units = "uM",
                                          suppress.messages=TRUE)))),.(CAS)] %>% 
   .[, r2_m100 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
                                      which.quantile = c(0.025,0.05,0.25,0.5,
                                                         0.75,0.95,0.975),
-                                     Caco2.options = list(Caco2.Pab.default = "1.6",
-                                                          Caco2.Fabs = FALSE,
-                                                          Caco2.Fgut = FALSE,
-                                                          overwrite.invivo = FALSE,
+                                     Caco2.options = list(overwrite.invivo = TRUE,
                                                           keepit100 = TRUE),
                                      output.units = "uM",
                                          suppress.messages=TRUE)))),.(CAS)] #%>% 
-  # .[, r3_mcaco2_honda1 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
-  #                                            which.quantile = c(0.025,0.05,0.25,0.5,
-  #                                                               0.75,0.95,0.975),
-  #                                            Caco2.options = list(Caco2.Pab.default = "1.6",
-  #                                                                 Caco2.Fabs = TRUE,
-  #                                                                 Caco2.Fgut = TRUE,
-  #                                                                 overwrite.invivo = TRUE,
-  #                                                                 keepit100 = FALSE),
-  #                                            output.units = "uM",
-  #                                            calc.analytic.css.arg.list = list(
-  #                                              IVIVE = "Honda1"),
-  #                                        suppress.messages=TRUE)))),.(CAS)] %>% 
-  # .[, r4_mfabs_honda1 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
-  #                                           which.quantile = c(0.025,0.05,0.25,0.5,
-  #                                                              0.75,0.95,0.975),
-  #                                           Caco2.options = list(Caco2.Pab.default = "1.6",
-  #                                                                Caco2.Fabs = FALSE,
-  #                                                                Caco2.Fgut = FALSE,
-  #                                                                overwrite.invivo = FALSE,
-  #                                                                keepit100 = FALSE),
-  #                                           output.units = "uM",
-  #                                           calc.analytic.css.arg.list = list(
-  #                                              IVIVE = "Honda1"),
-  #                                        suppress.messages=TRUE)))),.(CAS)]
+ 
 save(use.dt, file = paste0(loc.wd, "/r_data/AEDtable.RData"))
 ```
 ###
@@ -261,7 +232,7 @@ colnames(hist.table.ber)[2] <- "Value"
 hist.table <- rbind(hist.table.fabs, hist.table.ber)
 save(hist.table,file=paste0(loc.wd, "/r_data/histograms.RData"))
 
-print(paste("We are assuming that systemic bioavailability of an oral dose is a function of three processes: first-pass hepatic metabolism (independent of gut permeability), gut absorption, and gut metabolism. Since HTTK already included first-pass hepatic metabolism, shifts in the predictions of HTTK will be due to only gut absorption (no longer 100%) and gut metabolims (no longer zero).",
+print(paste("We are assuming that systemic bioavailability of an oral dose is a function of three processes: first-pass hepatic metabolism (independent of gut permeability), gut absorption, and gut metabolism. HTTK already included first-pass hepatic metabolism either by modeling flow from the gut through the liver before it reaches systemic circulation or by multiplying the absorbed dose by Fhep. Therefore, shifts in the predictions of HTTK will be due to only gut absorption (no longer 100%) and gut metabolims (no longer zero).",
             "For the chemcials where we can calculate BER the median value of Fabs is predicted to be",
             signif(median(hist.table.fabs$Value),3),
             "and the median value of Fgut is",
@@ -328,8 +299,8 @@ save(css.table,file=paste0(loc.wd, "/r_data/ranks.RData"))
 Figcsstest<-ggplot(css.table, aes(x=Fgutchange, y=Fbio.eff)) + 
   geom_point(alpha=0.5, size=3) +
   scale_colour_viridis_d()+
-  labs(y = "Fbio.eff", 
-        x = "Fbio")+
+  labs(y = "Fabsgut.eff", 
+        x = "Fabsgut")+
  # scale_x_log10() + scale_y_log10() +
   gtheme
 print(Figcsstest)
@@ -395,4 +366,28 @@ ggsave(FigBER,
        file = paste0(loc.wd,
                        "/r_data/results_for_paper/BERranksinglepanel.tiff"),
        dpi = 600, height = 5, width = 7.5, compression = "lzw")
+```
+# Identify the poorly absorbed chemicals:
+```{r lowfabstable}
+low.fabs <- subset(aed.full4,Fabs<0.5)
+low.fabs.table <- subset(low.fabs,gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])")
+low.fabs.table<- low.fabs.table[,c("DTXSID","CAS","Fabs","Fgut","Fhep","Fbio","seem3.u95","q95","BER")]
+low.fabs.table <- low.fabs.table[,q952:=
+                        subset(low.fabs,gutabs != 
+                                 "bold('100 Percent')~bolditalic('F'['abs/gut'])")$q95]
+low.fabs.table <- low.fabs.table[,BER2:=
+                        subset(low.fabs,gutabs != 
+                                 "bold('100 Percent')~bolditalic('F'['abs/gut'])")$BER]
+colnames(low.fabs.table)[colnames(low.fabs.table)=="seem3.u95"]<-"SEEM3"
+colnames(low.fabs.table)[colnames(low.fabs.table)=="q95"]<-"ToxCast AED Fabs=Fgut=1"
+colnames(low.fabs.table)[colnames(low.fabs.table)=="BER"]<-"BER Fabs=Fgut=1"
+colnames(low.fabs.table)[colnames(low.fabs.table)=="q952"]<-"ToxCast AED Caco2"
+colnames(low.fabs.table)[colnames(low.fabs.table)=="BER2"]<-"BER Caco2"
+low.fabs.table <- as.data.frame(low.fabs.table)
+for (i in 3:11) low.fabs.table[,i] <- signif(low.fabs.table[,i],3)
+low.fabs.table <- low.fabs.table[order(low.fabs.table$Fbio),]
+knitr::kable(low.fabs.table, 
+             caption = "Chemicals with Low Caco2-Predicted Fabs (Poorly absorbed chemicals)",
+             floating.environment="sidewaystable") 
+write.csv(low.fabs.table,file=paste0(loc.wd,"/r_data/poorlyabsorbedchemcials.csv"))
 ```
