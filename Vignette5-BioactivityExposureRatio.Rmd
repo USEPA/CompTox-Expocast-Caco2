@@ -232,8 +232,8 @@ colnames(hist.table.ber)[2] <- "Value"
 hist.table <- rbind(hist.table.fabs, hist.table.ber)
 save(hist.table,file=paste0(loc.wd, "/r_data/histograms.RData"))
 
-print(paste("We are assuming that systemic bioavailability of an oral dose is a function of three processes: first-pass hepatic metabolism (independent of gut permeability), gut absorption, and gut metabolism. HTTK already included first-pass hepatic metabolism either by modeling flow from the gut through the liver before it reaches systemic circulation or by multiplying the absorbed dose by Fhep. Therefore, shifts in the predictions of HTTK will be due to only gut absorption (no longer 100%) and gut metabolims (no longer zero).",
-            "For the chemcials where we can calculate BER the median value of Fabs is predicted to be",
+print(paste("We are assuming that systemic bioavailability of an oral dose is a function of three processes: first-pass hepatic metabolism (independent of gut permeability), gut absorption, and gut metabolism. HTTK already included first-pass hepatic metabolism either by modeling flow from the gut through the liver before it reaches systemic circulation or by multiplying the absorbed dose by Fhep. Therefore, shifts in the predictions of HTTK will be due to only gut absorption (no longer 100%) and gut metabolism (no longer zero).",
+            "For the chemicals where we can calculate BER the median value of Fabs is predicted to be",
             signif(median(hist.table.fabs$Value),3),
             "and the median value of Fgut is",
             signif(median(hist.table.fgut$Value),3),
@@ -302,6 +302,9 @@ Figcsstest<-ggplot(css.table, aes(x=Fgutchange, y=Fbio.eff)) +
   labs(y = "Fabsgut.eff", 
         x = "Fabsgut")+
  # scale_x_log10() + scale_y_log10() +
+  labs(y = expression(bold('Effective F'['gut']~'* F'['abs']~'from Monte Carlo')), 
+       x = expression(bold('Actual F'['gut']~'* F'['abs'])))+
+  geom_abline(slope=1,intercept=0,color="blue",linetype="dashed")+
   gtheme
 print(Figcsstest)
 ggsave(Figcsstest, 
