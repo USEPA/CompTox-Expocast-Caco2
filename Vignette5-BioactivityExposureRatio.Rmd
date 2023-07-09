@@ -364,8 +364,10 @@ FigBER <- ggplot(subset(aed.full4,
  # xlim(1,500)+
   scale_y_log10(limits=c(10^-8,10^2),labels=scientific_10)+
   gtheme
-print(FigBER)
-ggsave(FigBER, 
+hlay <- t(t(c(rep(1,8),2)))
+FigBERleg <- marrangeGrob(grobs = list(FigBER, gleg), nrow = 2, ncol = 1, top = NULL, layout_matrix = hlay)
+print(FigBERleg)
+ggsave(FigBERleg, 
        file = paste0(loc.wd,
                        "/r_data/results_for_paper/BERranksinglepanel.tiff"),
        dpi = 600, height = 5, width = 7.5, compression = "lzw")
