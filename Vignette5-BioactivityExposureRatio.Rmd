@@ -53,12 +53,11 @@ knitr::opts_knit$set(root.dir = loc.wd)
 ### Load the relevant libraries
 ```{r r_setup}
 
-packages <- c("ggplot2","hexbin","dplyr","gplots","httk","RColorBrewer",
+packages <- c("ggplot2","dplyr","httk",
         "viridis","data.table","magrittr","readxl",
-        "stringr","gridExtra","stringi","RMySQL","DBI","grid","xlsx","lattice",
-        "gtable","ggpubr","randomForest","caret","recipes","quantregForest",
-        "tcpl","scales")
-sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary her
+        "gridExtra","grid","lattice",
+        "gtable","ggpubr","scales")
+sapply(packages, require, character.only=TRUE, quietly=TRUE) #Note, the "character.only" argument is necessary her
 ```
 
 ### Load custom scripts for analysis
@@ -199,7 +198,7 @@ g1leg <- ggplot(legend.dt)+
   geom_point(aes(x = x, y = y, color = leg.labl))+
   scale_color_manual(labels = c("AED","Exposure", "Overlap"),
                      values = c("purple","yellow","orange"))+
-  labs(color = "Value:")+
+  labs(color = "")+
   theme_bw()+
   gtheme+
   theme(legend.position = "bottom")

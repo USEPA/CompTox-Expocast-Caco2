@@ -214,9 +214,11 @@ Load all the parameters needed to make calculations:
         .[,clur_gut:=clur_hep/100] %>% 
         .[,ffph:=ffph_us] %>% 
         .[,ffpr:=ffpr_us]
+     save(invivo.table, file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
 ```   
 These calculations should match both the manuscript text and the code in calc_oral_bioavailability.R
-```{r Caco_permeability_calcs}  
+```{r Caco_permeability_calcs} 
+    load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
    invivo.table[,use.pab:=Pab]
    invivo.table[,Pab.Type:="Measured"]
    invivo.table[is.na(use.pab),"Pab.Type"] <- "QSPR"
@@ -240,8 +242,8 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,Qguth:=Qvillih * CLpermh / (Qvillih + CLpermh)] %>% 
         .[,Qgutr:=Qvillir * CLpermr / (Qvillir + CLpermr)] %>%
    # Qgut Model -- Yang et al. (2007) equation 5:
-        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph*(1 + Qguth/CLpermh))] %>% 
-        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr*(1 + Qgutr/CLpermr))] %>%
+        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph*(1 + Qguth/CLpermh))*Qguth/(Qguth+1)] %>% 
+        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr*(1 + Qgutr/CLpermr))*Qguth/(Qguth+1)] %>%
    # Darwich et al. (2010) Equation 3
         .[,fah_darwichh:=1 - (1 + 0.54 * peffh)^-7] %>% 
         .[,fah_darwichr:=1 - (1 + 0.54 * peffr)^-7] %>% 
@@ -249,12 +251,12 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,fbioh:=ffph*fgh_qg*fah_darwichh] %>% 
         .[,fbior:=ffpr*fgr_qg*fah_darwichr]
    
-   save(invivo.table, file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+   save(invivo.table, file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
 ```   
 
 # Measured data from Lanevskij and Didziapetris (2019)
 ```{r make_caco_peff_fig}
-load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
       FigCacoPredPeff <- ggplot(invivo.table)+
         geom_point(aes(x = mpeff_lit, y = peffh, color=Class, shape=Class), 
                    alpha = 0.75,
@@ -274,7 +276,7 @@ print(FigCacoPredPeff)
 ```
 # Measured data from Kim et al. (2014)
 ```{r make_Caco_Fbio_kim_fig}
-load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
       FigCacoPredFbioKim <- ggplot(invivo.table)+
         geom_point(aes(y = fbioh, x = kim_fbioh, color=Class, shape=Class), 
                    alpha = 0.75,
@@ -291,7 +293,7 @@ print(FigCacoPredFbioKim)
 ```
 # Measured data collected by Varma et al. (2010)
 ```{r make_Caco_Fabs_fig}
-load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
 FigCacoPredFabs <- ggplot(invivo.table)+
         geom_point(aes(y = fah_darwichh, x = vo_Fa, color=Class, shape=Class), 
                    alpha = 0.75,
@@ -308,7 +310,7 @@ print(FigCacoPredFabs)
 ```
 # Measured data collected by Varma et al. (2010)
 ```{r make_Caco_Fgut_fig}
-load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   FigCacoPredFgut <- ggplot(invivo.table)+
         geom_point(aes(y = fgh_qg, x = vo_Fg, color=Class, shape=Class), 
                    alpha = 0.75,
@@ -325,7 +327,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
 ```
 # Measured data collected by Varma et al. (2010) (ffp=fraction first pass)
 ```{r make_Caco_Fhep_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   
   FigCacoPredFhep <- ggplot(invivo.table) +
   geom_point(aes(y = ffph, x = vo_Fh, color=Class, shape=Class), 
@@ -344,7 +346,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
 
 # Fbio calculated from measured data collected by Varma et al. (2010)
 ```{r make_Caco_Fabs_Varma_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   
   FigCacoPredFbioVarma <- ggplot(invivo.table)+
     geom_point(aes(y = fbioh, x = vo_F, color=Class, shape=Class), 
@@ -362,7 +364,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
 ```
 # Fbio for rats using Wambaugh et al. (2018) Fbio
 ```{r make_CacoFabsRat_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))    
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   FigCacoPredFbioRat <- ggplot(invivo.table)+
         geom_point(aes(y = fbior, x = pk_fbior, color=Class, shape=Class), 
                    alpha = 0.75,
@@ -379,7 +381,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
 ```
 # Fbio using both Kim et al. (2014) and Varma et al. (2010)
 ```{r make_Caco_Fabs_All_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare.RData"))
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
   varma.chems <- subset(invivo.table,!is.na(vo_F))[,
                    c("DTXSID","Class","fbioh","vo_F")]
@@ -586,11 +588,11 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,fbior:=ffpr*fgr_qg*fah_darwichr]
   
   save(invivo.table, file=paste0(loc.wd, 
-                                 "/r_data/processed/qspr-invivo-compare.RData"))    
+                                 "/r_data/processed/qspr-invivo-compare2.RData"))    
 ```   
    
 ```{r make_qspr_peff_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare2.RData"))
 
   FigQSPRPredPeff <- ggplot(invivo.table)+
     geom_point(aes(x = mpeff_lit, y = peffh, color=Class, shape=Class), 
@@ -610,7 +612,7 @@ These calculations should match both the manuscript text and the code in calc_or
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 ```{r make_QSPR_Fbio_kim_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare2.RData"))
 
   FigQSPRPredFbioKim <- ggplot(invivo.table)+
   geom_point(aes(y = fbioh, x = kim_fbioh, color=Class, shape=Class), 
@@ -629,7 +631,7 @@ These calculations should match both the manuscript text and the code in calc_or
 ```
 
 ```{r make_QSPR_Fabs_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare2.RData"))
 
   FigQSPRPredFabs <- ggplot(invivo.table) +
     geom_point(aes(y = fah_darwichh, x = vo_Fa, color=Class, shape=Class), 
@@ -649,7 +651,7 @@ These calculations should match both the manuscript text and the code in calc_or
 ```
 
 ```{r make_QSPR_Fgut_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare2.RData"))
   
   FigQSPRPredFgut <- ggplot(invivo.table)+
   geom_point(aes(y = fgh_qg, x = vo_Fg, color=Class, shape=Class), 
@@ -669,7 +671,7 @@ These calculations should match both the manuscript text and the code in calc_or
 ```
 
 ```{r make_QSPR_Fhep_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare2.RData"))
 
   FigQSPRPredFhep <- ggplot(invivo.table)+
     geom_point(aes(y = ffph, x = vo_Fh, color=Class, shape=Class), 
@@ -688,7 +690,7 @@ These calculations should match both the manuscript text and the code in calc_or
 ```
 
 ```{r make_QSPR_Fbio_Varma_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare2.RData"))
   
   FigQSPRPredFbioVarma <- ggplot(invivo.table)+
     geom_point(aes(y = fbioh, x = vo_F, color=Class, shape=Class), 
@@ -708,7 +710,7 @@ These calculations should match both the manuscript text and the code in calc_or
 ```
 # Fbio using both Kim et al. (2014) and Varma et al. (2010)
 ```{r make_QSPR_Fbio_all_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare.RData"))
+  load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare2.RData"))
 
   varma.chems <- subset(invivo.table,!is.na(vo_F))[,
                    c("DTXSID","Class","fbioh","vo_F")]
@@ -744,22 +746,22 @@ These calculations should match both the manuscript text and the code in calc_or
 evaluations <- data.frame()
 evaluations["Peff",c("In Vivo","Predicted","Reference","Data")] <- 
   c("mpeff_lit","peffh","Lanevskij and Didziapetris (2019)",
-    "/r_data/processed/caco2-invivo-compare.RData")
+    "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fabs",c("In Vivo","Predicted","Reference","Data")] <- 
   c("vo_Fa","fah_darwichh","Varma et al. (2010)",
-    "/r_data/processed/caco2-invivo-compare.RData")
+    "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fgut",c("In Vivo","Predicted","Reference","Data")] <- 
   c("vo_Fg","fgh_qg","Varma et al. (2010)",
-    "/r_data/processed/caco2-invivo-compare.RData")
+    "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fhep",c("In Vivo","Predicted","Reference","Data")] <- 
   c("vo_Fh","ffph","Varma et al. (2010)",
-    "/r_data/processed/caco2-invivo-compare.RData")
+    "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fbio",c("In Vivo","Predicted","Reference","Data")] <- 
   c("invivo_fbioh","fbioh","Kim et al. (2014) & Varma et al. (2010)",
     "/r_data/processed/caco2-invivo-compare-fbioall.RData")
 evaluations["Fbio-Rat",c("In Vivo","Predicted","Reference","Data")] <- 
   c("pk_fbior","fbior","Wambaugh et al. (2018)",
-    "/r_data/processed/caco2-invivo-compare.RData")
+    "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fbio-QSPR",c("In Vivo","Predicted","Reference","Data")] <- 
   c("invivo_fbioh","fbioh","Kim et al. (2014) & Varma et al. (2010)",
     "/r_data/processed/qspr-invivo-compare-fbioall.RData")
