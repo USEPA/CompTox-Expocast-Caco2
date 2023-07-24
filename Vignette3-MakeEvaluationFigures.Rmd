@@ -562,6 +562,7 @@ Load all the parameters needed to make calculations:
 ```   
 These calculations should match both the manuscript text and the code in calc_oral_bioavailability.R
 ```{r qspr_permeability_calcs}  
+
    invivo.table[,use.pab:=Pab.Pred.Med]
    invivo.table[,Pab.Type:="QSPR"]
    # peff dimensional 10-4 cm/s
