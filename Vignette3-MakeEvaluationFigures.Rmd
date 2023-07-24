@@ -218,6 +218,10 @@ Load all the parameters needed to make calculations:
 ```   
 These calculations should match both the manuscript text and the code in calc_oral_bioavailability.R
 ```{r Caco_permeability_calcs} 
+# Define a rate of intestinal transport to compete with absorption for poorly
+# absorbed chemicals:
+Qintesttransport <- 1
+
     load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
    invivo.table[,use.pab:=Pab]
    invivo.table[,Pab.Type:="Measured"]
@@ -242,8 +246,8 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,Qguth:=Qvillih * CLpermh / (Qvillih + CLpermh)] %>% 
         .[,Qgutr:=Qvillir * CLpermr / (Qvillir + CLpermr)] %>%
    # Qgut Model -- Yang et al. (2007) equation 5:
-        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph*(1 + Qguth/CLpermh))*Qguth/(Qguth+1)] %>% 
-        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr*(1 + Qgutr/CLpermr))*Qguth/(Qguth+1)] %>%
+        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph*(1 + Qguth/CLpermh))*Qguth/(Qguth+Qintesttransport)] %>% 
+        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr*(1 + Qgutr/CLpermr))*Qguth/(Qguth+Qintesttransport)] %>%
    # Darwich et al. (2010) Equation 3
         .[,fah_darwichh:=1 - (1 + 0.54 * peffh)^-7] %>% 
         .[,fah_darwichr:=1 - (1 + 0.54 * peffr)^-7] %>% 
@@ -578,8 +582,8 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,Qguth:=Qvillih * CLpermh / (Qvillih + CLpermh)] %>% 
         .[,Qgutr:=Qvillir * CLpermr / (Qvillir + CLpermr)] %>%
    # Qgut Model -- Yang et al. (2007) equation 5:
-        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph*(1 + Qguth/CLpermh))] %>% 
-        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr*(1 + Qgutr/CLpermr))] %>%
+        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph*(1 + Qguth/CLpermh))*Qguth/(Qguth+Qintesttransport)] %>% 
+        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr*(1 + Qgutr/CLpermr))*Qguth/(Qguth+Qintesttransport)] %>%
    # Darwich et al. (2010) Equation 3
         .[,fah_darwichh:=1 - (1 + 0.54 * peffh)^-7] %>% 
         .[,fah_darwichr:=1 - (1 + 0.54 * peffr)^-7] %>% 
