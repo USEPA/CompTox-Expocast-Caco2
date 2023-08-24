@@ -139,7 +139,7 @@ Load all the parameters needed to make calculations:
                      species = "Human",
                      suppress.messages = TRUE)$Funbound.plasma,
                    .(casrn)]
-      invivo.table[!is.na(fupr) & 
+        invivo.table[!is.na(fupr) & 
                      !is.na(clintr) & 
                      casrn %in% httk.casrn, 
                    fupr.adj := parameterize_steadystate(
@@ -220,7 +220,7 @@ These calculations should match both the manuscript text and the code in calc_or
 ```{r Caco_permeability_calcs} 
 # Define a rate of intestinal transport to compete with absorption for poorly
 # absorbed chemicals:
-Qintesttransport <- 1
+Qintesttransport <- 0.5
 
     load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
    invivo.table[,use.pab:=Pab]
@@ -246,8 +246,8 @@ Qintesttransport <- 1
         .[,Qguth:=Qvillih * CLpermh / (Qvillih + CLpermh)] %>% 
         .[,Qgutr:=Qvillir * CLpermr / (Qvillir + CLpermr)] %>%
    # Qgut Model -- Yang et al. (2007) equation 5:
-        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph*(1 + Qguth/CLpermh))*Qguth/(Qguth+Qintesttransport)] %>% 
-        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr*(1 + Qgutr/CLpermr))*Qguth/(Qguth+Qintesttransport)] %>%
+        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph)*Qguth/(Qguth+Qintesttransport)] %>% 
+        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr)*Qguth/(Qguth+Qintesttransport)] %>%
    # Darwich et al. (2010) Equation 3
         .[,fah_darwichh:=1 - (1 + 0.54 * peffh)^-7] %>% 
         .[,fah_darwichr:=1 - (1 + 0.54 * peffr)^-7] %>% 
