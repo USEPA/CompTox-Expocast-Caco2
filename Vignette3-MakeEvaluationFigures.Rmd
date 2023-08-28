@@ -11,29 +11,7 @@ vignette: >
 wambaugh.john@epa.gov
 
 ## Abstract
-Apical-to-basolateral (PAB) and basolateral-to-apical (PBA) measurements were 
-made in the Caco-2 assay for 484 environmental and pharmaceutical chemicals. 
-After filtering, 310 chemicals had a useable PAB and 396 had a useable PBA. 
-Replicates (> 30) were measured for the control chemicals Warfarin, Talinolol, 
-and Ranitidine. Measurement uncertainty was high (SD: 0.3 log10 units) for the 
-low permeability control (Ranitidine). Of our measured PAB, > 80% had high PAB 
-(> 10x10-6 cm/s). Our measured PAB were combined with literature values to 
-develop a classification quantitative-structure-property relationship (QSPR) 
-model, with a balanced accuracy of 80% for the test set. Measured PAB were also 
-used to predict in vivo oral bioavailability (Fbio,h)in human for 
-pharmaceuticals, and performed slightly better (R2: -0.03, RMSE: 0.30) than 
-assuming a fixed value for PAB. Additionally, measured PAB were used for 
-prediction of in vivo oral bioavailability in rat, which resulted in improved 
-prediction of maximum concentration (previous R2: 0.32, updated R2: 0.70). 
-Finally, measurement uncertainty was accounted for in estimates of 
-oral-equivalent dose (OED) from ToxCast in vitro assays for a simulated 
-population using a Monte-Carlo method. OED were subsequently compared with 
-exposure estimates, and the influence of different extrapolation assumptions 
-on the bioactivity-to-exposure ratio (BER) was evaluated. Generally, the large 
-measurement uncertainty for low PAB makes the use of Caco-2 data for accurate 
-prediction of point values difficult. However, accounting for uncertainty 
-enables the upper limits for oral bioavailability to be accurately represented 
-in calculation of OED.
+Administered equivalent dose (AED) estimation using in vitro hazard and high throughput toxicokinetics (HTTK) can be improved by refining assumptions regarding fraction absorbed (Fabs) through the intestine, a component of oral bioavailability (Fbio). Although in vivo data to inform Fabs are often unavailable for non-pharmaceuticals, in vitro measures of apparent permeability (Papp) using the Caco-2 cell line have been highly correlated with Fabs when used in in vitro-in vivo extrapolation (IVIVE) modeling. To address data gaps for non-drug chemicals, bidirectional Papp was evaluated using the Caco-2 assay for over 400 chemicals. A random forest quantitative structure-property relationship (QSPR) model was developed using these and peer-reviewed pharmaceutical data. Both Caco-2 data (R2=0.35) and the QSPR model (R2=0.27) were better at predicting human bioavailability compared to in vivo rat data (R2=0.18). The httk-predicted plasma steady state concentrations (Css) for IVIVE were updated, leading to modest changes for poorly absorbed chemicals. Experimental data were evaluated for sources of measurement uncertainty, which was then accounted for using the Monte Carlo method. Revised AEDs were subsequently compared with exposure estimates to evaluate influence on bioactivity:exposure ratios as a surrogate for risk. Ultimately, Papp incorporation to adjust for Fbio in httk modeling improves AED estimations used in HT risk prioritization. 
 
 ## Prepare for session
 
