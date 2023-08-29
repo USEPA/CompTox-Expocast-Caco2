@@ -55,45 +55,17 @@ source(paste0(loc.wd,"/r_scripts/Honda_caco2_utilities.R"))
 #source("C:/Users/GHONDA/Documents/R homebrew/chemprop_connect/query_dsstox.measchemprop.R")
 #source(paste0(loc.wd,"/r_scripts/rf_train.R"))
 #source(paste0(loc.wd,"/r_scripts/Honda_caco2_fullmodel.R"))
-
-
 ```
 
-## ANALYSIS
-
-
-### plot configuration
-```{r ggplot_theme}
-low_rec_co <- 0.4
-high_rec_co <- 2
-gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
-                axis.text.y = element_text(size=10, color = "black",face="bold"),
-                legend.text = element_text(size = 10),
-                legend.title = element_text(size = 10),
-                legend.key.size = unit(10, "points"),
-                panel.background = element_rect(fill="white"),
-                axis.line = element_line(color="black"),
-                axis.ticks.y = element_line(color="black"),
-                legend.position = "top",
-                axis.line.x=element_line(color="black"),
-                axis.ticks.x=element_line(color="black"),
-                axis.text.x = element_text(size = 10,face="bold",color="black"),
-                plot.title = element_text(hjust=0,size=12,face="bold"))
-```
-
-#
-#Load raw data and calculate means across replicates without filtering:
-#
-
-#### SOMEHOW THIS IS THE FILTERED DATA, NEEDS TO BE SWAPPED WITH OTHER CHUNK
-```{r load_raw}
-##### histograms #####
-# Raw Data
+### Data Processing Functions
+We calculate both with and without recovery filters (low_rec_co and high_rec_co)
+```{r caco2_load_function}
+load_caco_dt <- function(low_rec_co, high_rec_co)
+{  
   load(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_processed.RData"))
   caco2.QC <- fread(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_line101_short.csv"))
-  
   caco2.QC[,1] <- NULL
-  
+
   caco2.dt <- caco2.QC[caco2.dt,on=.(test_article,dtxsid,task_order,file_id)]
   caco2.dt <- copy(caco2.dt)
   caco2.dt[, comment_ab3 := as.character(comment_ab3)] %>% 
@@ -121,6 +93,7 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
     .[is.na(comment_ba1) & Pba1_orig=="ND",comment_ba1:="ND"] %>% 
     .[is.na(comment_ba2) & Pba2_orig=="ND",comment_ba2:="ND"] %>% 
     .[is.na(comment_ba3) & Pba3_orig=="ND",comment_ba3:="ND"] %>%
+# Filtering of negative Pab:
     .[Pab1 <= 0, comment_ab1:="ND"] %>% 
     .[Pab2 <= 0, comment_ab2:="ND"] %>% 
     .[Pab3 <= 0, comment_ab3:="ND"] %>% 
@@ -133,6 +106,7 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
     .[Pba1 <= 0, Pba1:=NA_real_] %>% 
     .[Pba2 <= 0, Pba2:= NA_real_] %>% 
     .[Pba3 <= 0, Pba3:= NA_real_] %>% 
+# Filtering based on low and high recovery thresholds:
     .[!(is.na(comment_ab1)|comment_ab1 %in% c("LOD","low_rec")),Pab1:=as.numeric(NA)] %>% 
     .[is.na(rec_ab1) | rec_ab1 < low_rec_co | rec_ab1 > high_rec_co, Pab1:=as.numeric(NA)] %>% 
     .[is.na(comment_ab1) & rec_ab1 < low_rec_co, comment_ab1:="low_rec"] %>% 
@@ -157,13 +131,8 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
     .[is.na(rec_ba3) | rec_ba3 < low_rec_co | rec_ba3 > high_rec_co, Pba3:=as.numeric(NA)] %>% 
     .[is.na(comment_ba3) & rec_ba3 < low_rec_co, comment_ba3:="low_rec"] %>% 
     .[is.na(comment_ba3) & rec_ba3 > high_rec_co, comment_ba3:="high_rec"]
-caco2.raw <- caco2.dt
-```
-
-
-```{r collate_data}
-  caco2.collate <- caco2.raw
-  caco2.collate[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
+# Synthesize values across measuremnt replicates (experiment performed in triplicate:
+  caco2.dt[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
            rec_ab:=mean(c(rec_ab1,rec_ab2,rec_ab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
                                                      (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
                                                      (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(rec_ab1,rec_ab2,rec_ab3)] %>% 
@@ -196,30 +165,127 @@ caco2.raw <- caco2.dt
                                        (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
                                        (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(Pba1,Pba2,Pba3)]
   
-  caco2.collate[,Pab:=Pab_c] %>% 
+   caco2.dt[,Pab:=Pab_c] %>% 
     .[,Pba:=Pba_c]
-  caco2.collate[,batch_id:=batch_guess]  
-  caco2.collate[casrn=="106-47-8",compound:="4-Chloroaniline"] %>% 
+  caco2.dt[,batch_id:=batch_guess]  
+  caco2.dt[casrn=="106-47-8",compound:="4-Chloroaniline"] %>% 
     .[casrn=="33228-44-3",compound:="4-Pentylaniline"]
-  caco2.collate[casrn == "66357-35-5", c("compound", "dtxsid") := list("Ranitidine", "DTXSID8045191")] %>% 
+  caco2.dt[casrn == "66357-35-5", c("compound", "dtxsid") := list("Ranitidine", "DTXSID8045191")] %>% 
     .[casrn == "57460-41-0", c("compound", "dtxsid") := list("Talinolol", "DTXSID6046426")] %>% 
     .[casrn == "81-81-2", c("compound", "dtxsid") := list("Warfarin", "DTXSID5023742")]
+  
+  caco2.dt[rec_ab < 0, rec_ab := NA_real_] %>% 
+    .[rec_ba < 0, rec_ba := NA_real_]
+
+  return(caco2.dt)
+}
+```
+# Function to apply Frec adjustment
+```{r frec_adjustment_function}
+adjust_for_frec <- function(caco2.dt, Pab.thresh)
+{
+  caco2.dt[, Pab0 := Pab] %>% 
+    .[, Pba0 := Pba] %>% 
+    .[Pab>Pab.thresh, Pab := Pab/rec_ab] %>% 
+    .[Pba>Pab.thresh, Pba := Pba/rec_ba] %>% 
+    .[, efflux0 := Pba0/Pab0] %>% 
+    .[, efflux.ratio := Pba/Pab]
+  
+  return (caco2.dt)
+}
 ```
 
+```{r merge_chemical_replicates_function}
+merge_chemical_replicates <- function(caco2.dt)
+{
+# Calculate per chemical stats:
+  caco2.perchem <- caco2.dt[,
+                            .(mPab = mean(Pab, na.rm = T),
+                              sdPab = sd(Pab, na.rm = T),
+                              mPba = mean(Pba, na.rm = T),
+                              sdPba = sd(Pba, na.rm = T),
+                              mPab0 = mean(Pab0, na.rm = T),
+                              sdPab0 = sd(Pab0, na.rm = T),
+                              mPba0 = mean(Pba0, na.rm = T),
+                              sdPba0 = sd(Pba0, na.rm = T),
+                              mefflux = mean(log10(efflux.ratio), na.rm = T),
+                              sdefflux = sd(log10(efflux.ratio), na.rm = T),
+                              mefflux0 = mean(efflux0, na.rm = T),
+                              sdefflux0 = sd(efflux0, na.rm = T),
+                              mrec_ab = mean(rec_ab, na.rm = T),
+                              mrec_ba = mean(rec_ba, na.rm = T),
+                              sdrec_ab = sd(rec_ab, na.rm = T),
+                              sdrec_ba = sd(rec_ba, na.rm = T),
+                              ntotal_recab = sum(!is.na(rec_ab)),
+                              ntotal_recba = sum(!is.na(rec_ba)),
+                              ntotal = .N,
+                              ntotal_ab = sum(!is.na(Pab)),
+                              ntotal_ba = sum(!is.na(Pba)),
+                              ntotal_efflux = sum(!is.na(log10(efflux.ratio))),
+                              ntotal_rab = sum(!is.na(rec_ab)),
+                              ntotal_rba = sum(!is.na(rec_ba))),
+                            .(casrn, dtxsid, compound)]
+  caco2.perchem <- caco2.perchem[,cvPab := sdPab/mPab]
+  caco2.perchem <- caco2.perchem[,cvPab0 := sdPab0/mPab0]
+
+  return(caco2.perchem)
+}
+```
+
+### plot configuration
+```{r ggplot_theme}
+gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
+                axis.text.y = element_text(size=10, color = "black",face="bold"),
+                legend.text = element_text(size = 10),
+                legend.title = element_text(size = 10),
+                legend.key.size = unit(10, "points"),
+                panel.background = element_rect(fill="white"),
+                axis.line = element_line(color="black"),
+                axis.ticks.y = element_line(color="black"),
+                legend.position = "top",
+                axis.line.x=element_line(color="black"),
+                axis.ticks.x=element_line(color="black"),
+                axis.text.x = element_text(size = 10,face="bold",color="black"),
+                plot.title = element_text(hjust=0,size=12,face="bold"))
+```
+
+## ANALYSIS
+
+### Set thresholds for low and high fractional recovery:
+```{r frec_thresholds, eval=FALSE}
+low_rec_co <- 0.4
+high_rec_co <- 2
+```
+
+
+#Load raw (unfiltered) data and calculate means across replicates without filtering:
+
+```{r load_raw}
+# No cutoffs:
+  caco2.unfilt <- load_caco_dt(low_rec_co=-Inf,
+                               high_rec_co=Inf)
+# No adjustment:
+  caco2.unfilt <- adjust_for_frec(caco2.unfilt,Pab.thresh=Inf)
+  caco2.perchemraw <- merge_chemical_replicates(caco2.unfilt)
+```
 
 ```{r rank_on_duplicates}
-caco2.collate[!is.na(Pab),nrep_pab := .N,.(casrn)]
-caco2.dup <- caco2.collate[nrep_pab >= 2,] %>% 
-  .[,mPab := mean(Pab, na.rm=TRUE), .(casrn)]
-caco2.dup <- unique(caco2.dup[,.(mPab,casrn)])[, .(chemrank = rank(mPab),casrn)][caco2.dup, on = "casrn"]
+  caco2.dup <- caco2.unfilt
+  caco2.dup[!is.na(Pab),nrep_pab := .N,.(casrn)]
+  caco2.dup <- caco2.dup[nrep_pab >= 2,] %>% 
+    .[,mPab := mean(Pab, na.rm=TRUE), .(casrn)]
+  caco2.dup <- unique(caco2.dup[,.(mPab,casrn)])[, 
+                 .(chemrank = rank(mPab),casrn)][caco2.dup, on = "casrn"]
 ```
+
 # duplicate measures
 ```{r replicates}
-txt.dt <- unique(caco2.dup[casrn %in% c("66357-35-5", "57460-41-0", "81-81-2"),.(compound, casrn, mPab)]) %>% 
+  txt.dt <- unique(caco2.dup[casrn %in% 
+    c("66357-35-5", "57460-41-0", "81-81-2"),
+    .(compound, casrn, mPab)]) %>% 
     .[, y := 1.5*mPab] %>% 
     .[, x := 10^c(0.0025,1.5,0.25)] %>% 
     .[, hjust := c(0, 1, 0)]
-  
 
   predint1 <- pred_int(x0 = log10(caco2.dup$Pab), 
                        y0 = log10(caco2.dup$mPab), alpha = 0.95)
@@ -231,43 +297,22 @@ txt.dt <- unique(caco2.dup[casrn %in% c("66357-35-5", "57460-41-0", "81-81-2"),.
     geom_ribbon(data = predint1$res.dt, 
                 aes(x= 10^xn, ymin = 10^yn2, ymax = 10^yn1), 
                 alpha = 0.2, fill = "blue")+
-    geom_text(data = txt.dt, aes(x = x, y = y, label = compound, hjust = hjust))+
-    labs(y = expression(bold("Mean")*bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)')), 
+    geom_text(data = txt.dt, 
+              aes(x = x, y = y, label = compound, hjust = hjust))+
+    labs(y = 
+           expression(bold("Mean")*bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)')), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10)+
     scale_y_log10(labels=scientific_10)+
     theme_bw() +
     gtheme
-  
 
   ggsave(FigMeanPabvsPab, file = paste0(loc.wd,
     "/r_data/results_for_paper/f1_replicates.tiff"),
     height = 3, width = 3, dpi = 600, compression = "lzw")
   print(FigMeanPabvsPab)
 ```
-###
-# Calculate per chemical stats on raw (unfiltered) data:
-```{r calculate_stats_per_chem_basis_raw}
-caco2.perchemraw <- caco2.collate[,
-                            .(mPab = mean(Pab, na.rm = T),
-                              sdPab = sd(Pab, na.rm = T),
-                              mPba = mean(Pba, na.rm = T),
-                              sdPba = sd(Pba, na.rm = T),
-                              mrec_ab = mean(rec_ab, na.rm = T),
-                              mrec_ba = mean(rec_ba, na.rm = T),
-                              sdrec_ab = sd(rec_ab, na.rm = T),
-                              sdrec_ba = sd(rec_ba, na.rm = T),
-                              ntotal = .N,
-                              ntotal_ab = sum(!is.na(Pab)),
-                              ntotal_ba = sum(!is.na(Pba)),
-                              ntotal_rab = sum(!is.na(rec_ab)),
-                              ntotal_rba = sum(!is.na(rec_ba))),
-                            .(casrn, dtxsid, compound)]
-```
-
-#
 # Analysis of Raw Data
-#
 
 ```{r make_recovery_fraction_histograms}
 labl.dt1 <- data.table(x = 2, y = c(150, 125, 100),
@@ -320,134 +365,12 @@ ggsave(FigFrecbaHist, file = paste0(loc.wd, "/r_data/results_for_paper/mrec_ba_h
 print(FigFrecabHist)
 print(FigFrecbaHist)
 ```
-#
-# Perform filtering based on fraction recovered:
-#
 
-```{r filter_based_on_fraction_recovered}
-  load(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_processed.RData"))
-  caco2.QC <- fread(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_line101_short.csv"))
-  low_rec_co <- -Inf
-  high_rec_co <- Inf
-  caco2.QC[,1] <- NULL
-  
-  caco2.filt <- caco2.QC[caco2.dt,on=.(test_article,dtxsid,task_order,file_id)]
-  caco2.filt <- copy(caco2.filt)
-  caco2.filt <- caco2.filt[, Pab0 := Pab] %>% 
-  .[, Pba0 := Pba] %>% 
-  .[, efflux0 := Pba0/Pab0] %>% 
-  .[, efflux.ratio := Pba/Pab]
-  # Triplicate measurements for each chemical, handle non-detects ("ND"):
-  caco2.filt[, comment_ab3 := as.character(comment_ab3)] %>% 
-    .[!is.na(update_Pab1),Pab1:=update_Pab1] %>% 
-    .[!is.na(update_Pab2),Pab2:=update_Pab2] %>% 
-    .[!is.na(update_Pab3),Pab3:=update_Pab3] %>% 
-    .[!is.na(update_rec_ab1),rec_ab1:=update_rec_ab1] %>% 
-    .[!is.na(update_rec_ab2),rec_ab2:=update_rec_ab2] %>% 
-    .[!is.na(update_rec_ab3),rec_ab3:=update_rec_ab3] %>% 
-    .[!is.na(update_Pba1),Pba1:=update_Pba1] %>% 
-    .[!is.na(update_Pba2),Pba2:=update_Pba2] %>% 
-    .[!is.na(update_Pba3),Pba3:=update_Pba3] %>% 
-    .[!is.na(update_rec_ba1),rec_ba1:=update_rec_ba1] %>% 
-    .[!is.na(update_rec_ba2),rec_ba2:=update_rec_ba2] %>% 
-    .[!is.na(update_rec_ba3),rec_ba3:=update_rec_ba3] %>% 
-    .[comment_ab1=="",comment_ab1:=NA_character_] %>% 
-    .[comment_ab2=="",comment_ab2:=NA_character_] %>% 
-    .[comment_ab3=="",comment_ab3:=NA_character_] %>%
-    .[is.na(comment_ab1) & Pab1_orig=="ND",comment_ab1:="ND"] %>% 
-    .[is.na(comment_ab2) & Pab2_orig=="ND",comment_ab2:="ND"] %>% 
-    .[is.na(comment_ab3) & Pab3_orig=="ND",comment_ab3:="ND"] %>% 
-    .[comment_ba1=="",comment_ba1:=NA_character_] %>% 
-    .[comment_ba2=="",comment_ba2:=NA_character_] %>% 
-    .[comment_ba3=="",comment_ba3:=NA_character_] %>%
-    .[is.na(comment_ba1) & Pba1_orig=="ND",comment_ba1:="ND"] %>% 
-    .[is.na(comment_ba2) & Pba2_orig=="ND",comment_ba2:="ND"] %>% 
-    .[is.na(comment_ba3) & Pba3_orig=="ND",comment_ba3:="ND"] %>%
-  # Get rid of negative values:
-    .[Pab1 <= 0, comment_ab1:="ND"] %>% 
-    .[Pab2 <= 0, comment_ab2:="ND"] %>% 
-    .[Pab3 <= 0, comment_ab3:="ND"] %>% 
-    .[Pba1 <= 0, comment_ba1:="ND"] %>% 
-    .[Pba2 <= 0, comment_ba2:="ND"] %>% 
-    .[Pba3 <= 0, comment_ba3:="ND"] %>% 
-    .[Pab1 <= 0, Pab1:=NA_real_] %>% 
-    .[Pab2 <= 0, Pab2:=NA_real_] %>% 
-    .[Pab3 <= 0, Pab3:=NA_real_] %>% 
-    .[Pba1 <= 0, Pba1:=NA_real_] %>% 
-    .[Pba2 <= 0, Pba2:= NA_real_] %>% 
-    .[Pba3 <= 0, Pba3:= NA_real_] %>% 
-    .[!(is.na(comment_ab1)|comment_ab1 %in% c("LOD","low_rec")),Pab1:=as.numeric(NA)] %>% 
-    .[is.na(rec_ab1) | rec_ab1 < low_rec_co | rec_ab1 > high_rec_co, Pab1:=as.numeric(NA)] %>% 
-    .[is.na(comment_ab1) & rec_ab1 < low_rec_co, comment_ab1:="low_rec"] %>% 
-    .[is.na(comment_ab1) & rec_ab1 > high_rec_co, comment_ab1:="high_rec"] %>% 
-    .[!(is.na(comment_ab2)|comment_ab2 %in% c("LOD","low_rec")),Pab2:=as.numeric(NA)] %>% 
-    .[is.na(rec_ab2) | rec_ab2 < low_rec_co | rec_ab2 > high_rec_co, Pab2:=as.numeric(NA)] %>% 
-    .[is.na(comment_ab2) & rec_ab2 < low_rec_co, comment_ab2:="low_rec"] %>% 
-    .[is.na(comment_ab2) & rec_ab2 > high_rec_co, comment_ab2:="high_rec"] %>% 
-    .[!(is.na(comment_ab3)|comment_ab3 %in% c("LOD","low_rec")),Pab3:=as.numeric(NA)] %>% 
-    .[is.na(rec_ab3) | rec_ab3 < low_rec_co | rec_ab3 > high_rec_co, Pab3:=as.numeric(NA)] %>% 
-    .[is.na(comment_ab3) & rec_ab3 < low_rec_co, comment_ab3:="low_rec"] %>% 
-    .[is.na(comment_ab3) & rec_ab3 > high_rec_co, comment_ab3:="high_rec"] %>% 
-    .[!(is.na(comment_ba1)|comment_ba1 %in% c("LOD","low_rec")),Pba1:=as.numeric(NA)] %>% 
-    .[is.na(rec_ba1) | rec_ba1 < low_rec_co | rec_ba1 > high_rec_co, Pba1:=as.numeric(NA)] %>% 
-    .[is.na(comment_ba1) & rec_ba1 < low_rec_co, comment_ba1:="low_rec"] %>% 
-    .[is.na(comment_ba1) & rec_ba1 > high_rec_co, comment_ba1:="high_rec"] %>% 
-    .[!(is.na(comment_ba2)|comment_ba2 %in% c("LOD","low_rec")),Pba2:=as.numeric(NA)] %>% 
-    .[is.na(rec_ba2) | rec_ba2 < low_rec_co | rec_ba2 > high_rec_co, Pba2:=as.numeric(NA)] %>% 
-    .[is.na(comment_ba2) & rec_ba2 < low_rec_co, comment_ba2:="low_rec"] %>% 
-    .[is.na(comment_ba2) & rec_ba2 > high_rec_co, comment_ba2:="high_rec"] %>% 
-    .[!(is.na(comment_ba3)|comment_ba3 %in% c("LOD","low_rec")),Pba3:=as.numeric(NA)] %>% 
-    .[is.na(rec_ba3) | rec_ba3 < low_rec_co | rec_ba3 > high_rec_co, Pba3:=as.numeric(NA)] %>% 
-    .[is.na(comment_ba3) & rec_ba3 < low_rec_co, comment_ba3:="low_rec"] %>% 
-    .[is.na(comment_ba3) & rec_ba3 > high_rec_co, comment_ba3:="high_rec"]
-
-# Calculate average recovery across replicates:
-  caco2.filt2 <- copy(caco2.filt)
-  caco2.filt2[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
-             rec_ab:=mean(c(rec_ab1,rec_ab2,rec_ab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
-                           (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
-                           (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(rec_ab1,rec_ab2,rec_ab3)] %>% 
-    .[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
-      sd_rec_ab:=sd(c(rec_ab1,rec_ab2,rec_ab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
-                                                 (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
-                                                 (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(rec_ab1,rec_ab2,rec_ab3)] %>% 
-    .[!(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
-      rec_ba:=mean(c(rec_ba1,rec_ba2,rec_ba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
-                                                (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
-                                                (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(rec_ba1,rec_ba2,rec_ba3)] %>% 
-    .[!(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
-      sd_rec_ba:=sd(c(rec_ba1,rec_ba2,rec_ba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
-                                                 (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
-                                                 (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(rec_ba1,rec_ba2,rec_ba3)] %>% 
-    .[!(is.na(Pab1)&is.na(Pab2)&is.na(Pab3)) & !(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
-      Pab_c:=mean(c(Pab1,Pab2,Pab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
-                                      (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
-                                      (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm = T),.(Pab1,Pab2,Pab3)] %>% 
-    .[!(is.na(Pab1)&is.na(Pab2)&is.na(Pab3)) & !(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
-      sd_Pab:=sd(c(Pab1,Pab2,Pab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
-                                     (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
-                                     (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(Pab1,Pab2,Pab3)] %>% 
-    .[!(is.na(Pba1)&is.na(Pba2)&is.na(Pba3)) & !(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
-      Pba_c:=mean(c(Pba1,Pba2,Pba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
-                                      (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
-                                      (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(Pba1,Pba2,Pba3)] %>% 
-    .[!(is.na(Pba1)&is.na(Pba2)&is.na(Pba3)) & !(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
-      sd_Pba := sd(c(Pba1,Pba2,Pba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
-                                       (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
-                                       (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(Pba1,Pba2,Pba3)]
-  
-  caco2.filt2[,Pab:=Pab_c] %>% 
-    .[,Pba:=Pba_c]
-  caco2.filt2[,batch_id:=batch_guess]  
-  caco2.filt2[casrn=="106-47-8",compound:="4-Chloroaniline"] %>% 
-    .[casrn=="33228-44-3",compound:="4-Pentylaniline"]
-  caco2.filt2[casrn == "66357-35-5", c("compound", "dtxsid") := list("Ranitidine", "DTXSID8045191")] %>% 
-    .[casrn == "57460-41-0", c("compound", "dtxsid") := list("Talinolol", "DTXSID6046426")] %>% 
-    .[casrn == "81-81-2", c("compound", "dtxsid") := list("Warfarin", "DTXSID5023742")]
-  
-caco2.filt3 <- copy(caco2.filt2) %>% 
-  .[rec_ab < 0, rec_ab := NA_real_] %>% 
-  .[rec_ba < 0, rec_ba := NA_real_]
+# Reload data using cutoffs based on fraction recovered (Frec):
+```{r load_filtered}
+# Low and high cutoffs:
+  caco2.filt <- load_caco_dt(low_rec_co=0.4,
+                               high_rec_co=2)
 ```
 
 #
@@ -459,13 +382,13 @@ caco2.filt3 <- copy(caco2.filt2) %>%
 Pab.thresh <- 10
 
   lmstat1 <- summary(lm(Pab ~ rec_ab, data =
-                          subset(caco2.filt3,Pab>Pab.thresh)))
+                          subset(caco2.filt,Pab>Pab.thresh)))
   lmstat2 <- summary(lm(Pab/rec_ab ~ rec_ab, data =
-                          subset(caco2.filt3,Pab>Pab.thresh)))
+                          subset(caco2.filt,Pab>Pab.thresh)))
   lmstat3 <- summary(lm(Pba ~ rec_ba, data =
-                          subset(caco2.filt3,Pba>Pab.thresh)))
+                          subset(caco2.filt,Pba>Pab.thresh)))
   lmstat4 <- summary(lm(Pba/rec_ba ~ rec_ba, data =
-                          subset(caco2.filt3,Pba>Pab.thresh)))
+                          subset(caco2.filt,Pba>Pab.thresh)))
 
 # Create labels for figures:
   labl.dt1 <- data.table(x = 0.5,
@@ -487,22 +410,19 @@ Pab.thresh <- 10
 ```
 
 ```{r adjustforrecovery}
-caco2.filt3[, Pab0 := Pab] %>% 
-  .[, Pba0 := Pba] %>% 
-  .[Pab>Pab.thresh, Pab := Pab/rec_ab] %>% 
-  .[Pba>Pab.thresh, Pba := Pba/rec_ba] %>% 
-  .[, efflux0 := Pba0/Pab0] %>% 
-  .[, efflux.ratio := Pba/Pab]
+# Divide Papp values > 10 by Frec:
+  caco2.filt <- adjust_for_frec(caco2.filt, 
+                                  Pab.thresh=10)
 ```
 
 # recovery vs permeability graphs - S1
 ```{r make_recovery_adjustment_figures}
-  FigPabvsRecovery <- ggplot(caco2.filt3) +
+  FigPabvsRecovery <- ggplot(caco2.filt) +
     geom_point(aes(x = rec_ab, y = Pab0), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
     geom_smooth(aes(x = rec_ab, y = Pab0), data=
-                      subset(caco2.filt3,Pab0>Pab.thresh), method = "lm")+
+                      subset(caco2.filt,Pab0>Pab.thresh), method = "lm")+
     geom_text(data = labl.dt1,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
     labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB")), 
          y = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
@@ -513,7 +433,7 @@ caco2.filt3[, Pab0 := Pab] %>%
                       ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   print(FigPabvsRecovery)
   
-  FigAdjPabvsRecovery <- ggplot(caco2.filt3) +
+  FigAdjPabvsRecovery <- ggplot(caco2.filt) +
     geom_point(aes(x = rec_ab, y = Pab), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
@@ -527,12 +447,12 @@ caco2.filt3[, Pab0 := Pab] %>%
     annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
                       ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   
-  FigPbavsRecovery <- ggplot(caco2.filt3) +
+  FigPbavsRecovery <- ggplot(caco2.filt) +
     geom_point(aes(x = rec_ba, y = Pba0), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
     geom_smooth(aes(x = rec_ba, y = Pba0), data=
-                      subset(caco2.filt3,Pba0>Pab.thresh), method = "lm")+
+                      subset(caco2.filt,Pba0>Pab.thresh), method = "lm")+
     geom_text(data = labl.dt3,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
     lims(y= c(0,160))+
     labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA")),
@@ -543,7 +463,7 @@ caco2.filt3[, Pab0 := Pab] %>%
                       ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   print(FigPbavsRecovery)
   
-  FigAdjPbavsRecovery <- ggplot(caco2.filt3) +
+  FigAdjPbavsRecovery <- ggplot(caco2.filt) +
     geom_point(aes(x = rec_ba, y = Pba), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
@@ -570,23 +490,21 @@ caco2.filt3[, Pab0 := Pab] %>%
 
 
 ```{r store_unflitered}
-names(caco2.filt3)
-
-caco2.filt3[, Pab.unadj.unfilt := Pab0] %>% 
-  .[, Pba.unadj.unfilt := Pba0] %>% 
-  .[, efflux.unadj.unfilt := Pba0/Pab0] %>% 
-  .[, rec_ab.unfilt := rec_ab] %>% 
-  .[, rec_ba.unfilt := rec_ba]
-
+caco2.filt[, Pab.unadj.unfilt := caco2.unfilt$Pab0] %>% 
+  .[, Pba.unadj.unfilt := caco2.unfilt$Pba0] %>% 
+  .[, efflux.unadj.unfilt := caco2.unfilt$Pba0/caco2.unfilt$Pab0] %>% 
+  .[, rec_ab.unfilt := caco2.unfilt$rec_ab] %>% 
+  .[, rec_ba.unfilt := caco2.unfilt$rec_ba]
 ```
+
 ```{r write_final_data}
-dim(unique(caco2.filt3[,.(casrn, batch_id, t_type)]))
-caco2.publish <- caco2.filt3[,.(casrn, batch_id, t_type,
+dim(unique(caco2.filt[,.(casrn, batch_id, t_type)]))
+caco2.publish <- caco2.filt[,.(casrn, batch_id, t_type,
                                Pab.unadj.unfilt,
                                Pba.unadj.unfilt,
                                efflux.unadj.unfilt,
                                rec_ab.unfilt,
-                               rec_ba.unfilt)][caco2.filt3, 
+                               rec_ba.unfilt)][caco2.filt, 
                                                on = c("casrn", 
                                                       "batch_id", 
                                                       "t_type")]
@@ -605,8 +523,8 @@ caco2.publish[, casrn := paste0(" ", casrn)]
 write.xlsx(caco2.publish, file = paste0(loc.wd, "/r_data/results_for_paper/caco2_data.xlsx"))
 save(caco2.publish, file = paste0(loc.wd,"/r_data/processed/our_caco2.RData"))
 
-length(unique(caco2.dt[!is.na(casrn),casrn])) #484
-caco2.all <- caco2.filt2[,.(mPab = mean(Pab,na.rm = T),
+length(unique(caco2.publish[!is.na(casrn),casrn])) #484
+caco2.all <- caco2.filt[,.(mPab = mean(Pab,na.rm = T),
                            mPba = mean(Pba, na.rm = T)),
                         .(casrn)]
 caco2.all[,.N,.(is.na(mPab))] #423
@@ -643,32 +561,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
 ```
 
 ```{r calculate_stats_per_chemical_on_filtered_data}  
-caco2.perchem <- caco2.publish[,
-                            .(mPab = mean(Pab, na.rm = T),
-                              sdPab = sd(Pab, na.rm = T),
-                              mPba = mean(Pba, na.rm = T),
-                              sdPba = sd(Pba, na.rm = T),
-                              mPab0 = mean(Pab0, na.rm = T),
-                              sdPab0 = sd(Pab0, na.rm = T),
-                              mPba0 = mean(Pba0, na.rm = T),
-                              sdPba0 = sd(Pba0, na.rm = T),
-                              mefflux = mean(log10(efflux.ratio), na.rm = T),
-                              sdefflux = sd(log10(efflux.ratio), na.rm = T),
-                              mefflux0 = mean(efflux0, na.rm = T),
-                              sdefflux0 = sd(efflux0, na.rm = T),
-                              mrec_ab = mean(rec_ab, na.rm = T),
-                              mrec_ba = mean(rec_ba, na.rm = T),
-                              sdrec_ab = sd(rec_ab, na.rm = T),
-                              sdrec_ba = sd(rec_ba, na.rm = T),
-                              ntotal_recab = sum(!is.na(rec_ab)),
-                              ntotal_recba = sum(!is.na(rec_ba)),
-                              ntotal = .N,
-                              ntotal_ab = sum(!is.na(Pab)),
-                              ntotal_ba = sum(!is.na(Pba)),
-                              ntotal_efflux = sum(!is.na(log10(efflux.ratio)))),
-                            .(casrn, dtxsid, compound)]
-caco2.perchem <- caco2.perchem[,cvPab := sdPab/mPab]
-caco2.perchem <- caco2.perchem[,cvPab0 := sdPab0/mPab0]
+  caco2.perchem <- merge_chemical_replicates(caco2.filt)
 ```
 
 ```{r analyze_controls_warfarin}
