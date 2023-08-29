@@ -23,7 +23,7 @@ rm(list=ls())
 
 ### Set the figure size and working directory
 ```{r knitr_setup}
-loc.wd <- "C:/Users/jwambaug/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Research Projects/Caco2/Honda_Caco2"
+loc.wd <- "C:/Users/jwambaug/git/comptox-caco2/Honda_Caco2"
 knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
 knitr::opts_knit$set(root.dir = loc.wd)
 ```
@@ -526,12 +526,15 @@ for (this.model in colnames(qspr.summary))
 }
 save(qspr.summary,file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))
 ```
+
 ```{r qspr_resultstable}
 load(paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))
 knitr::kable(qspr.summary, 
              caption = "Summary of test set performance of RF models as a function of how Caco2 data are subdivided into categories. Row's labeled \"Bin[Number]\" give the median and 95% interval for the measurments withing each bin.",
              floating.environment="sidewaystable") 
-write.csv(qspr.summary,file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.csv"))
+write.csv(qspr.summary,
+          na="",
+          file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.csv"))
 ```
 
 Although the models with two bins are the most accurate, the 95% intervals for

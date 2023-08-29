@@ -23,7 +23,7 @@ rm(list=ls())
 
 ### Set the figure size
 ```{r knitr_setup}
-loc.wd <- "C:/Users/jwambaug/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Research Projects/Caco2/Honda_Caco2"
+loc.wd <- "C:/Users/jwambaug/git/comptox-caco2/Honda_Caco2"
 knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
 knitr::opts_knit$set(root.dir = loc.wd)
 ```
@@ -49,7 +49,7 @@ scientific_10 <- function(x) {
 ```
 
 ###
-```{r something}
+```{r helpful_utilities}
 source(paste0(loc.wd,"/r_scripts/Honda_caco2_utilities.R"))
 #source('C:/Users/GHONDA/Documents/HTTKOralRoute/gh_ionization_functions.R')
 #source("C:/Users/GHONDA/Documents/R homebrew/chemprop_connect/query_dsstox.measchemprop.R")
@@ -62,8 +62,8 @@ source(paste0(loc.wd,"/r_scripts/Honda_caco2_utilities.R"))
 ## ANALYSIS
 
 
-### Data summary for chemical properties
-```{r summary}
+### plot configuration
+```{r ggplot_theme}
 low_rec_co <- 0.4
 high_rec_co <- 2
 gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
@@ -80,12 +80,15 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
                 axis.text.x = element_text(size = 10,face="bold",color="black"),
                 plot.title = element_text(hjust=0,size=12,face="bold"))
 ```
-###
-```{r check_recovery_impact}
 
+#
+#Load raw data and calculate means across replicates without filtering:
+#
+
+#### SOMEHOW THIS IS THE FILTERED DATA, NEEDS TO BE SWAPPED WITH OTHER CHUNK
+```{r load_raw}
 ##### histograms #####
 # Raw Data
-{ 
   load(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_processed.RData"))
   caco2.QC <- fread(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_line101_short.csv"))
   
@@ -154,12 +157,13 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
     .[is.na(rec_ba3) | rec_ba3 < low_rec_co | rec_ba3 > high_rec_co, Pba3:=as.numeric(NA)] %>% 
     .[is.na(comment_ba3) & rec_ba3 < low_rec_co, comment_ba3:="low_rec"] %>% 
     .[is.na(comment_ba3) & rec_ba3 > high_rec_co, comment_ba3:="high_rec"]
-}
+caco2.raw <- caco2.dt
+```
 
-# Filter Caco2.dt
-{
-  caco2.filt <- copy(caco2.dt)
-  caco2.filt[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
+
+```{r collate_data}
+  caco2.collate <- caco2.raw
+  caco2.collate[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
            rec_ab:=mean(c(rec_ab1,rec_ab2,rec_ab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
                                                      (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
                                                      (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(rec_ab1,rec_ab2,rec_ab3)] %>% 
@@ -192,30 +196,276 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
                                        (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
                                        (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(Pba1,Pba2,Pba3)]
   
-  caco2.filt[,Pab:=Pab_c] %>% 
+  caco2.collate[,Pab:=Pab_c] %>% 
     .[,Pba:=Pba_c]
-  caco2.filt[,batch_id:=batch_guess]  
-  caco2.filt[casrn=="106-47-8",compound:="4-Chloroaniline"] %>% 
+  caco2.collate[,batch_id:=batch_guess]  
+  caco2.collate[casrn=="106-47-8",compound:="4-Chloroaniline"] %>% 
     .[casrn=="33228-44-3",compound:="4-Pentylaniline"]
-  caco2.filt[casrn == "66357-35-5", c("compound", "dtxsid") := list("Ranitidine", "DTXSID8045191")] %>% 
+  caco2.collate[casrn == "66357-35-5", c("compound", "dtxsid") := list("Ranitidine", "DTXSID8045191")] %>% 
+    .[casrn == "57460-41-0", c("compound", "dtxsid") := list("Talinolol", "DTXSID6046426")] %>% 
+    .[casrn == "81-81-2", c("compound", "dtxsid") := list("Warfarin", "DTXSID5023742")]
+```
+
+
+```{r rank_on_duplicates}
+caco2.collate[!is.na(Pab),nrep_pab := .N,.(casrn)]
+caco2.dup <- caco2.collate[nrep_pab >= 2,] %>% 
+  .[,mPab := mean(Pab, na.rm=TRUE), .(casrn)]
+caco2.dup <- unique(caco2.dup[,.(mPab,casrn)])[, .(chemrank = rank(mPab),casrn)][caco2.dup, on = "casrn"]
+```
+# duplicate measures
+```{r replicates}
+txt.dt <- unique(caco2.dup[casrn %in% c("66357-35-5", "57460-41-0", "81-81-2"),.(compound, casrn, mPab)]) %>% 
+    .[, y := 1.5*mPab] %>% 
+    .[, x := 10^c(0.0025,1.5,0.25)] %>% 
+    .[, hjust := c(0, 1, 0)]
+  
+
+  predint1 <- pred_int(x0 = log10(caco2.dup$Pab), 
+                       y0 = log10(caco2.dup$mPab), alpha = 0.95)
+  
+  FigMeanPabvsPab <- ggplot(caco2.dup)+
+    geom_point(aes(x = Pab, y = mPab), alpha = 0.5)+
+    #geom_smooth(aes(x = Pab, y = mPab), method = "lm")+
+    geom_abline(slope = 1, linetype = "dashed")+
+    geom_ribbon(data = predint1$res.dt, 
+                aes(x= 10^xn, ymin = 10^yn2, ymax = 10^yn1), 
+                alpha = 0.2, fill = "blue")+
+    geom_text(data = txt.dt, aes(x = x, y = y, label = compound, hjust = hjust))+
+    labs(y = expression(bold("Mean")*bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)')), 
+         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10)+
+    scale_y_log10(labels=scientific_10)+
+    theme_bw() +
+    gtheme
+  
+
+  ggsave(FigMeanPabvsPab, file = paste0(loc.wd,
+    "/r_data/results_for_paper/f1_replicates.tiff"),
+    height = 3, width = 3, dpi = 600, compression = "lzw")
+  print(FigMeanPabvsPab)
+```
+###
+# Calculate per chemical stats on raw (unfiltered) data:
+```{r calculate_stats_per_chem_basis_raw}
+caco2.perchemraw <- caco2.collate[,
+                            .(mPab = mean(Pab, na.rm = T),
+                              sdPab = sd(Pab, na.rm = T),
+                              mPba = mean(Pba, na.rm = T),
+                              sdPba = sd(Pba, na.rm = T),
+                              mrec_ab = mean(rec_ab, na.rm = T),
+                              mrec_ba = mean(rec_ba, na.rm = T),
+                              sdrec_ab = sd(rec_ab, na.rm = T),
+                              sdrec_ba = sd(rec_ba, na.rm = T),
+                              ntotal = .N,
+                              ntotal_ab = sum(!is.na(Pab)),
+                              ntotal_ba = sum(!is.na(Pba)),
+                              ntotal_rab = sum(!is.na(rec_ab)),
+                              ntotal_rba = sum(!is.na(rec_ba))),
+                            .(casrn, dtxsid, compound)]
+```
+
+#
+# Analysis of Raw Data
+#
+
+```{r make_recovery_fraction_histograms}
+labl.dt1 <- data.table(x = 2, y = c(150, 125, 100),
+                       labl = c(paste0("Mean: ", signif(mean(caco2.perchemraw[, mrec_ab], na.rm = T),2)),
+                                paste0("SD: ", signif(sd(caco2.perchemraw[, mrec_ab], na.rm = T),2)),
+                                paste0("Total Count: ", sum(caco2.perchemraw[, !is.na(mrec_ab) & mrec_ab > 0]))
+                                ))
+labl.dt2 <- data.table(x = 2, y = c(150, 125, 100),
+                       labl = c(paste0("Mean: ", signif(mean(caco2.perchemraw[, mrec_ba], na.rm = T),2)),
+                                paste0("SD: ", signif(sd(caco2.perchemraw[, mrec_ba], na.rm = T),2)),
+                                paste0("Total Count: ", sum(caco2.perchemraw[, !is.na(mrec_ba) & mrec_ba > 0]))
+                       ))
+
+FigFrecabHist <- 
+  ggplot(caco2.perchemraw[mrec_ab > 0,])+
+  geom_histogram(aes(x = mrec_ab), fill= "grey80", color = "black")+
+  geom_vline(xintercept = 1, linetype = "dashed")+
+  geom_text(data = labl.dt1, aes(x = x, y = y, label = labl), hjust = 0)+
+  labs(#title = "a)",
+    y = expression(bold("Count")), 
+    x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
+  #lims(x = c(0,2.1), y = c(0,85))+
+  scale_x_continuous(limits = c(0, 5), breaks = c(0,1,2,3,4), expand = c(0,0))+
+  scale_y_continuous(limits = c(0,200))+
+  theme_bw()+
+  gtheme+
+  annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"),
+                    ymin = 195,ymax = 195,xmax = 0.1, xmin = 0.1)
+
+FigFrecbaHist <- 
+  ggplot(caco2.perchemraw[mrec_ba > 0,])+
+  geom_histogram(aes(x = mrec_ba), fill= "grey80", color = "black")+
+  geom_vline(xintercept = 1, linetype = "dashed")+
+  geom_text(data = labl.dt2, aes(x = x, y = y, label = labl), hjust = 0)+
+  labs(#title = "b) Talinolol",
+    y = expression(bold("Count")), 
+    x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
+  scale_x_continuous(limits = c(0, 5), breaks = c(0,1,2,3,4), expand = c(0,0))+
+  scale_y_continuous(limits = c(0,200))+
+  #lims(x = c(0,2.1), y = c(0,85))+
+  theme_bw()+
+  gtheme+
+  annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
+                    ymin = 195,ymax = 195,xmax = 0.1, xmin = 0.1)
+
+ggsave(FigFrecabHist, file = paste0(loc.wd, "/r_data/results_for_paper/mrec_ab_histo.tiff"),
+       height = 3, width = 3, dpi = 600, compression = "lzw")
+ggsave(FigFrecbaHist, file = paste0(loc.wd, "/r_data/results_for_paper/mrec_ba_histo.tiff"),
+       height = 3, width = 3, dpi = 600, compression = "lzw")
+print(FigFrecabHist)
+print(FigFrecbaHist)
+```
+#
+# Perform filtering based on fraction recovered:
+#
+
+```{r filter_based_on_fraction_recovered}
+  load(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_processed.RData"))
+  caco2.QC <- fread(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_line101_short.csv"))
+  low_rec_co <- -Inf
+  high_rec_co <- Inf
+  caco2.QC[,1] <- NULL
+  
+  caco2.filt <- caco2.QC[caco2.dt,on=.(test_article,dtxsid,task_order,file_id)]
+  caco2.filt <- copy(caco2.filt)
+  caco2.filt <- caco2.filt[, Pab0 := Pab] %>% 
+  .[, Pba0 := Pba] %>% 
+  .[, efflux0 := Pba0/Pab0] %>% 
+  .[, efflux.ratio := Pba/Pab]
+  # Triplicate measurements for each chemical, handle non-detects ("ND"):
+  caco2.filt[, comment_ab3 := as.character(comment_ab3)] %>% 
+    .[!is.na(update_Pab1),Pab1:=update_Pab1] %>% 
+    .[!is.na(update_Pab2),Pab2:=update_Pab2] %>% 
+    .[!is.na(update_Pab3),Pab3:=update_Pab3] %>% 
+    .[!is.na(update_rec_ab1),rec_ab1:=update_rec_ab1] %>% 
+    .[!is.na(update_rec_ab2),rec_ab2:=update_rec_ab2] %>% 
+    .[!is.na(update_rec_ab3),rec_ab3:=update_rec_ab3] %>% 
+    .[!is.na(update_Pba1),Pba1:=update_Pba1] %>% 
+    .[!is.na(update_Pba2),Pba2:=update_Pba2] %>% 
+    .[!is.na(update_Pba3),Pba3:=update_Pba3] %>% 
+    .[!is.na(update_rec_ba1),rec_ba1:=update_rec_ba1] %>% 
+    .[!is.na(update_rec_ba2),rec_ba2:=update_rec_ba2] %>% 
+    .[!is.na(update_rec_ba3),rec_ba3:=update_rec_ba3] %>% 
+    .[comment_ab1=="",comment_ab1:=NA_character_] %>% 
+    .[comment_ab2=="",comment_ab2:=NA_character_] %>% 
+    .[comment_ab3=="",comment_ab3:=NA_character_] %>%
+    .[is.na(comment_ab1) & Pab1_orig=="ND",comment_ab1:="ND"] %>% 
+    .[is.na(comment_ab2) & Pab2_orig=="ND",comment_ab2:="ND"] %>% 
+    .[is.na(comment_ab3) & Pab3_orig=="ND",comment_ab3:="ND"] %>% 
+    .[comment_ba1=="",comment_ba1:=NA_character_] %>% 
+    .[comment_ba2=="",comment_ba2:=NA_character_] %>% 
+    .[comment_ba3=="",comment_ba3:=NA_character_] %>%
+    .[is.na(comment_ba1) & Pba1_orig=="ND",comment_ba1:="ND"] %>% 
+    .[is.na(comment_ba2) & Pba2_orig=="ND",comment_ba2:="ND"] %>% 
+    .[is.na(comment_ba3) & Pba3_orig=="ND",comment_ba3:="ND"] %>%
+  # Get rid of negative values:
+    .[Pab1 <= 0, comment_ab1:="ND"] %>% 
+    .[Pab2 <= 0, comment_ab2:="ND"] %>% 
+    .[Pab3 <= 0, comment_ab3:="ND"] %>% 
+    .[Pba1 <= 0, comment_ba1:="ND"] %>% 
+    .[Pba2 <= 0, comment_ba2:="ND"] %>% 
+    .[Pba3 <= 0, comment_ba3:="ND"] %>% 
+    .[Pab1 <= 0, Pab1:=NA_real_] %>% 
+    .[Pab2 <= 0, Pab2:=NA_real_] %>% 
+    .[Pab3 <= 0, Pab3:=NA_real_] %>% 
+    .[Pba1 <= 0, Pba1:=NA_real_] %>% 
+    .[Pba2 <= 0, Pba2:= NA_real_] %>% 
+    .[Pba3 <= 0, Pba3:= NA_real_] %>% 
+    .[!(is.na(comment_ab1)|comment_ab1 %in% c("LOD","low_rec")),Pab1:=as.numeric(NA)] %>% 
+    .[is.na(rec_ab1) | rec_ab1 < low_rec_co | rec_ab1 > high_rec_co, Pab1:=as.numeric(NA)] %>% 
+    .[is.na(comment_ab1) & rec_ab1 < low_rec_co, comment_ab1:="low_rec"] %>% 
+    .[is.na(comment_ab1) & rec_ab1 > high_rec_co, comment_ab1:="high_rec"] %>% 
+    .[!(is.na(comment_ab2)|comment_ab2 %in% c("LOD","low_rec")),Pab2:=as.numeric(NA)] %>% 
+    .[is.na(rec_ab2) | rec_ab2 < low_rec_co | rec_ab2 > high_rec_co, Pab2:=as.numeric(NA)] %>% 
+    .[is.na(comment_ab2) & rec_ab2 < low_rec_co, comment_ab2:="low_rec"] %>% 
+    .[is.na(comment_ab2) & rec_ab2 > high_rec_co, comment_ab2:="high_rec"] %>% 
+    .[!(is.na(comment_ab3)|comment_ab3 %in% c("LOD","low_rec")),Pab3:=as.numeric(NA)] %>% 
+    .[is.na(rec_ab3) | rec_ab3 < low_rec_co | rec_ab3 > high_rec_co, Pab3:=as.numeric(NA)] %>% 
+    .[is.na(comment_ab3) & rec_ab3 < low_rec_co, comment_ab3:="low_rec"] %>% 
+    .[is.na(comment_ab3) & rec_ab3 > high_rec_co, comment_ab3:="high_rec"] %>% 
+    .[!(is.na(comment_ba1)|comment_ba1 %in% c("LOD","low_rec")),Pba1:=as.numeric(NA)] %>% 
+    .[is.na(rec_ba1) | rec_ba1 < low_rec_co | rec_ba1 > high_rec_co, Pba1:=as.numeric(NA)] %>% 
+    .[is.na(comment_ba1) & rec_ba1 < low_rec_co, comment_ba1:="low_rec"] %>% 
+    .[is.na(comment_ba1) & rec_ba1 > high_rec_co, comment_ba1:="high_rec"] %>% 
+    .[!(is.na(comment_ba2)|comment_ba2 %in% c("LOD","low_rec")),Pba2:=as.numeric(NA)] %>% 
+    .[is.na(rec_ba2) | rec_ba2 < low_rec_co | rec_ba2 > high_rec_co, Pba2:=as.numeric(NA)] %>% 
+    .[is.na(comment_ba2) & rec_ba2 < low_rec_co, comment_ba2:="low_rec"] %>% 
+    .[is.na(comment_ba2) & rec_ba2 > high_rec_co, comment_ba2:="high_rec"] %>% 
+    .[!(is.na(comment_ba3)|comment_ba3 %in% c("LOD","low_rec")),Pba3:=as.numeric(NA)] %>% 
+    .[is.na(rec_ba3) | rec_ba3 < low_rec_co | rec_ba3 > high_rec_co, Pba3:=as.numeric(NA)] %>% 
+    .[is.na(comment_ba3) & rec_ba3 < low_rec_co, comment_ba3:="low_rec"] %>% 
+    .[is.na(comment_ba3) & rec_ba3 > high_rec_co, comment_ba3:="high_rec"]
+
+# Calculate average recovery across replicates:
+  caco2.filt2 <- copy(caco2.filt)
+  caco2.filt2[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
+             rec_ab:=mean(c(rec_ab1,rec_ab2,rec_ab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
+                           (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
+                           (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(rec_ab1,rec_ab2,rec_ab3)] %>% 
+    .[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
+      sd_rec_ab:=sd(c(rec_ab1,rec_ab2,rec_ab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
+                                                 (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
+                                                 (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(rec_ab1,rec_ab2,rec_ab3)] %>% 
+    .[!(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
+      rec_ba:=mean(c(rec_ba1,rec_ba2,rec_ba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
+                                                (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
+                                                (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(rec_ba1,rec_ba2,rec_ba3)] %>% 
+    .[!(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
+      sd_rec_ba:=sd(c(rec_ba1,rec_ba2,rec_ba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
+                                                 (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
+                                                 (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(rec_ba1,rec_ba2,rec_ba3)] %>% 
+    .[!(is.na(Pab1)&is.na(Pab2)&is.na(Pab3)) & !(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
+      Pab_c:=mean(c(Pab1,Pab2,Pab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
+                                      (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
+                                      (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm = T),.(Pab1,Pab2,Pab3)] %>% 
+    .[!(is.na(Pab1)&is.na(Pab2)&is.na(Pab3)) & !(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
+      sd_Pab:=sd(c(Pab1,Pab2,Pab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
+                                     (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
+                                     (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(Pab1,Pab2,Pab3)] %>% 
+    .[!(is.na(Pba1)&is.na(Pba2)&is.na(Pba3)) & !(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
+      Pba_c:=mean(c(Pba1,Pba2,Pba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
+                                      (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
+                                      (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(Pba1,Pba2,Pba3)] %>% 
+    .[!(is.na(Pba1)&is.na(Pba2)&is.na(Pba3)) & !(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
+      sd_Pba := sd(c(Pba1,Pba2,Pba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
+                                       (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
+                                       (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(Pba1,Pba2,Pba3)]
+  
+  caco2.filt2[,Pab:=Pab_c] %>% 
+    .[,Pba:=Pba_c]
+  caco2.filt2[,batch_id:=batch_guess]  
+  caco2.filt2[casrn=="106-47-8",compound:="4-Chloroaniline"] %>% 
+    .[casrn=="33228-44-3",compound:="4-Pentylaniline"]
+  caco2.filt2[casrn == "66357-35-5", c("compound", "dtxsid") := list("Ranitidine", "DTXSID8045191")] %>% 
     .[casrn == "57460-41-0", c("compound", "dtxsid") := list("Talinolol", "DTXSID6046426")] %>% 
     .[casrn == "81-81-2", c("compound", "dtxsid") := list("Warfarin", "DTXSID5023742")]
   
-}
+caco2.filt3 <- copy(caco2.filt2) %>% 
+  .[rec_ab < 0, rec_ab := NA_real_] %>% 
+  .[rec_ba < 0, rec_ba := NA_real_]
 ```
 
+#
+# Analysis of Filtered Data
+#
+
 # Stats on adjusting Pab for fraction recovered:
-```{r adjustforrecovery}
+```{r frec_adjustment_stats}
 Pab.thresh <- 10
 
   lmstat1 <- summary(lm(Pab ~ rec_ab, data =
-                          subset(caco2.filt,Pab>Pab.thresh)))
+                          subset(caco2.filt3,Pab>Pab.thresh)))
   lmstat2 <- summary(lm(Pab/rec_ab ~ rec_ab, data =
-                          subset(caco2.filt,Pab>Pab.thresh)))
+                          subset(caco2.filt3,Pab>Pab.thresh)))
   lmstat3 <- summary(lm(Pba ~ rec_ba, data =
-                          subset(caco2.filt,Pba>Pab.thresh)))
+                          subset(caco2.filt3,Pba>Pab.thresh)))
   lmstat4 <- summary(lm(Pba/rec_ba ~ rec_ba, data =
-                          subset(caco2.filt,Pba>Pab.thresh)))
+                          subset(caco2.filt3,Pba>Pab.thresh)))
 
 # Create labels for figures:
   labl.dt1 <- data.table(x = 0.5,
@@ -237,64 +487,63 @@ Pab.thresh <- 10
 ```
 
 ```{r adjustforrecovery}
-caco2.adj <- caco2.filt
-caco2.adj[, Pab0 := Pab] %>% 
+caco2.filt3[, Pab0 := Pab] %>% 
   .[, Pba0 := Pba] %>% 
   .[Pab>Pab.thresh, Pab := Pab/rec_ab] %>% 
   .[Pba>Pab.thresh, Pba := Pba/rec_ba] %>% 
   .[, efflux0 := Pba0/Pab0] %>% 
-  .[, efflux.ratio := Pba/Pab] %>% 
-  .[, logPab := log10(Pab)] %>% 
-  .[, logPba := log10(Pba)] %>% 
-  .[, logPab0 := log10(Pab0)] %>% 
-  .[, logPba0 := log10(Pba0)]
+  .[, efflux.ratio := Pba/Pab]
 ```
+
 # recovery vs permeability graphs - S1
 ```{r make_recovery_adjustment_figures}
-  FigPabvsRecovery <- ggplot(caco2.adj) +
+  FigPabvsRecovery <- ggplot(caco2.filt3) +
     geom_point(aes(x = rec_ab, y = Pab0), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
     geom_smooth(aes(x = rec_ab, y = Pab0), data=
-                      subset(caco2.adj,Pab0>Pab.thresh), method = "lm")+
+                      subset(caco2.filt3,Pab0>Pab.thresh), method = "lm")+
     geom_text(data = labl.dt1,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
-    lims(y= c(0,150))+
-    labs(x = expression(bold("Recovery")[bolditalic("AB")]), 
+    labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB")), 
          y = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    lims(x=c(0,2.5),y=c(0,200))+
     theme_bw()+
     gtheme+
     annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
                       ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   print(FigPabvsRecovery)
   
-  FigAdjPabvsRecovery <- ggplot(caco2.adj) +
+  FigAdjPabvsRecovery <- ggplot(caco2.filt3) +
     geom_point(aes(x = rec_ab, y = Pab), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
     geom_smooth(aes(x = rec_ab, y = Pab), method = "lm")+
     geom_text(data = labl.dt2,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
     lims(y = c(0,150))+
-    labs(x = expression(bold("Recovery")[bolditalic("AB")]), 
+    labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB")), 
          y = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
     gtheme+
     annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
                       ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
-  FigPbavsRecovery <- ggplot(caco2.filt) +
+  
+  FigPbavsRecovery <- ggplot(caco2.filt3) +
     geom_point(aes(x = rec_ba, y = Pba0), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
-    geom_smooth(aes(x = rec_ba, y = Pba), data=
-                      subset(caco2.adj,Pba0>Pab.thresh), method = "lm")+
+    geom_smooth(aes(x = rec_ba, y = Pba0), data=
+                      subset(caco2.filt3,Pba0>Pab.thresh), method = "lm")+
     geom_text(data = labl.dt3,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
     lims(y= c(0,160))+
-    labs(x = expression(bold("Recovery")[bolditalic("BA")]), 
+    labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA")),
          y = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
     gtheme+
     annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
                       ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
-  FigAdjPbavsRecovery <- ggplot(caco2.filt) +
+  print(FigPbavsRecovery)
+  
+  FigAdjPbavsRecovery <- ggplot(caco2.filt3) +
     geom_point(aes(x = rec_ba, y = Pba), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
@@ -318,14 +567,63 @@ caco2.adj[, Pab0 := Pab] %>%
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-```{r analyze controls}
+
+
+```{r store_unflitered}
+names(caco2.filt3)
+
+caco2.filt3[, Pab.unadj.unfilt := Pab0] %>% 
+  .[, Pba.unadj.unfilt := Pba0] %>% 
+  .[, efflux.unadj.unfilt := Pba0/Pab0] %>% 
+  .[, rec_ab.unfilt := rec_ab] %>% 
+  .[, rec_ba.unfilt := rec_ba]
+
+```
+```{r write_final_data}
+dim(unique(caco2.filt3[,.(casrn, batch_id, t_type)]))
+caco2.publish <- caco2.filt3[,.(casrn, batch_id, t_type,
+                               Pab.unadj.unfilt,
+                               Pba.unadj.unfilt,
+                               efflux.unadj.unfilt,
+                               rec_ab.unfilt,
+                               rec_ba.unfilt)][caco2.filt3, 
+                                               on = c("casrn", 
+                                                      "batch_id", 
+                                                      "t_type")]
+
+caco2.publish[, Pab.unadj := Pab0] %>% 
+  .[, Pba.unadj := Pba0] %>% 
+  .[, efflux.unadj := efflux0]
+
+setcolorder(caco2.publish,
+            c("compound","casrn","dtxsid","batch_id","t_type",
+              "Pab", "Pba", "efflux.ratio", "rec_ab", "rec_ba",
+              "Pab.unadj", "Pba.unadj", "efflux.unadj",
+              "Pab.unadj.unfilt", "Pba.unadj.unfilt", "efflux.unadj.unfilt",
+              "rec_ab.unfilt", "rec_ba.unfilt"))
+caco2.publish[, casrn := paste0(" ", casrn)]
+write.xlsx(caco2.publish, file = paste0(loc.wd, "/r_data/results_for_paper/caco2_data.xlsx"))
+save(caco2.publish, file = paste0(loc.wd,"/r_data/processed/our_caco2.RData"))
+
+length(unique(caco2.dt[!is.na(casrn),casrn])) #484
+caco2.all <- caco2.filt2[,.(mPab = mean(Pab,na.rm = T),
+                           mPba = mean(Pba, na.rm = T)),
+                        .(casrn)]
+caco2.all[,.N,.(is.na(mPab))] #423
+caco2.all[,.N,.(is.na(mPba))] #453
+length(unique(caco2.publish[!is.na(Pab), casrn])) # 310
+length(unique(caco2.publish[!is.na(Pba), casrn])) # 396
+length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
+```
+
+```{r analyze_all_data}
 
 # batch control pab vs upper and lower 5th percentiles - S2
-{
-  names(caco2.adj)
-  caco2.5perc <- copy(caco2.adj)
-  s2.dt <- caco2.5perc[, hcPab := Pab[casrn == "81-81-2" & t_type == "control"], .(batch_id)] %>% 
-    .[, lcPab := Pab[casrn == "66357-35-5" & t_type == "control"], .(batch_id)] %>% 
+
+  names(caco2.publish)
+  caco2.5perc <- copy(caco2.publish)
+  s2.dt <- caco2.5perc[, hcPab := Pab[casrn == " 81-81-2" & t_type == "control"], .(batch_id)] %>% 
+    .[, lcPab := Pab[casrn == " 66357-35-5" & t_type == "control"], .(batch_id)] %>% 
     .[, Pab95 := quantile(Pab[t_type != "control"], 0.95, na.rm = TRUE), .(batch_id)] %>% 
     .[, Pab05 := quantile(Pab[t_type != "control"], 0.05, na.rm = TRUE), .(batch_id)] %>% 
     .[,.(hcPab, lcPab, Pab95, Pab05, batch_id)] %>% 
@@ -342,10 +640,10 @@ caco2.adj[, Pab0 := Pab] %>%
   #print(g1)
   ggsave(FigMeanPabvsPab, file = paste0(loc.wd, "/r_data/results_for_paper/S2figure.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  
-  
-}
-caco2.perchem <- caco2.adj[,
+```
+
+```{r calculate_stats_per_chemical_on_filtered_data}  
+caco2.perchem <- caco2.publish[,
                             .(mPab = mean(Pab, na.rm = T),
                               sdPab = sd(Pab, na.rm = T),
                               mPba = mean(Pba, na.rm = T),
@@ -369,7 +667,483 @@ caco2.perchem <- caco2.adj[,
                               ntotal_ba = sum(!is.na(Pba)),
                               ntotal_efflux = sum(!is.na(log10(efflux.ratio)))),
                             .(casrn, dtxsid, compound)]
+caco2.perchem <- caco2.perchem[,cvPab := sdPab/mPab]
+caco2.perchem <- caco2.perchem[,cvPab0 := sdPab0/mPab0]
 ```
+
+```{r analyze_controls_warfarin}
+  min(caco2.publish[casrn %in% " 81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)
+  max(caco2.publish[casrn == " 81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)
+  labl.FigWarfarinPabAdj <- caco2.perchem[casrn == " 81-81-2",.(labl = c(
+    paste0("Mean: ",signif(mPab,2)),
+    paste0("SD: ", signif(sdPab,2)),
+    paste0("CV: ", signif(cvPab,2)),
+    paste0("Total Count: ", ntotal_ab)),
+                                                   x = 10,
+                                                   y = c(13,11,9,7))]
+  labl.FigWarfarinPabUnadj <- caco2.perchem[casrn == " 81-81-2",.(labl = c(
+    paste0("Mean: ",signif(mPab0,2)),
+    paste0("SD: ", signif(sdPab0,2)),
+    paste0("CV: ", signif(cvPab0,2)),
+    paste0("Total Count: ", ntotal_ab)),
+                                                   x = 1,
+                                                   y = -3.5+c(13,12,11,10))]
+  labl.dt1b <- caco2.perchem[casrn == " 81-81-2",.(labl = c(
+    paste0("Mean: ",signif(mPba,2)),
+    paste0("SD: ", signif(sdPba,2)),
+    paste0("Total Count: ", ntotal_ba)),
+                                                 x = 10,
+                                                 y = c(8,7,6))]
+  labl.dt1c <- caco2.perchem[casrn == " 81-81-2",.(labl = c(
+    paste0("Mean: ",signif(mefflux,2)),
+    paste0("SD: ", signif(sdefflux,2)),
+    paste0("Total Count: ", ntotal_efflux)),
+                                                 x = 0.1,
+                                                 y = c(8,7,6))]
+  
+  labl.dt1d <- caco2.perchem[casrn == " 81-81-2",.(labl = c(
+    paste0("Mean: ",signif(mrec_ab,2)),
+    paste0("SD: ", signif(sdrec_ab,2)),
+    paste0("Total Count: ", ntotal_recab
+                                                              )),
+                                                     x = 10,
+                                                     y = c(7,6,5))]
+  labl.dt1e <- caco2.perchem[casrn == " 81-81-2",.(labl = c(
+    paste0("Mean: ",signif(mrec_ba,2)),
+    paste0("SD: ", signif(sdrec_ba,2)),
+    paste0("Total Count: ", ntotal_recba
+                                                              )),
+                                                     x = 10,
+                                                     y = c(10,8,6))]
+  FigWarfarinPabAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
+    geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
+    geom_text(data = labl.FigWarfarinPabAdj,
+              aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "a) Warfarin",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^2.5))+
+    scale_y_continuous(breaks = c(0, 5, 10, 15))+
+    theme_bw()+
+    gtheme
+  print(FigWarfarinPabAdjHist)
+  
+  FigWarfarinPabUnadjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
+    geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
+    geom_text(data = labl.FigWarfarinPabUnadj,
+              aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "a) Warfarin",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^-0.5,10^2.5))+
+    scale_y_continuous(breaks = c(0,5,10), limits = c(0,10))+
+    theme_bw()+
+    gtheme
+  print(FigWarfarinPabUnadjHist)
+  
+  FigWarfarinPbaAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
+    geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt1b,aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "a) Warfarin",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^1.75))+
+    theme_bw()+
+    gtheme
+  #print(g3b)
+  
+  FigWarfarinPbaUnadjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
+    geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
+    labs(title = "a) Warfarin",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+    lims(y = c(0, 12))+
+    scale_x_log10(labels=scientific_10,limits=c(10^-0.5,10^2.5))+
+    theme_bw()+
+    gtheme
+  
+  FigWarfarinEffluxRAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
+    geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt1c,aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "a) Warfarin",
+         y = expression(bold("Count")), 
+         x = expression(bold("Efflux Ratio"))) +
+    #lims(x = c(0.75,2.25))+
+    scale_x_log10(labels=scientific_10)+
+    theme_bw()+
+    gtheme
+  
+  FigWarfarinEffluxRUnadjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
+    geom_histogram(aes(x =efflux0), fill= "grey80", color = "black")+
+    labs(title = "a) Warfarin",
+         y = expression(bold("Count")), 
+         x = expression(bold("Efflux Ratio"))) +
+    #lims(x = c(0.75,2.25))+
+    scale_x_log10(labels=scientific_10)+
+    theme_bw()+
+    gtheme
+  
+  FigWarfarinFrecabHist <- 
+    ggplot(caco2.publish[casrn == " 81-81-2",])+
+    geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt1d, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "a) Warfarin",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
+    lims(x = c(0,2.2))+
+    theme_bw()+
+    gtheme
+  
+  FigWarfarinFrecbaHist <- 
+    ggplot(caco2.publish[casrn == " 81-81-2",])+
+    geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt1e, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "a) Warfarin",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
+    lims(x = c(0,2.2))+
+    theme_bw()+
+    gtheme
+  
+  ggsave(FigWarfarinPabAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/warfarin_Pab_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigWarfarinPbaAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/warfarin_Pba_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigWarfarinEffluxRAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/warfarin_efflux_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigWarfarinFrecabHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/warfarin_recab_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigWarfarinFrecbaHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/warfarin_recba_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigWarfarinPabUnadjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/warfarin_Pab0_histo.tiff"),
+    height = 3, width = 3, dpi = 600, compression = "lzw")
+  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/warfarin_Pba0_histo.tiff"),
+  #        height = 3, width = 3, dpi = 600, compression = "lzw")
+  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/warfarin_efflux0_histo.tiff"),
+  #        height = 3, width = 3, dpi = 600, compression = "lzw")
+```
+
+```{r analyze_controls_talinolol}
+  labl.dtFigTalinololPabAdj <- caco2.perchem[casrn == " 57460-41-0",.(labl = c(
+    paste0("Mean: ",signif(mPab,2)),
+    paste0("SD: ", signif(sdPab,2)),
+    paste0("CV: ", signif(cvPab,2)),
+    paste0("Total Count: ", ntotal_ab)),
+                                                   x = 0.002,
+                                                   y = c(9.5,8.5,7.5,6.5))]
+  labl.dtFigTalinololPabUnadj <- caco2.perchem[casrn == " 57460-41-0",.(labl = c(
+    paste0("Mean: ",signif(mPab0,2)),
+    paste0("SD: ", signif(sdPab0,2)),
+    paste0("CV: ", signif(cvPab0,2)),
+    paste0("Total Count: ", ntotal_ab)),
+                                                   x = 0.002,
+                                                   y = c(9.5,8.5,7.5,6.5))]
+  labl.dt2b <- caco2.perchem[casrn == " 57460-41-0",.(labl = c(
+    paste0("Mean: ",signif(mPba,2)),
+    paste0("SD: ", signif(sdPba,2)),
+    paste0("Total Count: ", ntotal_ba)),
+                                                    x = 0.1,
+                                                    y = c(7.5,6.5,5.5))]
+  labl.dt2c <- caco2.perchem[casrn == " 57460-41-0",.(labl = c(
+    paste0("Mean: ",signif(mefflux,2)),
+    paste0("SD: ", signif(sdefflux,2)),
+    paste0("Total Count: ", ntotal_efflux)),
+                                                    x = 1,
+                                                    y = c(7.5,6.5,5.5))]
+  labl.dt2d <- caco2.perchem[casrn == " 57460-41-0",.(labl = c(
+    paste0("Mean: ",signif(mrec_ab,2)),
+    paste0("SD: ", signif(sdrec_ab,2)),
+    paste0("Total Count: ", ntotal_recab
+                                                              )),
+                                                     x = 10,
+                                                     y = c(10,8,6))]
+  labl.dt2e <- caco2.perchem[casrn == " 57460-41-0",.(labl = c(
+    paste0("Mean: ",signif(mrec_ba,2)),
+    paste0("SD: ", signif(sdrec_ba,2)),
+    paste0("Total Count: ", ntotal_recba
+                                                              )),
+                                                     x = 10,
+                                                     y = c(10,8,6))]
+  
+  FigTalinololPabAdjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
+    geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
+    geom_text(data = labl.dtFigTalinololPabAdj, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "b) Talinolol",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_y_continuous(breaks = c(0,5,10), limits = c(0,10))+
+    scale_x_log10(labels=scientific_10,limits=c(10^-3,10^0.5))+
+    theme_bw()+
+    gtheme
+  print(FigTalinololPabAdjHist)
+  
+  FigTalinololPabUnadjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
+    geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
+    geom_text(data = labl.dtFigTalinololPabUnadj, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "b) Talinolol",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    lims(x = c(-2.5,0.5))+
+    scale_x_log10(labels=scientific_10,limits=c(10^-3,10^0.5))+
+    theme_bw()+
+    gtheme
+  print(FigTalinololPabUnadjHist)
+  
+  FigTalinololPbaAdjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
+    geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt2b, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "b) Talinolol",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2.5))+
+    theme_bw()+
+    gtheme
+  
+  FigTalinololPbaUnadjHist  <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
+    geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
+    labs(title = "b) Talinolol",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2.5))+
+    theme_bw()+
+    gtheme
+  
+  FigTalinololEffluxRAdjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
+    geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt2c, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "b) Talinolol",
+         y = expression(bold("Count")), 
+         x = expression(bold("Efflux Ratio"))) +
+    #lims(x = c(0.75,2.25))+
+    scale_x_log10(labels=scientific_10)+
+    theme_bw()+
+    gtheme
+  
+  FigTalinololEffluxRUnadjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
+    geom_histogram(aes(x = efflux0), fill= "grey80", color = "black")+
+    labs(title = "b) Talinolol",
+         y = expression(bold("Count")), 
+         x = expression(bold("Efflux Ratio"))) +
+    #lims(x = c(0.75,2.25))+
+    scale_x_log10(labels=scientific_10)+
+    theme_bw()+
+    gtheme
+  
+  FigTalinololFrecabHist <- 
+    ggplot(caco2.publish[casrn == " 57460-41-0",])+
+    geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt2d, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "b) Talinolol",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
+    lims(x = c(0,2.2))+
+    theme_bw()+
+    gtheme
+  
+  FigTalinololFrecbaHist <- 
+    ggplot(caco2.publish[casrn == " 57460-41-0",])+
+    geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt2e, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "b) Talinolol",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
+    lims(x = c(0,2.2))+
+    theme_bw()+
+    gtheme
+  
+  ggsave(FigTalinololPabAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Talinolol_Pab_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigTalinololPbaAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Talinolol_Pba_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigTalinololEffluxRAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Talinolol_efflux_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigTalinololFrecbaHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Talinolol_recab_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigTalinololFrecbaHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Talinolol_recba_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  
+  ggsave(FigTalinololPabUnadjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Talinolol_Pab0_histo.tiff"),
+          height = 3, width = 3, dpi = 600, compression = "lzw")
+  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/Talinolol_Pba0_histo.tiff"),
+  #        height = 3, width = 3, dpi = 600, compression = "lzw")
+  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/Talinolol_efflux0_histo.tiff"),
+  #        height = 3, width = 3, dpi = 600, compression = "lzw")
+```
+
+```{r analyze_controls_ranitidine}
+  labl.dtFigRanitidinePabAdjHist <- 
+  caco2.perchem[casrn == " 66357-35-5",.(labl = c(
+    paste0("Mean: ",signif(mPab,2)),
+    paste0("SD: ", signif(sdPab,2)),
+    paste0("CV: ", signif(cvPab,2)),
+    paste0("Total Count: ", ntotal_ab)),
+                                                   x = 0.01,
+                                                   y = 1+c(8,7,6,5))]
+  labl.dtFigRanitidinePabUnadjHist <- 
+  caco2.perchem[casrn == " 66357-35-5",.(labl = c(
+    paste0("Mean: ",signif(mPab0,2)),
+    paste0("SD: ", signif(sdPab0,2)),
+    paste0("CV: ", signif(cvPab0,2)),
+    paste0("Total Count: ", ntotal_ab)),
+                                                   x = 0.01,
+                                                   y = 1+c(8,7,6,5))]
+  labl.dt3b <- caco2.perchem[casrn == " 66357-35-5",.(labl = c(
+    paste0("Mean: ",signif(mPba,2)),
+    paste0("SD: ", signif(sdPba,2)),
+    paste0("Total Count: ", ntotal_ba
+                                                             )),
+                                                    x = 0.1,
+                                                    y = c(7,6,5))]
+  labl.dt3c <- caco2.perchem[casrn == " 66357-35-5",.(labl = c(
+    paste0("Mean: ",signif(mefflux,2)),
+    paste0("SD: ", signif(sdefflux,2)),
+    paste0("Total Count: ", ntotal_efflux
+                                                             )),
+                                                    x = 1,
+                                                    y = c(4,3.5,3))]
+  labl.dt3d <- caco2.perchem[casrn == " 66357-35-5",.(labl = c(
+    paste0("Mean: ",signif(mrec_ab,2)),
+    paste0("SD: ", signif(sdrec_ab,2)),
+     paste0("Total Count: ", ntotal_recab
+                                                              )),
+                                                     x = 10,
+                                                     y = c(7,6,5))]
+  labl.dt3e <- caco2.perchem[casrn == " 66357-35-5",.(labl = c(
+    paste0("Mean: ",signif(mrec_ba,2)),
+    paste0("SD: ", signif(sdrec_ba,2)),
+    paste0("Total Count: ", ntotal_recba
+                                                              )),
+                                                     x = 10,
+                                                     y = c(10,8,6))]
+  
+  FigRanitidinePabAdjHist <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
+    geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
+    geom_text(data = labl.dtFigRanitidinePabAdjHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "c) Ranitidine",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^-2,10^0))+
+    scale_y_continuous(breaks = c(0,5,10), labels = c(0,5,10), limits = c(0,10))+
+    theme_bw()+
+    gtheme
+  print(FigRanitidinePabAdjHist)
+  
+  FigRanitidinePabUnadjHist <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
+    geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
+    geom_text(data = labl.dtFigRanitidinePabUnadjHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "c) Ranitidine",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^-2,10^0))+
+    theme_bw()+
+    gtheme
+  print(FigRanitidinePabUnadjHist)
+  
+  FigRanitidinePbaAdjHist <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
+    geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt3b, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "c) Ranitidine",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2))+
+    theme_bw()+
+    gtheme
+  
+  FigRanitidinePbaUnadjHist <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
+    geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
+    labs(title = "c) Ranitidine",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+    scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2))+
+    theme_bw()+
+    gtheme
+  
+  FigRanitidineEffluxRAdjHist <- 
+    ggplot(caco2.publish[casrn == " 66357-35-5",])+
+    geom_histogram(aes(x = log10(efflux.ratio)), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt3c, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "c) Ranitidine",
+         y = expression(bold("Count")), 
+         x = expression(bold("Efflux Ratio"))) +
+    #lims(x = c(0.75,2.25))+
+    scale_x_log10(labels=scientific_10)+
+    theme_bw()+
+    gtheme
+  
+  FigRanitidineFrecabHist <- 
+    ggplot(caco2.publish[casrn == " 66357-35-5",])+
+    geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt3d, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "c) Ranitidine",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
+    lims(x = c(0,2.2))+
+    scale_y_continuous(breaks = c(0,5,10))+
+    theme_bw()+
+    gtheme
+  
+  FigRanitidineFrecbaHist  <- 
+    ggplot(caco2.publish[casrn == " 66357-35-5",])+
+    geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
+    geom_text(data = labl.dt3e, aes(x = x, y= y, label = labl), hjust = 0)+
+    labs(title = "c) Ranitidine",
+         y = expression(bold("Count")), 
+         x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
+    lims(x = c(0,2.2))+
+    theme_bw()+
+    gtheme
+
+  FigRanitidineEffluxRUnadjHist  <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
+    geom_histogram(aes(x = efflux0), fill= "grey80", color = "black")+
+    labs(title = "c) Ranitidine",
+         y = expression(bold("Count")), 
+         x = expression(bold("Efflux Ratio"))) +
+    #lims(x = c(0.75,2.25))+
+    scale_x_log10(labels=scientific_10)+
+    theme_bw()+
+    gtheme
+  
+  ggsave(FigRanitidinePabAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Ranitidine_Pab_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigRanitidinePbaAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Ranitidine_Pba_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigRanitidineEffluxRAdjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Ranitidine_efflux_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigRanitidineFrecabHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Ranitidine_recab_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigRanitidineFrecbaHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Ranitidine_recba_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  ggsave(FigRanitidinePabUnadjHist, file = paste0(loc.wd,
+    "/r_data/results_for_paper/Ranitidine_Pab0_histo.tiff"),
+    height = 3, width = 3, dpi = 600, compression = "lzw")
+  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/Ranitidine_Pba0_histo.tiff"),
+  #        height = 3, width = 3, dpi = 600, compression = "lzw")
+  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/Ranitidine_efflux0_histo.tiff"),
+  #        height = 3, width = 3, dpi = 600, compression = "lzw")
+```  
+
+
 # Permeability histograms
 ```{r permeability}
   labl.dt1 <- data.table(x = -2.5, y = 100,
@@ -472,749 +1246,3 @@ caco2.perchem <- caco2.adj[,
   print(FigPabUnadjHist)
 ```
 
-
-```{r analyze_controls_warfarin}
-  min(caco2.adj[casrn == "81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)
-  max(caco2.adj[casrn == "81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)
-  labl.FigWarfarinPabAdj <- caco2.perchem[casrn == "81-81-2",.(labl = c(
-    paste0("Mean: ",signif(mPab,2)),
-    paste0("SD: ", signif(sdPab,2)),
-    paste0("Total Count: ", ntotal_ab)),
-                                                   x = 10,
-                                                   y = c(13,11,9))]
-  labl.FigWarfarinPabUnadj <- caco2.perchem[casrn == "81-81-2",.(labl = c(
-    paste0("Mean: ",signif(mPab0,2)),
-    paste0("SD: ", signif(sdPab0,2)),
-    paste0("Total Count: ", ntotal_ab)),
-                                                   x = 1,
-                                                   y = c(13,11,9))]
-  labl.dt1b <- caco2.perchem[casrn == "81-81-2",.(labl = c(
-    paste0("Mean: ",signif(mPba,2)),
-    paste0("SD: ", signif(sdPba,2)),
-    paste0("Total Count: ", ntotal_ba)),
-                                                 x = 10,
-                                                 y = c(8,7,6))]
-  labl.dt1c <- caco2.perchem[casrn == "81-81-2",.(labl = c(
-    paste0("Mean: ",signif(mefflux,2)),
-    paste0("SD: ", signif(sdefflux,2)),
-    paste0("Total Count: ", ntotal_efflux)),
-                                                 x = 0.1,
-                                                 y = c(8,7,6))]
-  
-  labl.dt1d <- caco2.perchem[casrn == "81-81-2",.(labl = c(
-    paste0("Mean: ",signif(mrec_ab,2)),
-    paste0("SD: ", signif(sdrec_ab,2)),
-    paste0("Total Count: ", ntotal_recab
-                                                              )),
-                                                     x = 10,
-                                                     y = c(7,6,5))]
-  labl.dt1e <- caco2.perchem[casrn == "81-81-2",.(labl = c(
-    paste0("Mean: ",signif(mrec_ba,2)),
-    paste0("SD: ", signif(sdrec_ba,2)),
-    paste0("Total Count: ", ntotal_recba
-                                                              )),
-                                                     x = 10,
-                                                     y = c(10,8,6))]
-  FigWarfarinPabAdjHist <- ggplot(caco2.adj[casrn == "81-81-2",])+
-    geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
-    geom_text(data = labl.FigWarfarinPabAdj,
-              aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^2.5))+
-    scale_y_continuous(breaks = c(0, 5, 10, 15))+
-    theme_bw()+
-    gtheme
-  print(FigWarfarinPabAdjHist)
-  
-  FigWarfarinPabUnadjHist <- ggplot(caco2.adj[casrn == "81-81-2",])+
-    geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
-    geom_text(data = labl.FigWarfarinPabUnadj,
-              aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^-0.5,10^2.5))+
-    lims(y = c(0, 17.5))+
-    theme_bw()+
-    gtheme
-  print(FigWarfarinPabUnadjHist)
-  
-  FigWarfarinPbaAdjHist <- ggplot(caco2.adj[casrn == "81-81-2",])+
-    geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt1b,aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^1.75))+
-    theme_bw()+
-    gtheme
-  #print(g3b)
-  
-  FigWarfarinPbaUnadjHist <- ggplot(caco2.adj[casrn == "81-81-2",])+
-    geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
-    labs(title = "a) Warfarin",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
-    lims(y = c(0, 17.5))+
-    scale_x_log10(labels=scientific_10,limits=c(10^-0.5,10^2.5))+
-    theme_bw()+
-    gtheme
-  
-  FigWarfarinEffluxRAdjHist <- ggplot(caco2.adj[casrn == "81-81-2",])+
-    geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt1c,aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
-         y = expression(bold("Count")), 
-         x = expression(bold("Efflux Ratio"))) +
-    #lims(x = c(0.75,2.25))+
-    scale_x_log10(labels=scientific_10)+
-    theme_bw()+
-    gtheme
-  
-  FigWarfarinEffluxRUnadjHist <- ggplot(caco2.adj[casrn == "81-81-2",])+
-    geom_histogram(aes(x =efflux0), fill= "grey80", color = "black")+
-    labs(title = "a) Warfarin",
-         y = expression(bold("Count")), 
-         x = expression(bold("Efflux Ratio"))) +
-    #lims(x = c(0.75,2.25))+
-    scale_x_log10(labels=scientific_10)+
-    theme_bw()+
-    gtheme
-  
-  FigWarfarinFrecabHist <- 
-    ggplot(caco2.adj[casrn == "81-81-2",])+
-    geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt1d, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
-         y = expression(bold("Count")), 
-         x = expression(bold("Recovery")[bolditalic("AB")])) +
-    lims(x = c(0,2.2))+
-    theme_bw()+
-    gtheme
-  
-  FigWarfarinFrecbaHist <- 
-    ggplot(caco2.adj[casrn == "81-81-2",])+
-    geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt1e, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
-         y = expression(bold("Count")), 
-         x = expression(bold("Recovery")[bolditalic("BA")])) +
-    lims(x = c(0,2.2))+
-    theme_bw()+
-    gtheme
-  
-  ggsave(FigWarfarinPabAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_Pab_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigWarfarinPbaAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_Pba_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigWarfarinEffluxRAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_efflux_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigWarfarinFrecabHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_recab_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigWarfarinFrecbaHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_recba_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigWarfarinPabUnadjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_Pab0_histo.tiff"),
-    height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/warfarin_Pba0_histo.tiff"),
-  #        height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/warfarin_efflux0_histo.tiff"),
-  #        height = 3, width = 3, dpi = 600, compression = "lzw")
-```
-
-```{r analyze_controls_talinolol}
-  labl.dtFigTalinololPabAdj <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
-    paste0("Mean: ",signif(mPab,2)),
-    paste0("SD: ", signif(sdPab,2)),
-    paste0("Total Count: ", ntotal_ab)),
-                                                   x = 0.01,
-                                                   y = c(7.5,6.5,5.5))]
-  labl.dtFigTalinololPabUnadj <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
-    paste0("Mean: ",signif(mPab0,2)),
-    paste0("SD: ", signif(sdPab0,2)),
-    paste0("Total Count: ", ntotal_ab)),
-                                                   x = 0.01,
-                                                   y = c(7.5,6.5,5.5))]
-  labl.dt2b <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
-    paste0("Mean: ",signif(mPba,2)),
-    paste0("SD: ", signif(sdPba,2)),
-    paste0("Total Count: ", ntotal_ba)),
-                                                    x = 0.1,
-                                                    y = c(7.5,6.5,5.5))]
-  labl.dt2c <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
-    paste0("Mean: ",signif(mefflux,2)),
-    paste0("SD: ", signif(sdefflux,2)),
-    paste0("Total Count: ", ntotal_efflux)),
-                                                    x = 1,
-                                                    y = c(7.5,6.5,5.5))]
-  labl.dt2d <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
-    paste0("Mean: ",signif(mrec_ab,2)),
-    paste0("SD: ", signif(sdrec_ab,2)),
-    paste0("Total Count: ", ntotal_recab
-                                                              )),
-                                                     x = 10,
-                                                     y = c(10,8,6))]
-  labl.dt2e <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
-    paste0("Mean: ",signif(mrec_ba,2)),
-    paste0("SD: ", signif(sdrec_ba,2)),
-    paste0("Total Count: ", ntotal_recba
-                                                              )),
-                                                     x = 10,
-                                                     y = c(10,8,6))]
-  
-  FigTalinololPabAdjHist <- ggplot(caco2.adj[casrn == "57460-41-0",])+
-    geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
-    geom_text(data = labl.dtFigTalinololPabAdj, 
-              aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_y_continuous(breaks = c(0,5,10), limits = c(0,10))+
-    scale_x_log10(labels=scientific_10,limits=c(10^-2.5,10^0.5))+
-    theme_bw()+
-    gtheme
-  print(FigTalinololPabAdjHist)
-  
-  FigTalinololPabUnadjHist <- ggplot(caco2.adj[casrn == "57460-41-0",])+
-    geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
-    geom_text(data = labl.dtFigTalinololPabUnadj, 
-              aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    lims(x = c(-2.5,0.5))+
-    scale_x_log10(labels=scientific_10,limits=c(10^-2.5,10^0.5))+
-    theme_bw()+
-    gtheme
-  print(FigTalinololPabUnadjHist)
-  
-  FigTalinololPbaAdjHist <- ggplot(caco2.adj[casrn == "57460-41-0",])+
-    geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt2b, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2.5))+
-    theme_bw()+
-    gtheme
-  
-  FigTalinololPbaUnadjHist  <- ggplot(caco2.adj[casrn == "57460-41-0",])+
-    geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
-    labs(title = "b) Talinolol",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2.5))+
-    theme_bw()+
-    gtheme
-  
-  FigTalinololEffluxRAdjHist <- ggplot(caco2.adj[casrn == "57460-41-0",])+
-    geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt2c, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
-         y = expression(bold("Count")), 
-         x = expression(bold("Efflux Ratio"))) +
-    #lims(x = c(0.75,2.25))+
-    scale_x_log10(labels=scientific_10)+
-    theme_bw()+
-    gtheme
-  
-  FigTalinololEffluxRUnadjHist <- ggplot(caco2.adj[casrn == "57460-41-0",])+
-    geom_histogram(aes(x = efflux0), fill= "grey80", color = "black")+
-    labs(title = "b) Talinolol",
-         y = expression(bold("Count")), 
-         x = expression(bold("Efflux Ratio"))) +
-    #lims(x = c(0.75,2.25))+
-    scale_x_log10(labels=scientific_10)+
-    theme_bw()+
-    gtheme
-  
-  FigTalinololFrecabHist <- 
-    ggplot(caco2.adj[casrn == "57460-41-0",])+
-    geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt2d, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
-         y = expression(bold("Count")), 
-         x = expression(bold("Recovery")[bolditalic("AB")])) +
-    lims(x = c(0,2.2))+
-    theme_bw()+
-    gtheme
-  
-  FigTalinololFrecbaHist <- 
-    ggplot(caco2.adj[casrn == "57460-41-0",])+
-    geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt2e, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
-         y = expression(bold("Count")), 
-         x = expression(bold("Recovery")[bolditalic("BA")])) +
-    lims(x = c(0,2.2))+
-    theme_bw()+
-    gtheme
-  
-  ggsave(FigTalinololPabAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_Pab_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigTalinololPbaAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_Pba_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigTalinololEffluxRAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_efflux_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigTalinololFrecbaHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_recab_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigTalinololFrecbaHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_recba_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  
-  ggsave(FigTalinololPabUnadjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_Pab0_histo.tiff"),
-          height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/Talinolol_Pba0_histo.tiff"),
-  #        height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/Talinolol_efflux0_histo.tiff"),
-  #        height = 3, width = 3, dpi = 600, compression = "lzw")
-```
-
-```{r analyze_controls_ranitidine}
-  labl.dtFigRanitidinePabAdjHist <- 
-  caco2.perchem[casrn == "66357-35-5",.(labl = c(
-    paste0("Mean: ",signif(mPab,2)),
-    paste0("SD: ", signif(sdPab,2)),
-    paste0("Total Count: ", ntotal_ab
-                                                                   )),
-                                                   x = 0.1,
-                                                   y = c(8,7,6))]
-  labl.dtFigRanitidinePabUnadjHist <- 
-  caco2.perchem[casrn == "66357-35-5",.(labl = c(
-    paste0("Mean: ",signif(mPab0,2)),
-    paste0("SD: ", signif(sdPab0,2)),
-    paste0("Total Count: ", ntotal_ab
-                                                                   )),
-                                                   x = 0.1,
-                                                   y = c(8,7,6))]
-  labl.dt3b <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
-    paste0("Mean: ",signif(mPba,2)),
-    paste0("SD: ", signif(sdPba,2)),
-    paste0("Total Count: ", ntotal_ba
-                                                             )),
-                                                    x = 0.1,
-                                                    y = c(7,6,5))]
-  labl.dt3c <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
-    paste0("Mean: ",signif(mefflux,2)),
-    paste0("SD: ", signif(sdefflux,2)),
-    paste0("Total Count: ", ntotal_efflux
-                                                             )),
-                                                    x = 1,
-                                                    y = c(4,3.5,3))]
-  labl.dt3d <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
-    paste0("Mean: ",signif(mrec_ab,2)),
-    paste0("SD: ", signif(sdrec_ab,2)),
-     paste0("Total Count: ", ntotal_recab
-                                                              )),
-                                                     x = 10,
-                                                     y = c(7,6,5))]
-  labl.dt3e <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
-    paste0("Mean: ",signif(mrec_ba,2)),
-    paste0("SD: ", signif(sdrec_ba,2)),
-    paste0("Total Count: ", ntotal_recba
-                                                              )),
-                                                     x = 10,
-                                                     y = c(10,8,6))]
-  
-  FigRanitidinePabAdjHist <- ggplot(caco2.adj[casrn == "66357-35-5",])+
-    geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
-    geom_text(data = labl.dtFigRanitidinePabAdjHist, 
-              aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^-2,10^0))+
-    scale_y_continuous(breaks = c(0,5,10), labels = c(0,5,10), limits = c(0,10))+
-    theme_bw()+
-    gtheme
-  print(FigRanitidinePabAdjHist)
-  
-  FigRanitidinePabUnadjHist <- ggplot(caco2.adj[casrn == "66357-35-5",])+
-    geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
-    geom_text(data = labl.dtFigRanitidinePabUnadjHist, 
-              aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^-2,10^0))+
-    theme_bw()+
-    gtheme
-  print(FigRanitidinePabUnadjHist)
-  
-  FigRanitidinePbaAdjHist <- ggplot(caco2.adj[casrn == "66357-35-5",])+
-    geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt3b, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2))+
-    theme_bw()+
-    gtheme
-  
-  FigRanitidinePbaUnadjHist <- ggplot(caco2.adj[casrn == "66357-35-5",])+
-    geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
-    labs(title = "c) Ranitidine",
-         y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2))+
-    theme_bw()+
-    gtheme
-  
-  FigRanitidineEffluxRAdjHist <- 
-    ggplot(caco2.adj[casrn == "66357-35-5",])+
-    geom_histogram(aes(x = log10(efflux.ratio)), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt3c, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
-         y = expression(bold("Count")), 
-         x = expression(bold("Efflux Ratio"))) +
-    #lims(x = c(0.75,2.25))+
-    scale_x_log10(labels=scientific_10)+
-    theme_bw()+
-    gtheme
-  
-  FigRanitidineFrecabHist <- 
-    ggplot(caco2.adj[casrn == "66357-35-5",])+
-    geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt3d, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
-         y = expression(bold("Count")), 
-         x = expression(bold("Recovery")[bolditalic("AB")])) +
-    lims(x = c(0,2.2))+
-    scale_y_continuous(breaks = c(0,5,10))+
-    theme_bw()+
-    gtheme
-  
-  FigRanitidineFrecbaHist  <- 
-    ggplot(caco2.adj[casrn == "66357-35-5",])+
-    geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt3e, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
-         y = expression(bold("Count")), 
-         x = expression(bold("Recovery")[bolditalic("BA")])) +
-    lims(x = c(0,2.2))+
-    theme_bw()+
-    gtheme
-
-  FigRanitidineEffluxRUnadjHist  <- ggplot(caco2.adj[casrn == "66357-35-5",])+
-    geom_histogram(aes(x = efflux0), fill= "grey80", color = "black")+
-    labs(title = "c) Ranitidine",
-         y = expression(bold("Count")), 
-         x = expression(bold("Efflux Ratio"))) +
-    #lims(x = c(0.75,2.25))+
-    scale_x_log10(labels=scientific_10)+
-    theme_bw()+
-    gtheme
-  
-  ggsave(FigRanitidinePabAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_Pab_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigRanitidinePbaAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_Pba_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigRanitidineEffluxRAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_efflux_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigRanitidineFrecabHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_recab_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigRanitidineFrecbaHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_recba_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigRanitidinePabUnadjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_Pab0_histo.tiff"),
-    height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/Ranitidine_Pba0_histo.tiff"),
-  #        height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/Ranitidine_efflux0_histo.tiff"),
-  #        height = 3, width = 3, dpi = 600, compression = "lzw")
-```  
-
-```{r rank_on_duplicates}
-caco2.adj[!is.na(Pab),nrep_pab := .N,.(casrn)]
-caco2.dup <- caco2.adj[nrep_pab >= 2,] %>% 
-  .[,mPab := mean(Pab, na.rm=TRUE), .(casrn)]
-caco2.dup <- unique(caco2.dup[,.(mPab,casrn)])[, .(chemrank = rank(mPab),casrn)][caco2.dup, on = "casrn"]
-```
-# duplicate measures
-```{r replicates}
-txt.dt <- unique(caco2.dup[casrn %in% c("66357-35-5", "57460-41-0", "81-81-2"),.(compound, casrn, mPab)]) %>% 
-    .[, y := 1.5*mPab] %>% 
-    .[, x := 10^c(0.0025,1.5,0.25)] %>% 
-    .[, hjust := c(0, 1, 0)]
-  
-
-  predint1 <- pred_int(x0 = log10(caco2.dup$Pab), 
-                       y0 = log10(caco2.dup$mPab), alpha = 0.95)
-  
-  FigMeanPabvsPab <- ggplot(caco2.dup)+
-    geom_point(aes(x = Pab, y = mPab), alpha = 0.5)+
-    #geom_smooth(aes(x = Pab, y = mPab), method = "lm")+
-    geom_abline(slope = 1, linetype = "dashed")+
-    geom_ribbon(data = predint1$res.dt, 
-                aes(x= 10^xn, ymin = 10^yn2, ymax = 10^yn1), 
-                alpha = 0.2, fill = "blue")+
-    geom_text(data = txt.dt, aes(x = x, y = y, label = compound, hjust = hjust))+
-    labs(y = expression(bold("Mean")*bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)')), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10)+
-    scale_y_log10(labels=scientific_10)+
-    theme_bw() +
-    gtheme
-  
-  ggplot(predint1$res.dt)+
-    geom_point(aes(x= xn, y = resint), alpha = 0.2, fill = "blue")
-  ggsave(FigMeanPabvsPab, file = paste0(loc.wd,
-    "/r_data/results_for_paper/f1_replicates.tiff"),
-    height = 3, width = 3, dpi = 600, compression = "lzw")
-  print(FigMeanPabvsPab)
-```
-###
-```{r examine_fraction_recovered}
-{
-  load(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_processed.RData"))
-  caco2.QC <- fread(paste0(loc.wd,"/r_data/caco2_qc/caco2dt_line101_short.csv"))
-  low_rec_co <- -Inf
-  high_rec_co <- Inf
-  caco2.QC[,1] <- NULL
-  
-  caco2.filt <- caco2.QC[caco2.dt,on=.(test_article,dtxsid,task_order,file_id)]
-  caco2.filt <- copy(caco2.filt)
-  caco2.filt <- caco2.filt[, Pab0 := Pab] %>% 
-  .[, Pba0 := Pba] %>% 
-  .[, efflux0 := Pba0/Pab0] %>% 
-  .[, efflux.ratio := Pba/Pab]
-  caco2.filt[, comment_ab3 := as.character(comment_ab3)] %>% 
-    .[!is.na(update_Pab1),Pab1:=update_Pab1] %>% 
-    .[!is.na(update_Pab2),Pab2:=update_Pab2] %>% 
-    .[!is.na(update_Pab3),Pab3:=update_Pab3] %>% 
-    .[!is.na(update_rec_ab1),rec_ab1:=update_rec_ab1] %>% 
-    .[!is.na(update_rec_ab2),rec_ab2:=update_rec_ab2] %>% 
-    .[!is.na(update_rec_ab3),rec_ab3:=update_rec_ab3] %>% 
-    .[!is.na(update_Pba1),Pba1:=update_Pba1] %>% 
-    .[!is.na(update_Pba2),Pba2:=update_Pba2] %>% 
-    .[!is.na(update_Pba3),Pba3:=update_Pba3] %>% 
-    .[!is.na(update_rec_ba1),rec_ba1:=update_rec_ba1] %>% 
-    .[!is.na(update_rec_ba2),rec_ba2:=update_rec_ba2] %>% 
-    .[!is.na(update_rec_ba3),rec_ba3:=update_rec_ba3] %>% 
-    .[comment_ab1=="",comment_ab1:=NA_character_] %>% 
-    .[comment_ab2=="",comment_ab2:=NA_character_] %>% 
-    .[comment_ab3=="",comment_ab3:=NA_character_] %>%
-    .[is.na(comment_ab1) & Pab1_orig=="ND",comment_ab1:="ND"] %>% 
-    .[is.na(comment_ab2) & Pab2_orig=="ND",comment_ab2:="ND"] %>% 
-    .[is.na(comment_ab3) & Pab3_orig=="ND",comment_ab3:="ND"] %>% 
-    .[comment_ba1=="",comment_ba1:=NA_character_] %>% 
-    .[comment_ba2=="",comment_ba2:=NA_character_] %>% 
-    .[comment_ba3=="",comment_ba3:=NA_character_] %>%
-    .[is.na(comment_ba1) & Pba1_orig=="ND",comment_ba1:="ND"] %>% 
-    .[is.na(comment_ba2) & Pba2_orig=="ND",comment_ba2:="ND"] %>% 
-    .[is.na(comment_ba3) & Pba3_orig=="ND",comment_ba3:="ND"] %>%
-    .[Pab1 <= 0, comment_ab1:="ND"] %>% 
-    .[Pab2 <= 0, comment_ab2:="ND"] %>% 
-    .[Pab3 <= 0, comment_ab3:="ND"] %>% 
-    .[Pba1 <= 0, comment_ba1:="ND"] %>% 
-    .[Pba2 <= 0, comment_ba2:="ND"] %>% 
-    .[Pba3 <= 0, comment_ba3:="ND"] %>% 
-    .[Pab1 <= 0, Pab1:=NA_real_] %>% 
-    .[Pab2 <= 0, Pab2:=NA_real_] %>% 
-    .[Pab3 <= 0, Pab3:=NA_real_] %>% 
-    .[Pba1 <= 0, Pba1:=NA_real_] %>% 
-    .[Pba2 <= 0, Pba2:= NA_real_] %>% 
-    .[Pba3 <= 0, Pba3:= NA_real_] %>% 
-    .[!(is.na(comment_ab1)|comment_ab1 %in% c("LOD","low_rec")),Pab1:=as.numeric(NA)] %>% 
-    .[is.na(rec_ab1) | rec_ab1 < low_rec_co | rec_ab1 > high_rec_co, Pab1:=as.numeric(NA)] %>% 
-    .[is.na(comment_ab1) & rec_ab1 < low_rec_co, comment_ab1:="low_rec"] %>% 
-    .[is.na(comment_ab1) & rec_ab1 > high_rec_co, comment_ab1:="high_rec"] %>% 
-    .[!(is.na(comment_ab2)|comment_ab2 %in% c("LOD","low_rec")),Pab2:=as.numeric(NA)] %>% 
-    .[is.na(rec_ab2) | rec_ab2 < low_rec_co | rec_ab2 > high_rec_co, Pab2:=as.numeric(NA)] %>% 
-    .[is.na(comment_ab2) & rec_ab2 < low_rec_co, comment_ab2:="low_rec"] %>% 
-    .[is.na(comment_ab2) & rec_ab2 > high_rec_co, comment_ab2:="high_rec"] %>% 
-    .[!(is.na(comment_ab3)|comment_ab3 %in% c("LOD","low_rec")),Pab3:=as.numeric(NA)] %>% 
-    .[is.na(rec_ab3) | rec_ab3 < low_rec_co | rec_ab3 > high_rec_co, Pab3:=as.numeric(NA)] %>% 
-    .[is.na(comment_ab3) & rec_ab3 < low_rec_co, comment_ab3:="low_rec"] %>% 
-    .[is.na(comment_ab3) & rec_ab3 > high_rec_co, comment_ab3:="high_rec"] %>% 
-    .[!(is.na(comment_ba1)|comment_ba1 %in% c("LOD","low_rec")),Pba1:=as.numeric(NA)] %>% 
-    .[is.na(rec_ba1) | rec_ba1 < low_rec_co | rec_ba1 > high_rec_co, Pba1:=as.numeric(NA)] %>% 
-    .[is.na(comment_ba1) & rec_ba1 < low_rec_co, comment_ba1:="low_rec"] %>% 
-    .[is.na(comment_ba1) & rec_ba1 > high_rec_co, comment_ba1:="high_rec"] %>% 
-    .[!(is.na(comment_ba2)|comment_ba2 %in% c("LOD","low_rec")),Pba2:=as.numeric(NA)] %>% 
-    .[is.na(rec_ba2) | rec_ba2 < low_rec_co | rec_ba2 > high_rec_co, Pba2:=as.numeric(NA)] %>% 
-    .[is.na(comment_ba2) & rec_ba2 < low_rec_co, comment_ba2:="low_rec"] %>% 
-    .[is.na(comment_ba2) & rec_ba2 > high_rec_co, comment_ba2:="high_rec"] %>% 
-    .[!(is.na(comment_ba3)|comment_ba3 %in% c("LOD","low_rec")),Pba3:=as.numeric(NA)] %>% 
-    .[is.na(rec_ba3) | rec_ba3 < low_rec_co | rec_ba3 > high_rec_co, Pba3:=as.numeric(NA)] %>% 
-    .[is.na(comment_ba3) & rec_ba3 < low_rec_co, comment_ba3:="low_rec"] %>% 
-    .[is.na(comment_ba3) & rec_ba3 > high_rec_co, comment_ba3:="high_rec"]
-
-  caco2.filt2 <- copy(caco2.filt)
-  caco2.filt2[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
-             rec_ab:=mean(c(rec_ab1,rec_ab2,rec_ab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
-                                                       (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
-                                                       (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(rec_ab1,rec_ab2,rec_ab3)] %>% 
-    .[!(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
-      sd_rec_ab:=sd(c(rec_ab1,rec_ab2,rec_ab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
-                                                 (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
-                                                 (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(rec_ab1,rec_ab2,rec_ab3)] %>% 
-    .[!(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
-      rec_ba:=mean(c(rec_ba1,rec_ba2,rec_ba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
-                                                (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
-                                                (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(rec_ba1,rec_ba2,rec_ba3)] %>% 
-    .[!(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
-      sd_rec_ba:=sd(c(rec_ba1,rec_ba2,rec_ba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
-                                                 (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
-                                                 (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(rec_ba1,rec_ba2,rec_ba3)] %>% 
-    .[!(is.na(Pab1)&is.na(Pab2)&is.na(Pab3)) & !(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
-      Pab_c:=mean(c(Pab1,Pab2,Pab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
-                                      (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
-                                      (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm = T),.(Pab1,Pab2,Pab3)] %>% 
-    .[!(is.na(Pab1)&is.na(Pab2)&is.na(Pab3)) & !(is.na(rec_ab1)&is.na(rec_ab2)&is.na(rec_ab3)),
-      sd_Pab:=sd(c(Pab1,Pab2,Pab3)[!is.na(c(rec_ab1,rec_ab2,rec_ab3)) &
-                                     (c(rec_ab1,rec_ab2,rec_ab3) >= low_rec_co) &
-                                     (c(rec_ab1,rec_ab2,rec_ab3) <= high_rec_co)],na.rm=T),.(Pab1,Pab2,Pab3)] %>% 
-    .[!(is.na(Pba1)&is.na(Pba2)&is.na(Pba3)) & !(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
-      Pba_c:=mean(c(Pba1,Pba2,Pba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
-                                      (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
-                                      (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(Pba1,Pba2,Pba3)] %>% 
-    .[!(is.na(Pba1)&is.na(Pba2)&is.na(Pba3)) & !(is.na(rec_ba1)&is.na(rec_ba2)&is.na(rec_ba3)),
-      sd_Pba := sd(c(Pba1,Pba2,Pba3)[!is.na(c(rec_ba1,rec_ba2,rec_ba3)) &
-                                       (c(rec_ba1,rec_ba2,rec_ba3) >= low_rec_co) &
-                                       (c(rec_ba1,rec_ba2,rec_ba3) <= high_rec_co)],na.rm=T),.(Pba1,Pba2,Pba3)]
-  
-  caco2.filt2[,Pab:=Pab_c] %>% 
-    .[,Pba:=Pba_c]
-  caco2.filt2[,batch_id:=batch_guess]  
-  caco2.filt2[casrn=="106-47-8",compound:="4-Chloroaniline"] %>% 
-    .[casrn=="33228-44-3",compound:="4-Pentylaniline"]
-  caco2.filt2[casrn == "66357-35-5", c("compound", "dtxsid") := list("Ranitidine", "DTXSID8045191")] %>% 
-    .[casrn == "57460-41-0", c("compound", "dtxsid") := list("Talinolol", "DTXSID6046426")] %>% 
-    .[casrn == "81-81-2", c("compound", "dtxsid") := list("Warfarin", "DTXSID5023742")]
-  
-  
-}
-caco2.filt3 <- copy(caco2.filt2) %>% 
-  .[rec_ab < 0, rec_ab := NA_real_] %>% 
-  .[rec_ba < 0, rec_ba := NA_real_]
-caco2.perchemraw <- caco2.filt3[,
-                            .(mPab = mean(Pab, na.rm = T),
-                              sdPab = sd(Pab, na.rm = T),
-                              mPba = mean(Pba, na.rm = T),
-                              sdPba = sd(Pba, na.rm = T),
-                              mrec_ab = mean(rec_ab, na.rm = T),
-                              mrec_ba = mean(rec_ba, na.rm = T),
-                              sdrec_ab = sd(rec_ab, na.rm = T),
-                              sdrec_ba = sd(rec_ba, na.rm = T),
-                              ntotal = .N,
-                              ntotal_ab = sum(!is.na(Pab)),
-                              ntotal_ba = sum(!is.na(Pba)),
-                              ntotal_rab = sum(!is.na(rec_ab)),
-                              ntotal_rba = sum(!is.na(rec_ba))),
-                            .(casrn, dtxsid, compound)]
-
-
-labl.dt1 <- data.table(x = 2, y = c(150, 125, 100),
-                       labl = c(paste0("Mean: ", signif(mean(caco2.perchemraw[, mrec_ab], na.rm = T),2)),
-                                paste0("SD: ", signif(sd(caco2.perchemraw[, mrec_ab], na.rm = T),2)),
-                                paste0("Total Count: ", sum(caco2.perchemraw[, !is.na(mrec_ab) & mrec_ab > 0]))
-                                ))
-labl.dt2 <- data.table(x = 2, y = c(150, 125, 100),
-                       labl = c(paste0("Mean: ", signif(mean(caco2.perchemraw[, mrec_ba], na.rm = T),2)),
-                                paste0("SD: ", signif(sd(caco2.perchemraw[, mrec_ba], na.rm = T),2)),
-                                paste0("Total Count: ", sum(caco2.perchemraw[, !is.na(mrec_ba) & mrec_ba > 0]))
-                       ))
-
-g5a <- 
-  ggplot(caco2.perchemraw[mrec_ab > 0,])+
-  geom_histogram(aes(x = mrec_ab), fill= "grey80", color = "black")+
-  geom_vline(xintercept = 1, linetype = "dashed")+
-  geom_text(data = labl.dt1, aes(x = x, y = y, label = labl), hjust = 0)+
-  labs(#title = "a)",
-    y = expression(bold("Count")), 
-    x = expression(bold("Recovery"[bolditalic("AB")]))) +
-  #lims(x = c(0,2.1), y = c(0,85))+
-  scale_x_continuous(limits = c(0, 5), breaks = c(0,1,2,3,4), expand = c(0,0))+
-  scale_y_continuous(limits = c(0,200))+
-  theme_bw()+
-  gtheme+
-  annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
-                    ymin = 195,ymax = 195,xmax = 0.1, xmin = 0.1)
-g5b <- 
-  ggplot(caco2.perchemraw[mrec_ba > 0,])+
-  geom_histogram(aes(x = mrec_ba), fill= "grey80", color = "black")+
-  geom_vline(xintercept = 1, linetype = "dashed")+
-  geom_text(data = labl.dt2, aes(x = x, y = y, label = labl), hjust = 0)+
-  labs(#title = "b) Talinolol",
-    y = expression(bold("Count")), 
-    x = expression(bold("Recovery"[bolditalic("BA")]))) +
-  scale_x_continuous(limits = c(0, 5), breaks = c(0,1,2,3,4), expand = c(0,0))+
-  scale_y_continuous(limits = c(0,200))+
-  #lims(x = c(0,2.1), y = c(0,85))+
-  theme_bw()+
-  gtheme+
-  annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
-                    ymin = 195,ymax = 195,xmax = 0.1, xmin = 0.1)
-
-ggsave(g5a, file = paste0(loc.wd, "/r_data/results_for_paper/mrec_ab_histo.tiff"),
-       height = 3, width = 3, dpi = 600, compression = "lzw")
-ggsave(g5b, file = paste0(loc.wd, "/r_data/results_for_paper/mrec_ba_histo.tiff"),
-       height = 3, width = 3, dpi = 600, compression = "lzw")
-
-
-
-names(caco2.filt)
-
-caco2.filt2[, Pab.unadj.unfilt := log10(Pab)] %>% 
-  .[, Pba.unadj.unfilt := log10(Pba)] %>% 
-  .[, efflux.unadj.unfilt := Pba/Pab] %>% 
-  .[, rec_ab.unfilt := rec_ab] %>% 
-  .[, rec_ba.unfilt := rec_ba]
-
-```
-
-```{r write_final_data}
-{
-dim(unique(caco2.filt2[,.(casrn, batch_id, t_type)]))
-caco2.publish <- caco2.filt2[,.(casrn, batch_id, t_type,
-                               Pab.unadj.unfilt,
-                               Pba.unadj.unfilt,
-                               efflux.unadj.unfilt,
-                               rec_ab.unfilt,
-                               rec_ba.unfilt)][caco2.filt2, 
-                                               on = c("casrn", 
-                                                      "batch_id", 
-                                                      "t_type")]
-
-caco2.publish[, Pab.unadj := Pab0] %>% 
-  .[, Pba.unadj := Pba0] %>% 
-  .[, efflux.unadj := efflux0]
-
-setcolorder(caco2.publish,
-            c("compound","casrn","dtxsid","batch_id","t_type",
-              "Pab", "Pba", "efflux.ratio", "rec_ab", "rec_ba",
-              "Pab.unadj", "Pba.unadj", "efflux.unadj",
-              "Pab.unadj.unfilt", "Pba.unadj.unfilt", "efflux.unadj.unfilt",
-              "rec_ab.unfilt", "rec_ba.unfilt"))
-caco2.publish[, casrn := paste0(" ", casrn)]
-write.xlsx(caco2.publish, file = paste0(loc.wd, "/r_data/results_for_paper/caco2_data.xlsx"))
-save(caco2.publish, file = paste0(loc.wd,"/r_data/processed/our_caco2.RData"))
-
-length(unique(caco2.dt[!is.na(casrn),casrn])) #484
-caco2.all <- caco2.filt2[,.(mPab = mean(Pab,na.rm = T),
-                           mPba = mean(Pba, na.rm = T)),
-                        .(casrn)]
-caco2.all[,.N,.(is.na(mPab))] #423
-caco2.all[,.N,.(is.na(mPba))] #453
-length(unique(caco2.publish[!is.na(Pab), casrn])) # 310
-length(unique(caco2.publish[!is.na(Pba), casrn])) # 396
-length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
-```
