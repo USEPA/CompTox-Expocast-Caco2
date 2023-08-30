@@ -60,6 +60,21 @@ temp <- chem.dt[!is.na(DTXSID) &
                   !is.na(Human.Clint),
                 .(DTXSID, CAS, Compound, logP, Human.Funbound.plasma, Human.Clint, Human.Caco2.Pab)
                 ]
+# Which chemicals have measure Caco2
+measured.chems <- temp$DTXSID[!is.na(temp$Human.Caco2.Pab)]
+length(measured.chems)
+load_honda2023()
+chem.dt <- as.data.table(chem.physical_and_invitro.data)
+temp <- chem.dt[!is.na(DTXSID) &
+                  !is.na(logP) &
+                  !is.na(MP) &
+                  !is.na(Human.Funbound.plasma) &
+                  !is.na(Human.Clint),
+                .(DTXSID, CAS, Compound, logP, Human.Funbound.plasma, Human.Clint, Human.Caco2.Pab)
+                ]
+dim(temp)
+measplusqspr.chems <- temp$DTXSID[!is.na(temp$Human.Caco2.Pab)]
+length(measplusqspr.chems)
 for(this.cas in temp[regexpr("<",Human.Clint) == -1 &
                      Human.Clint != "ND" &
                      Human.Funbound.plasma != "NF",CAS]){
@@ -70,8 +85,12 @@ for(this.cas in temp[regexpr("<",Human.Clint) == -1 &
   
 }
 use.dt <- temp[!is.na(adj.fuph) & !is.na(clinth), ]
-
+# Restrict to chemcials with either measured or predicted Caco2:
+use.dt <- use.dt[DTXSID %in% measplusqspr.chems,]
+dim(use.dt)
+```
 # Calculate css for different IVIVE assumptions
+```{r calc_css}
 set.seed(6252019)
 use.dt[, r1_mcaco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
                                          which.quantile = c(0.025,0.05,0.25,0.5,
@@ -90,6 +109,7 @@ use.dt[, r1_mcaco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
  
 save(use.dt, file = paste0(loc.wd, "/r_data/AEDtable.RData"))
 ```
+
 ###
 ```{r ber_table}
 # load Css values
