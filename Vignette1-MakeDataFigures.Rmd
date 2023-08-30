@@ -570,22 +570,22 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
 
 ```{r analyze_controls_warfarin}
   min(caco2.publish[casrn %in% "81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)
-  max(caco2.publish[casrn == "81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)
+  max(caco2.publish[casrn == " 81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)
   labl.FigWarfarinPabAdj <- caco2.perchem[casrn == "81-81-2",.(labl = c(
     paste0("Mean: ",signif(mPab,2)),
     paste0("SD: ", signif(sdPab,2)),
    # paste0("CV: ", signif(cvPab,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 10,
-                                                   y = -4+c(13,11,9#,7
+                                                   x = 1,
+                                                   y = 0+c(13,11,9#,7
                                                          ))]
   labl.FigWarfarinPabUnadj <- caco2.perchem[casrn == "81-81-2",.(labl = c(
     paste0("Mean: ",signif(mPab0,2)),
     paste0("SD: ", signif(sdPab0,2)),
    # paste0("CV: ", signif(cvPab0,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 1,
-                                                   y = -4+c(13,12,11#,10
+                                                   x = 4,
+                                                   y = -4+c(13,11,9#,10
                                                               ))]
   labl.dt1b <- caco2.perchem[casrn == "81-81-2",.(labl = c(
     paste0("Mean: ",signif(mPba,2)),
@@ -614,7 +614,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
                                                               )),
                                                      x = 10,
                                                      y = c(10,8,6))]
-  FigWarfarinPabAdjHist <- ggplot(caco2.publish[casrn == "81-81-2",])+
+  FigWarfarinPabAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
     geom_text(data = labl.FigWarfarinPabAdj,
               aes(x = x, y= y, label = labl), hjust = 0)+
@@ -627,7 +627,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     gtheme
   print(FigWarfarinPabAdjHist)
   
-  FigWarfarinPabUnadjHist <- ggplot(caco2.publish[casrn == "81-81-2",])+
+  FigWarfarinPabUnadjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
     geom_text(data = labl.FigWarfarinPabUnadj,
               aes(x = x, y= y, label = labl), hjust = 0)+
@@ -640,7 +640,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     gtheme
   print(FigWarfarinPabUnadjHist)
   
-  FigWarfarinPbaAdjHist <- ggplot(caco2.publish[casrn == "81-81-2",])+
+  FigWarfarinPbaAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1b,aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "a) Warfarin",
@@ -651,7 +651,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     gtheme
   #print(g3b)
   
-  FigWarfarinPbaUnadjHist <- ggplot(caco2.publish[casrn == "81-81-2",])+
+  FigWarfarinPbaUnadjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
     labs(title = "a) Warfarin",
          y = expression(bold("Count")), 
@@ -661,7 +661,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     theme_bw()+
     gtheme
   
-  FigWarfarinEffluxRAdjHist <- ggplot(caco2.publish[casrn == "81-81-2",])+
+  FigWarfarinEffluxRAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1c,aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "a) Warfarin",
@@ -672,7 +672,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     theme_bw()+
     gtheme
   
-  FigWarfarinEffluxRUnadjHist <- ggplot(caco2.publish[casrn == "81-81-2",])+
+  FigWarfarinEffluxRUnadjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x =efflux0), fill= "grey80", color = "black")+
     labs(title = "a) Warfarin",
          y = expression(bold("Count")), 
@@ -683,7 +683,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     gtheme
   
   FigWarfarinFrecabHist <- 
-    ggplot(caco2.publish[casrn == "81-81-2",])+
+    ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1d, aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "a) Warfarin",
@@ -694,7 +694,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     gtheme
   
   FigWarfarinFrecbaHist <- 
-    ggplot(caco2.publish[casrn == "81-81-2",])+
+    ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1e, aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "a) Warfarin",
@@ -735,7 +735,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     #paste0("CV: ", signif(cvPab,2)),
     paste0("Total Count: ", ntotal_ab)),
                                                    x = 0.002,
-                                                   y = -3+c(9.5,8.5,7.5#,6.5
+                                                   y = 0+c(9.5,8.5,7.5#,6.5
                                                          ))]
   labl.dtFigTalinololPabUnadj <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
     paste0("Mean: ",signif(mPab0,2)),
@@ -743,7 +743,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
    # paste0("CV: ", signif(cvPab0,2)),
     paste0("Total Count: ", ntotal_ab)),
                                                    x = 0.002,
-                                                   y = -3+c(9.5,8.5,7.5#,6.5
+                                                   y = 0+c(9.5,8.5,7.5#,6.5
                                                          ))]
   labl.dt2b <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
     paste0("Mean: ",signif(mPba,2)),
@@ -892,8 +892,8 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     paste0("SD: ", signif(sdPab,2)),
    # paste0("CV: ", signif(cvPab,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 0.1,
-                                                   y = -2+c(8,7,6#,5
+                                                   x = 0.01,
+                                                   y = 0+c(8,7,6#,5
                                                            ))]
   labl.dtFigRanitidinePabUnadjHist <- 
   caco2.perchem[casrn == "66357-35-5",.(labl = c(
@@ -901,8 +901,8 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     paste0("SD: ", signif(sdPab0,2)),
   #  paste0("CV: ", signif(cvPab0,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 0.1,
-                                                   y = -2+c(8,7,6#,5
+                                                   x = 0.01,
+                                                   y = 0+c(8,7,6#,5
                                                            ))]
   labl.dt3b <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
     paste0("Mean: ",signif(mPba,2)),
