@@ -92,14 +92,15 @@ dim(use.dt)
 # Calculate css for different IVIVE assumptions
 ```{r calc_css}
 set.seed(6252019)
-use.dt[, r1_mcaco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
+use.dt[, css_caco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
                                          which.quantile = c(0.025,0.05,0.25,0.5,
                                                             0.75,0.95,0.975),
                                          Caco2.options = list(overwrite.invivo = TRUE,
                                                               keepit100 = FALSE),
                                          output.units = "uM",
-                                         suppress.messages=TRUE)))),.(CAS)] %>% 
-  .[, r2_m100 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
+                                         suppress.messages=TRUE)))),.(CAS)]
+set.seed(6252019)
+use.dt[, css_fgutabs100 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
                                      which.quantile = c(0.025,0.05,0.25,0.5,
                                                         0.75,0.95,0.975),
                                      Caco2.options = list(overwrite.invivo = TRUE,
@@ -107,7 +108,7 @@ use.dt[, r1_mcaco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
                                      output.units = "uM",
                                          suppress.messages=TRUE)))),.(CAS)] #%>% 
  
-save(use.dt, file = paste0(loc.wd, "/r_data/AEDtable.RData"))
+save(use.dt, measured.chems, file = paste0(loc.wd, "/r_data/AEDtable.RData"))
 ```
 
 ###
@@ -123,12 +124,12 @@ load(file = paste0(loc.wd, "/r_data/BER/seem3_httk_chems_15AUG2019.RData"))
 
 # Merge with Toxcast data and convert q5AC50 to OED (aka AED)
 aed.dt <- toxcast.summary[use.dt, on = "CAS"]
-aed_r1_mcaco2 <- aed.dt[, lapply(unlist(r1_mcaco2), 
+aed_caco2 <- aed.dt[, lapply(unlist(css_caco2), 
                                  function(x) q5cnom/x), 
                         .(CAS, DTXSID)][,c("gutabs", "IVIVE") := 
 list("bold('Caco-2')~bolditalic('F'['bio'])", "bold('Nominal Conc.')")]
 
-aed_r2_m100 <- aed.dt[, lapply(unlist(r2_m100), 
+aed_fgutabs100 <- aed.dt[, lapply(unlist(css_fgutabs100), 
                                function(x) q5cnom/x), 
                       .(CAS, DTXSID)][,c("gutabs", "IVIVE") := 
 list("bold('100 Percent')~bolditalic('F'['abs/gut'])", "bold('Nominal Conc.')")]
@@ -137,8 +138,8 @@ list("bold('100 Percent')~bolditalic('F'['abs/gut'])", "bold('Nominal Conc.')")]
 #                                                                                                      list("bold('Caco-2')~bolditalic('F'['bio'])", "bold('Free Conc.')")]
 # aed_r4_mfabs_honda1 <- aed.dt[, lapply(unlist(r2_mfabs), function(x) q5cfree/x), .(CAS, DTXSID)][,c("gutabs", "IVIVE") := 
 #                                                                                                    list("bolditalic('In Vivo')~bolditalic('F'['bio'])", "bold('Free Conc.')")]
-aed.full <- rbind(aed_r1_mcaco2,
-                  aed_r2_m100)#,
+aed.full <- rbind(aed_caco2,
+                  aed_fgutabs100)#,
                   #aed_r3_mcaco2_honda1,
                   #aed_r4_mfabs_honda1)
 setnames(aed.full, 3:9, c("q025", "q05", "q25", "q50", "q75", "q95", "q975"))
@@ -156,16 +157,39 @@ aed.full2 <- seem.dt[,.(DTXSID = dsstox_substance_id,
 aed.full2[, BER:=q95/seem3.u95]
 aed.full2[BER<1, cross.ber.min:=q95]
 aed.full2[BER<1, cross.ber.max:=seem3.u95]
-aed.full3 <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])" & 
-                         IVIVE == "bold('Nominal Conc.')", 
-                       .(r1 = rank(BER), CAS)][aed.full2, on = 'CAS']
-aed.full4 <- aed.full3[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])" & 
-                         IVIVE == "bold('Nominal Conc.')", 
-                       .(r2 = rank(BER), CAS)][aed.full3, on = 'CAS']
-aed.full4[,
+aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])" & 
+          IVIVE == "bold('Nominal Conc.')", r100 := rank(
+            aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])" & 
+            IVIVE == "bold('Nominal Conc.')","BER"])]
+aed.full2[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])",r100:=
+          aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+          "r100"]
+          ]
+aed.full2[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])" & 
+          IVIVE == "bold('Nominal Conc.')", rcaco := rank(
+            aed.full2[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])" & 
+            IVIVE == "bold('Nominal Conc.')","BER"])]
+aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])" & 
+          IVIVE == "bold('Nominal Conc.')" &
+          DTXSID %in% measured.chems, r100meas := rank(
+            aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])" & 
+            IVIVE == "bold('Nominal Conc.')" &
+            DTXSID %in% measured.chems,"BER"])]
+aed.full2[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])",r100meas:=
+          aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+          "r100meas"]
+          ]
+aed.full2[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])" & 
+          IVIVE == "bold('Nominal Conc.')" &
+          DTXSID %in% measured.chems, rcacomeas := rank(
+            aed.full2[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])" & 
+            IVIVE == "bold('Nominal Conc.')" &
+            DTXSID %in% measured.chems,"BER"])]
+aed.full2[,
           c("Fbio", "Fabs", "Fgut", "Fhep") :=
             calc_fbio.oral(chem.cas=CAS,suppress.messages=TRUE),by=CAS]
-save(aed.full4,file=paste0(loc.wd, "/r_data/BERtable.RData"))
+
+save(aed.full2,file=paste0(loc.wd, "/r_data/BERtable.RData"))
 ```
 
 
@@ -215,15 +239,15 @@ scientific_10 <- function(x) {
 
 ```{r makehistogram}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
-hist.table.fabs <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+hist.table.fabs <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              c("DTXSID","Fabs")]
 hist.table.fabs$label <- "Fabs"
 colnames(hist.table.fabs)[2] <- "Value"
-hist.table.fgut <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+hist.table.fgut <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              c("DTXSID","Fgut")]
 hist.table.fgut$label <- "Fgut"
 colnames(hist.table.fgut)[2] <- "Value"
-hist.table.ber <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+hist.table.ber <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                             c("DTXSID","BER")]
 hist.table.ber$label <- "BER"
 colnames(hist.table.ber)[2] <- "Value"
@@ -265,13 +289,13 @@ ggsave(FigBERHistogram,
 
 ```{r makerankcomparison}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
-rank.table <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
-                             c("DTXSID","r1")]
-rank.table <- cbind(rank.table, aed.full4[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
-                             "r2"])
+rank.table <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                             c("DTXSID","r100")]
+rank.table <- cbind(rank.table, aed.full2[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+                             "rcaco"])
 save(rank.table,file=paste0(loc.wd, "/r_data/ranks.RData"))
 
-FigBERRankCompare<-ggplot(rank.table, aes(x=r1, y=r2)) + 
+FigBERRankCompare<-ggplot(rank.table, aes(x=r100, y=rcaco)) + 
   geom_point(alpha=0.5, size=3) +
   scale_colour_viridis_d()+
   labs(y = expression(bold('BER Rank with F'['bio'])), 
@@ -285,9 +309,9 @@ ggsave(FigBERRankCompare,
 ```
 ```{r clacmccsscheck}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
-css.table <- aed.full4[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+css.table <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              c("DTXSID","q50","Fgut", "Fabs")]
-css.table <- cbind(css.table, aed.full4[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
+css.table <- cbind(css.table, aed.full2[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              "q50"])
 colnames(css.table)[5]<-"q50.2"
 css.table[,"Fbio.eff"] <- css.table[,"q50"]/css.table[,"q50.2"]
@@ -312,16 +336,16 @@ ggsave(Figcsstest,
 
 
 
-```{r makezoomedBERfig}
+```{r makeallchemBERfig}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
-g1 <- ggplot(subset(aed.full4,
+g1 <- ggplot(subset(aed.full2,
                     IVIVE=="bold('Nominal Conc.')"))+
   facet_grid(rows= vars(gutabs), labeller = label_parsed) +
-  geom_point(aes(y = q95, x = r2), color = "purple") +
-  geom_point(aes(y = seem3.u95, x = r2), color = "yellow")+
+  geom_point(aes(y = q95, x = r100), color = "purple") +
+  geom_point(aes(y = seem3.u95, x = r100), color = "yellow")+
   geom_linerange(aes(ymin = cross.ber.min, 
                      ymax = cross.ber.max, 
-                     x = r2), color = "orange")+
+                     x = r100), color = "orange")+
  # geom_text(data = figtxt.dt,
  #           mapping = aes(x = x1, y = y1, label = labl1),
 #            hjust = 0, parse = FALSE) +
@@ -342,37 +366,80 @@ ggsave(g2,
                        "/r_data/results_for_paper/BERrankzoom.tiff"),
        dpi = 600, height = 5, width = 7.5, compression = "lzw")
 ```
-```{r makezoomedBERfig2}
+
+```{r makemeasurecacoBERfig}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
-FigBER <- ggplot(subset(aed.full4,
+FigBERmeas <- ggplot(subset(aed.full2,DTXSID%in%measured.chems &
                     !is.na(q95) &
-                    gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])"))+
+                    gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])"))+
     geom_linerange(aes(ymin = seem3.u95, 
                      ymax = q95, 
-                     x = r2), color = "grey")+
+                     x = rcacomeas), color = "grey")+
   geom_linerange(aes(ymin = cross.ber.min, 
                      ymax = cross.ber.max, 
-                     x = r2), color = "orange")+
-    geom_point(aes(y = q95, x = r2), color = "purple") +
-  geom_point(aes(y = seem3.u95, x = r2), color = "yellow")+
+                     x = rcacomeas), color = "orange")+
+    geom_point(aes(y = q95, x = rcacomeas), color = "purple") +
+  geom_point(aes(y = seem3.u95, x = rcacomeas), color = "yellow")+
 
   labs(x = "Bioactive:Exposure Ratio", 
-       y = expression(bold('log'['10']*'(mg/kgBW/day)')))+
+       y = 'mg/kg BW/day')+
   theme_bw()+
  # xlim(1,500)+
   scale_y_log10(limits=c(10^-8,10^2),labels=scientific_10)+
   gtheme
 hlay <- t(t(c(rep(1,8),2)))
-FigBERleg <- marrangeGrob(grobs = list(FigBER, gleg), nrow = 2, ncol = 1, top = NULL, layout_matrix = hlay)
+FigBERleg <- marrangeGrob(grobs = list(FigBERmeas, gleg), nrow = 2, ncol = 1, top = NULL, layout_matrix = hlay)
 print(FigBERleg)
 ggsave(FigBERleg, 
        file = paste0(loc.wd,
-                       "/r_data/results_for_paper/BERranksinglepanel.tiff"),
+                       "/r_data/results_for_paper/BERrankmeascaco2.tiff"),
        dpi = 600, height = 5, width = 7.5, compression = "lzw")
+```
+
+```{r makemeasurecacoBERfig}
+load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+FigBERall <- ggplot(subset(aed.full2,
+                    !is.na(q95) &
+                    gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])"))+
+    geom_linerange(aes(ymin = seem3.u95, 
+                     ymax = q95, 
+                     x = rcaco), color = "grey")+
+  geom_linerange(aes(ymin = cross.ber.min, 
+                     ymax = cross.ber.max, 
+                     x = rcaco), color = "orange")+
+    geom_point(aes(y = q95, x = rcaco), color = "purple") +
+  geom_point(aes(y = seem3.u95, x = rcaco), color = "yellow")+
+
+  labs(x = "Bioactive:Exposure Ratio", 
+       y = 'mg/kg BW/day')+
+  theme_bw()+
+  scale_y_log10(limits=c(10^-8,10^2),labels=scientific_10)+
+  gtheme
+hlay <- t(t(c(rep(1,8),2)))
+FigBERleg <- marrangeGrob(grobs = list(FigBERall, gleg), nrow = 2, ncol = 1, top = NULL, layout_matrix = hlay)
+print(FigBERleg)
+ggsave(FigBERleg, 
+       file = paste0(loc.wd,
+                       "/r_data/results_for_paper/BERrankallcaco2.tiff"),
+       dpi = 600, height = 5, width = 7.5, compression = "lzw")
+```
+```{r multipanelBER}
+ggarrange(FigBERmeas, FigBERall, 
+          labels = c("A", "B"),
+          ncol = 1, nrow = 2,
+          common.legend = TRUE, legend = "bottom")
+tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigTwoPanelBER.tiff"),
+         height = 3*200, width = 3*200, compression = "lzw")
+ggarrange(FigBERmeas, FigBERall, 
+          labels = c("A", "B"),
+          ncol = 1, nrow = 2,
+          common.legend = TRUE, legend = "bottom"+
+          theme_gray(base_size = 18))
+dev.off()
 ```
 # Identify the poorly absorbed chemicals:
 ```{r lowfabstable}
-low.fabs <- subset(aed.full4,Fabs<0.5)
+low.fabs <- subset(aed.full2,Fabs<0.5)
 low.fabs.table <- subset(low.fabs,gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])")
 low.fabs.table<- low.fabs.table[,c("DTXSID","CAS","Fabs","Fgut","Fhep","Fbio","seem3.u95","q95","BER")]
 low.fabs.table <- low.fabs.table[,q952:=

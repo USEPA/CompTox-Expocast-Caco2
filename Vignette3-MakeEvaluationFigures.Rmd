@@ -96,6 +96,8 @@ Load all the parameters needed to make calculations:
    pharma <- read_excel(paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
    
    invivo.table <- gut.data
+# Basiv version for plots:
+   save(invivo.table,file=paste0(loc.wd, "/r_data/processed/all_gut_data_invivotable.RData"))
    colnames(invivo.table)[colnames(invivo.table)=="dtxsid"] <- "DTXSID"
    invivo.table <- merge(invivo.table,caco2.dt,by="DTXSID")
    invivo.table <- subset(invivo.table,DTXSID%in% chem.physical_and_invitro.data$DTXSID)
@@ -795,16 +797,16 @@ evaluations["Fhep",c("In Vivo","Predicted","Reference","Data")] <-
   c("vo_Fh","ffph","Varma et al. (2010)",
     "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fbio",c("In Vivo","Predicted","Reference","Data")] <- 
-  c("invivo_fbioh","fbioh","Kim et al. (2014) & Varma et al. (2010)",
+  c("invivo_fbioh","fbioh","Kim et al. (2014)",
     "/r_data/processed/caco2-invivo-compare-fbioall.RData")
 evaluations["Fbio-Rat",c("In Vivo","Predicted","Reference","Data")] <- 
-  c("invivo_fbioh","pk_fbior","Wambaugh et al. (2018)",
-    "/r_data/processed/rat-human-compare-fbioall.RData")
+  c("kim_fbioh","pk_fbior","Kim et al. (2014) & Wambaugh et al. (2018)",
+    "/r_data/processed/all_gut_data_invivotable.RData")
 evaluations["Fbio-QSPR",c("In Vivo","Predicted","Reference","Data")] <- 
-  c("invivo_fbioh","fbioh","Kim et al. (2014) & Varma et al. (2010)",
+  c("invivo_fbioh","fbioh","Kim et al. (2014)",
     "/r_data/processed/qspr-invivo-compare-fbioall.RData")
 evaluations["Fbio-PreviousHTTK",c("In Vivo","Predicted","Reference","Data")] <- 
-  c("invivo_fbioh","ffph","Pearce et al. (2017)",
+  c("invivo_fbioh","ffph","Kim et al. (2014)",
     "/r_data/processed/oldhttk-invivo-compare-fbioall.RData")
 
 eval.table <- data.frame()
