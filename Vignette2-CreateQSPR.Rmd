@@ -33,7 +33,8 @@ knitr::opts_knit$set(root.dir = loc.wd)
 ### Load the relevant libraries
 ```{r r_setup}
 
-packages <- c("ggplot2","randomForest","caret","OneR", "readxl", "httk")
+packages <- c("ggplot2","randomForest","caret","OneR", "readxl", "httk",
+              "data.table")
 sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary here
 
 ```
@@ -145,16 +146,23 @@ save(chembl,file=paste0(loc.wd,"/r_data/processed/chembl_caco2_MAY2023.RData"))
 
 ```{r qspr_compiletrainingset}
   # Load data
-  load(paste0(loc.wd,"/r_data/processed/our_caco2_25MAR2019.RData"))
+  # New data from this paper:
+  caco2.dt2 <- as.data.table(read_excel(paste0(loc.wd, "/r_data/results_for_paper/caco2_data.xlsx")))
+  dim(caco2.dt2)
+# Get rid of data that were filtered out for weird recovery fractions:
+  caco2.dt2 <- subset(caco2.dt2,!(Filtered%in%"Y"))
+  dim(caco2.dt2)
+# Literature date identified by Greg:
   load(paste0(loc.wd,"/r_data/processed/lit_caco2_26MAR2019.RData"))
+# Pull from ChEMBL by Risa:
   load(paste0(loc.wd,"/r_data/processed/chembl_caco2_MAY2023.RData"))
-#  caco2.dt2 <- caco2.publish
   caco2.dt2$Data.Origin <- "EPA"
   colnames(lit.caco2.dt)[colnames(lit.caco2.dt)=="repref"] <- "Data.Origin"
 
   # Merge data:
   train.set <- as.data.frame(caco2.dt2)[,c("dtxsid","Pab","Data.Origin")]
   colnames(lit.caco2.dt)[colnames(lit.caco2.dt)=="lit_pab"] <- "Pab"
+  dim(train.set)
   train.set <- rbind(train.set,as.data.frame(lit.caco2.dt)[,
                 c("dtxsid","Pab","Data.Origin")])
   train.set$SMILES <- NA
@@ -299,15 +307,31 @@ dim(all.desc)
   # Separate out test set:
   TEST.FRAC <- 0.1
   all.desc$Test <- 0
+  unique.chems <- unique(all.desc$dtxsid)
+  unique.bin <- NULL
+  for (this.chem in unique.chems)
+  {
+# Come up with a consensus bin call for chemicals with multiple measurments:
+    unique.bin[this.chem] <- round(mean(as.numeric(all.desc[all.desc$dtxsid==this.chem,
+                                                 "Pab5Bin"])))
+  }
+  
   # Try to ensure reproducible pseudo-random sampling of test set chemicals:
   set.seed(12052012)
   for (this.bin in 1:5)
   {
-    this.bin.rows <- which(all.desc$Pab5Bin == this.bin)
-    test.rows <- sample(this.bin.rows,
-                        round(TEST.FRAC*length(this.bin.rows)))
-    all.desc[test.rows,"Test"] <- 1
+# Get just the chemicals in the given bin:
+    this.bin.chems <- unique.chems[unique.bin==this.bin]
+    test.chems <- sample(this.bin.chems,
+                        round(TEST.FRAC*length(this.bin.chems)))
+# Put all measurments of test chems into the test bin:
+    all.desc[all.desc$dtxsid%in%test.chems,"Test"] <- 1
   }
+# Put all the control chemicals in the training set:
+  all.desc[all.desc$dtxsid%in%
+             c("DTXSID8045191", "DTXSID6046426", "DTXSID5023742"),
+           "Test"] <- 0
+  
   dim(all.desc)
   dim(subset(all.desc, Test==0))
   dim(subset(all.desc, Test==1))
@@ -318,25 +342,43 @@ dim(all.desc)
   save(train.set,file=paste0(loc.wd,"/r_data/trainset.RData"))
   write.table(train.set,sep="\t",row.names=FALSE,
             file=paste0(loc.wd,"/r_data/trainset.txt"))
+# This table has all measurements in training and test set with column "Test"
+# indicating which:
   all.caco2 <- all.desc[,c("dtxsid","Pab","Data.Origin","Test")]
   save(all.caco2,file=paste0(loc.wd,"/r_data/alldata.RData"))
-    write.table(subset(all.caco2,!is.na(dtxsid)), 
-                     file=paste0(loc.wd,"/r_data/AllCaco2PabData_10e-6cmps.txt"), 
+  write.table(subset(all.caco2,!is.na(dtxsid)), 
+              file=paste0(loc.wd,
+                "/r_data/results_for_paper/TableAllCaco2PabData_10e-6cmps.txt"), 
               row.names=FALSE,
               sep="\t")
 ```
 ```{r qspr_resultsforpaper}
-print(paste0(dim(test.set)[1]," chemicals in test set."))
-print(paste0(dim(subset(test.set,Data.Origin=="EPA"))[1]," EPA chemicals in test set."))
-print(paste0(dim(subset(test.set,Data.Origin=="Lanevskij"))[1]," Lanevskij chemicals in test set."))
-print(paste0(dim(subset(test.set,Data.Origin=="Obringer"))[1]," Obringer chemicals in test set."))
-print(paste0(dim(subset(test.set,regexpr("ChEMBL",Data.Origin)!=-1))[1]," ChEMBL chemicals in test set."))
+load(file=paste0(loc.wd,"/r_data/testset.RData"))
+load(file=paste0(loc.wd,"/r_data/trainset.RData"))
+  
+print(paste0(dim(test.set)[1]," measurements in test set."))
+print(paste0(dim(subset(test.set,Data.Origin=="EPA"))[1]," EPA measurements in test set."))
+print(paste0(dim(subset(test.set,Data.Origin=="Lanevskij"))[1]," Lanevskij measurements in test set."))
+print(paste0(dim(subset(test.set,Data.Origin=="Obringer"))[1]," Obringer measurements in test set."))
+print(paste0(dim(subset(test.set,regexpr("ChEMBL",Data.Origin)!=-1))[1]," ChEMBL measurements in test set."))
 
-print(paste0(dim(train.set)[1]," chemicals in training set."))
-print(paste0(dim(subset(train.set,Data.Origin=="EPA"))[1]," EPA chemicals in training set."))
-print(paste0(dim(subset(train.set,Data.Origin=="Lanevskij"))[1]," Lanevskij chemicals in training set."))
-print(paste0(dim(subset(train.set,Data.Origin=="Obringer"))[1]," Obringer chemicals in training set."))
-print(paste0(dim(subset(train.set,regexpr("ChEMBL",Data.Origin)!=-1))[1]," ChEMBL chemicals in training set."))
+print(paste0(dim(train.set)[1]," measurements in training set."))
+print(paste0(dim(subset(train.set,Data.Origin=="EPA"))[1]," EPA measurements in training set."))
+print(paste0(dim(subset(train.set,Data.Origin=="Lanevskij"))[1]," Lanevskij measurements in training set."))
+print(paste0(dim(subset(train.set,Data.Origin=="Obringer"))[1]," Obringer measurements in training set."))
+print(paste0(dim(subset(train.set,regexpr("ChEMBL",Data.Origin)!=-1))[1]," ChEMBL measurements in training set."))
+
+print(paste0(length(unique(test.set$dtxsid))," chemicals in test set."))
+print(paste0(length(unique(subset(test.set,Data.Origin=="EPA")$dtxsid))," EPA chemicals in test set."))
+print(paste0(length(unique(subset(test.set,Data.Origin=="Lanevskij")$dtxsid))," Lanevskij chemicals in test set."))
+print(paste0(length(unique(subset(test.set,Data.Origin=="Obringer")$dtxsid))," Obringer chemicals in test set."))
+print(paste0(length(unique(subset(test.set,regexpr("ChEMBL",Data.Origin)!=-1)$dtxsid))," ChEMBL chemicals in test set."))
+
+print(paste0(length(unique(train.set$dtxsid))," chemicals in training set."))
+print(paste0(length(unique(subset(train.set,Data.Origin=="EPA")$dtxsid))," EPA chemicals in training set."))
+print(paste0(length(unique(subset(train.set,Data.Origin=="Lanevskij")$dtxsid))," Lanevskij chemicals in training set."))
+print(paste0(length(unique(subset(train.set,Data.Origin=="Obringer")$dtxsid))," Obringer chemicals in training set."))
+print(paste0(length(unique(subset(train.set,regexpr("ChEMBL",Data.Origin)!=-1)$dtxsid))," ChEMBL chemicals in training set."))
 ```
   #Cleaning out low variance variables:
 ```{r qspr_reducedescriptors_lowvar}
@@ -534,7 +576,7 @@ knitr::kable(qspr.summary,
              floating.environment="sidewaystable") 
 write.csv(qspr.summary,
           na="",
-          file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.csv"))
+          file=paste0(loc.wd,"/r_dataresults_for_paper/Tableqsprbinnumbersummary.csv"))
 ```
 
 Although the models with two bins are the most accurate, the 95% intervals for

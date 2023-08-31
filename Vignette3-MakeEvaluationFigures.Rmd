@@ -308,10 +308,10 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Measured data collected by Varma et al. (2010) (ffp=fraction first pass)
-```{r make_Caco_Fhep_fig}
+```{r make_httk_Fhep_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   
-  FigCacoPredFhep <- ggplot(invivo.table) +
+  FighttkPredFhep <- ggplot(invivo.table) +
   geom_point(aes(y = ffph, x = vo_Fh, color=Class, shape=Class), 
                  alpha = 0.75,
                  size=3) +
@@ -321,8 +321,44 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
   lims(x = c(0,1), y = c(0,1)) +
   scale_colour_viridis_d() +
   gtheme
-  print(FigCacoPredFhep)
-  ggsave(FigCacoPredFhep, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFhep.tiff"),
+  print(FighttkPredFhep)
+  ggsave(FighttlPredFhep, file = paste0(loc.wd, "/r_data/results_for_paper/FighttkPredFhep.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+```
+# Fbio calculated from measured data
+# using first-pass metabolism only (previous httk model)
+```{r make_httk_FhepFbio_fig}
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
+
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
+
+  varma.chems <- subset(invivo.table,!is.na(vo_F))[,
+                   c("DTXSID","Class","ffph","vo_F")]
+  kim.chems <- subset(invivo.table,!is.na(kim_fbioh))[,
+                 c("DTXSID","Class","ffph","kim_fbioh")]
+  colnames(varma.chems)[4] <- "invivo_fbioh"
+  colnames(kim.chems)[4] <- "invivo_fbioh"
+  varma.chems$Reference <- "Varma2010"
+  kim.chems$Reference <- "Kim2014"
+  fbio.table <- rbind(varma.chems,kim.chems)
+  invivo.table <- fbio.table
+  save(invivo.table,
+     file=paste0(loc.wd, 
+                 "/r_data/processed/oldhttk-invivo-compare-fbioall.RData"))
+
+  FigOldhttkPredFbio <- ggplot(invivo.table) +
+  geom_point(aes(y = ffph, x = invivo_fbioh, color=Class, shape=Class), 
+                 alpha = 0.75,
+                 size=3) +
+  geom_abline(slope = 1, linetype = "dashed") +
+  labs(y = expression(bold("Pred.")~bolditalic("F"["hep,h"])),
+       x = expression(bold("Measured")~bolditalic("F"["bio,h"]))) +
+  lims(x = c(0,1), y = c(0,1)) +
+  scale_colour_viridis_d() +
+  gtheme
+  print(FigOldhttkPredFbio)
+  ggsave(FigOldhttkPredFbio, 
+         file = paste0(loc.wd, "/r_data/results_for_paper/FigoldhttkPredFbio.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -346,14 +382,31 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 ```
 # Fbio for rats using Wambaugh et al. (2018) Fbio
 ```{r make_CacoFabsRat_fig}
-  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
+
+  varma.chems <- subset(invivo.table,!is.na(pk_fbior) &
+                          !is.na(vo_F))[,
+                   c("DTXSID","Class","pk_fbior","vo_F")]
+  kim.chems <- subset(invivo.table,!is.na(pk_fbior) &
+                        !is.na(kim_fbioh))[,
+                 c("DTXSID","Class","pk_fbior","kim_fbioh")]
+  colnames(varma.chems)[4] <- "invivo_fbioh"
+  colnames(kim.chems)[4] <- "invivo_fbioh"
+  varma.chems$Reference <- "Varma2010"
+  kim.chems$Reference <- "Kim2014"
+  fbio.table <- rbind(varma.chems,kim.chems)
+  invivo.table <- fbio.table
+  save(invivo.table,
+     file=paste0(loc.wd, 
+                 "/r_data/processed/rat-human-compare-fbioall.RData"))
+  
   FigCacoPredFbioRat <- ggplot(invivo.table)+
-        geom_point(aes(y = fbior, x = pk_fbior, color=Class, shape=Class), 
+        geom_point(aes(y = invivo_fbioh, x = pk_fbior, color=Class, shape=Class), 
                    alpha = 0.75,
                    size=3)+
         geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("Caco2 Predicted")~bolditalic("F"["bio,r"])),
-             x = expression(bold("Measured")~bolditalic("F"["bio,r"])))+
+        labs(y = expression(bold("Measured")~bolditalic("F"["bio,r"])),
+             x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
         lims(x = c(0,1), y = c(0,1))+
         scale_colour_viridis_d()+
         gtheme
@@ -361,6 +414,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
   ggsave(FigCacoPredFbioRat, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioRat.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
+
 # Fbio using both Kim et al. (2014) and Varma et al. (2010)
 ```{r make_Caco_Fabs_All_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
@@ -395,6 +449,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
                        "/r_data/results_for_paper/FigCacoPredFbioAll.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
+
 # Combine the evalaution figures of the components of Fbio for the paper:
 ```{r multipanelfigureforpaper}
 ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FigCacoPredFhep, 
@@ -743,11 +798,14 @@ evaluations["Fbio",c("In Vivo","Predicted","Reference","Data")] <-
   c("invivo_fbioh","fbioh","Kim et al. (2014) & Varma et al. (2010)",
     "/r_data/processed/caco2-invivo-compare-fbioall.RData")
 evaluations["Fbio-Rat",c("In Vivo","Predicted","Reference","Data")] <- 
-  c("pk_fbior","fbior","Wambaugh et al. (2018)",
-    "/r_data/processed/caco2-invivo-compare2.RData")
+  c("invivo_fbioh","pk_fbior","Wambaugh et al. (2018)",
+    "/r_data/processed/rat-human-compare-fbioall.RData")
 evaluations["Fbio-QSPR",c("In Vivo","Predicted","Reference","Data")] <- 
   c("invivo_fbioh","fbioh","Kim et al. (2014) & Varma et al. (2010)",
     "/r_data/processed/qspr-invivo-compare-fbioall.RData")
+evaluations["Fbio-PreviousHTTK",c("In Vivo","Predicted","Reference","Data")] <- 
+  c("invivo_fbioh","ffph","Pearce et al. (2017)",
+    "/r_data/processed/oldhttk-invivo-compare-fbioall.RData")
 
 eval.table <- data.frame()
 for (this.evaluation in row.names(evaluations))
@@ -777,5 +835,5 @@ for (this.evaluation in row.names(evaluations))
 knitr::kable(eval.table, 
              caption = "Evaluation of predictions against in vivo data for Fbio and contributing factors.",
              floating.environment="sidewaystable") 
-write.csv(eval.table,file=paste0(loc.wd,"/r_data/invivoevaluationsummary.csv"))
+write.csv(eval.table,file=paste0(loc.wd,"/r_data/results_for_paper/Tableinvivoevaluationsummary.csv"))
 ```

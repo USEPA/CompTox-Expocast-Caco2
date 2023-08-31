@@ -524,7 +524,9 @@ setcolorder(caco2.publish,
               "Pab.unadj.unfilt", "Pba.unadj.unfilt", "efflux.unadj.unfilt",
               "rec_ab.unfilt", "rec_ba.unfilt"))
 caco2.publish[, casrn := paste0(" ", casrn)]
-write.xlsx(caco2.publish, file = paste0(loc.wd, "/r_data/results_for_paper/caco2_data.xlsx"))
+write.xlsx(caco2.publish, 
+           file = paste0(loc.wd, "/r_data/results_for_paper/caco2_data.xlsx"),
+           showNA=FALSE)
 save(caco2.publish, file = paste0(loc.wd,"/r_data/processed/our_caco2.RData"))
 
 length(unique(caco2.publish[!is.na(casrn),casrn])) #484
@@ -566,6 +568,41 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
 
 ```{r calculate_stats_per_chemical_on_filtered_data}  
   caco2.perchem <- merge_chemical_replicates(caco2.filt)
+# This table has one measerument per chemical:
+  save(caco2.perchem,
+       file = paste0(loc.wd, "/r_data/MeanChemicalMeasurments.RData")
+  write.table(caco2.perchem[!duplicated(dtxsid),c(
+                            "compound",
+                            "casrn",                 
+                            "dtxsid",
+                             "mPab",
+                             "sdPab",
+                             "mPba",
+                             "sdPba",
+                             "mPab0",
+                             "sdPab0",
+                             "mPba0",
+                             "sdPba0",
+                             "mefflux",
+                             "sdefflux",
+                             "mefflux0",
+                             "sdefflux0",
+                             "mrec_ab",
+                             "mrec_ba",
+                             "sdrec_ab",
+                             "sdrec_ba",
+                             "ntotal_recab",
+                             "ntotal_recba",
+                             "ntotal",
+                             "ntotal_ab",
+                             "ntotal_ba",
+                             "ntotal_efflux",
+                             "ntotal_rab",
+                             "ntotal_rba")],
+              row.names=FALSE,
+              na="",
+              file = paste0(loc.wd, 
+                "/r_data/results_for_paper/TableMeanChemicalMeasurments.txt"))
 ```
 
 ```{r analyze_controls_warfarin}
