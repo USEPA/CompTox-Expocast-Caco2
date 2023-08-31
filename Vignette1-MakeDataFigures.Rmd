@@ -570,8 +570,8 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
   caco2.perchem <- merge_chemical_replicates(caco2.filt)
 # This table has one measerument per chemical:
   save(caco2.perchem,
-       file = paste0(loc.wd, "/r_data/MeanChemicalMeasurments.RData")
-  write.table(caco2.perchem[!duplicated(dtxsid),c(
+       file = paste0(loc.wd, "/r_data/MeanChemicalMeasurments.RData"))
+  write.table(caco2.perchem[!duplicated(caco2.perchem$dtxsid),c(
                             "compound",
                             "casrn",                 
                             "dtxsid",
@@ -601,8 +601,8 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
                              "ntotal_rba")],
               row.names=FALSE,
               na="",
-              file = paste0(loc.wd, 
-                "/r_data/results_for_paper/TableMeanChemicalMeasurments.txt"))
+              file = paste0(loc.wd,
+                            "/r_data/results_for_paper/TableMeanChemicalMeasurments.txt"))
 ```
 
 ```{r analyze_controls_warfarin}

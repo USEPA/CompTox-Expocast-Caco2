@@ -224,8 +224,8 @@ Qintesttransport <- 0.5
         .[,Qguth:=Qvillih * CLpermh / (Qvillih + CLpermh)] %>% 
         .[,Qgutr:=Qvillir * CLpermr / (Qvillir + CLpermr)] %>%
    # Qgut Model -- Yang et al. (2007) equation 5:
-        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph)*Qguth/(Qguth+Qintesttransport)] %>% 
-        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr)*Qguth/(Qguth+Qintesttransport)] %>%
+        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut)*Qguth/(Qguth+Qintesttransport)] %>% 
+        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut)*Qguth/(Qguth+Qintesttransport)] %>%
    # Darwich et al. (2010) Equation 3
         .[,fah_darwichh:=1 - (1 + 0.54 * peffh)^-7] %>% 
         .[,fah_darwichr:=1 - (1 + 0.54 * peffr)^-7] %>% 
@@ -322,7 +322,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
   scale_colour_viridis_d() +
   gtheme
   print(FighttkPredFhep)
-  ggsave(FighttlPredFhep, file = paste0(loc.wd, "/r_data/results_for_paper/FighttkPredFhep.tiff"),
+  ggsave(FighttkPredFhep, file = paste0(loc.wd, "/r_data/results_for_paper/FighttkPredFhep.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Fbio calculated from measured data
@@ -452,13 +452,13 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
 # Combine the evalaution figures of the components of Fbio for the paper:
 ```{r multipanelfigureforpaper}
-ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FigCacoPredFhep, 
+ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FighttkPredFhep, 
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
 tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioComponents.tiff"),
          height = 3*200, width = 3*200, compression = "lzw")
-ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FigCacoPredFhep, 
+ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FighttkPredFhep, 
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom"+
@@ -616,8 +616,8 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,Qguth:=Qvillih * CLpermh / (Qvillih + CLpermh)] %>% 
         .[,Qgutr:=Qvillir * CLpermr / (Qvillir + CLpermr)] %>%
    # Qgut Model -- Yang et al. (2007) equation 5:
-        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut/rb2ph*(1 + Qguth/CLpermh))*Qguth/(Qguth+Qintesttransport)] %>% 
-        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut/rb2pr*(1 + Qgutr/CLpermr))*Qguth/(Qguth+Qintesttransport)] %>%
+        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut)*Qguth/(Qguth+Qintesttransport)] %>% 
+        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut)*Qguth/(Qguth+Qintesttransport)] %>%
    # Darwich et al. (2010) Equation 3
         .[,fah_darwichh:=1 - (1 + 0.54 * peffh)^-7] %>% 
         .[,fah_darwichr:=1 - (1 + 0.54 * peffr)^-7] %>% 
