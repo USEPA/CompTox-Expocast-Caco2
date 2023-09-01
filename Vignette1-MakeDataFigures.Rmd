@@ -1,10 +1,10 @@
 ---
-title: "Honda et al. (unsubmitted): Analysis and Figure Generation"
-author: "Greg Honda"
-date: "August 3, 2020"
+title: "Honda et al. (unsubmitted): Caco-2 Data Organization and Analysis"
+author: "Greg Honda and John Wambaugh"
+date: "August 21, 2023"
 output: rmarkdown::html_vignette
 vignette: >
- %\VignetteIndexEntry{Honda et al. (unsubmitted): Analysis and Figure Generation}
+ %\VignetteIndexEntry{Honda et al. (unsubmitted): Data Organization and Analysis}
  %\VignetteEngine{knitr::rmarkdown}
  %\VignetteEncoding{UTF-8}
 ---
@@ -570,7 +570,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
   caco2.perchem <- merge_chemical_replicates(caco2.filt)
 # This table has one measerument per chemical:
   save(caco2.perchem,
-       file = paste0(loc.wd, "/r_data/MeanChemicalMeasurments.RData"))
+       file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
   write.table(caco2.perchem[!duplicated(caco2.perchem$dtxsid),c(
                             "compound",
                             "casrn",                 
@@ -601,8 +601,9 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
                              "ntotal_rba")],
               row.names=FALSE,
               na="",
+              sep=",",
               file = paste0(loc.wd,
-                            "/r_data/results_for_paper/TableMeanChemicalMeasurments.txt"))
+                            "/r_data/results_for_paper/TableMeanChemicalMeasurments.csv"))
 ```
 
 ```{r analyze_controls_warfarin}

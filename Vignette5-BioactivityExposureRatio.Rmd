@@ -1,10 +1,10 @@
 ---
-title: "Honda et al. (unsubmitted): Analysis and Figure Generation"
-author: "Greg Honda"
-date: "August 3, 2020"
+title: "Honda et al. (unsubmitted): Impact of Bioavailability on Risk Prioritization"
+author: "Greg Honda and John Wambaugh"
+date: "August 21, 2023"
 output: rmarkdown::html_vignette
 vignette: >
- %\VignetteIndexEntry{Honda et al. (unsubmitted): Analysis and Figure Generation}
+ %\VignetteIndexEntry{Honda et al. (unsubmitted): Risk Prioritization}
  %\VignetteEngine{knitr::rmarkdown}
  %\VignetteEncoding{UTF-8}
 ---
@@ -459,5 +459,5 @@ low.fabs.table <- low.fabs.table[order(low.fabs.table$Fbio),]
 knitr::kable(low.fabs.table, 
              caption = "Chemicals with Low Caco2-Predicted Fabs (Poorly absorbed chemicals)",
              floating.environment="sidewaystable") 
-write.csv(low.fabs.table,file=paste0(loc.wd,"/r_data/poorlyabsorbedchemcials.csv"))
+write.csv(low.fabs.table,file=paste0(loc.wd,"/r_data/results_for_paper/Tablepoorlyabsorbedchemcials.csv"))
 ```

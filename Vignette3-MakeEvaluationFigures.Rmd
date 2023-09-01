@@ -1,10 +1,10 @@
 ---
-title: "Honda et al. (unsubmitted): Analysis and Figure Generation"
-author: "Greg Honda"
-date: "August 3, 2020"
+title: "Honda et al. (unsubmitted): Comparison of Oral Absorption Predictions to In Vivo Data"
+author: "Greg Honda and John Wambaugh"
+date: "August 21, 2023"
 output: rmarkdown::html_vignette
 vignette: >
- %\VignetteIndexEntry{Honda et al. (unsubmitted): Analysis and Figure Generation}
+ %\VignetteIndexEntry{Honda et al. (unsubmitted): In Vivo Evaluation}
  %\VignetteEngine{knitr::rmarkdown}
  %\VignetteEncoding{UTF-8}
 ---

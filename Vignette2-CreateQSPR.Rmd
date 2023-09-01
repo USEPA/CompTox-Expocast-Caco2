@@ -1,10 +1,10 @@
 ---
-title: "Honda et al. (unsubmitted): Analysis and Figure Generation"
-author: "Greg Honda"
-date: "August 3, 2020"
+title: "Honda et al. (unsubmitted): Machine Learning QSPR for Caco-2 Permeability"
+author: "Greg Honda and John Wambaugh"
+date: "August 21, 2023"
 output: rmarkdown::html_vignette
 vignette: >
- %\VignetteIndexEntry{Honda et al. (unsubmitted): Analysis and Figure Generation}
+ %\VignetteIndexEntry{Honda et al. (unsubmitted): Machine Learning QSPR}
  %\VignetteEngine{knitr::rmarkdown}
  %\VignetteEncoding{UTF-8}
 ---
@@ -576,7 +576,7 @@ knitr::kable(qspr.summary,
              floating.environment="sidewaystable") 
 write.csv(qspr.summary,
           na="",
-          file=paste0(loc.wd,"/r_dataresults_for_paper/Tableqsprbinnumbersummary.csv"))
+          file=paste0(loc.wd,"/r_data/results_for_paper/Tableqsprbinnumbersummary.csv"))
 ```
 
 Although the models with two bins are the most accurate, the 95% intervals for
@@ -883,7 +883,7 @@ httk.AD[httk.Si.max.k > 3 &
         httk.S.new.k > 3] <- 0 # Outside applicability domain
 print(paste0(sum(httk.AD)," HTTK chemicals (",
              signif(sum(httk.AD)/length(httk.AD),3)*100,
-             "%) are in the Roy et al. (2015) estimated domain of applicability"))
+             "%) are in the Roy et al. (2015) estimated domain o applicability"))
 ```
 
 Use optimal model to predict across HTTK library
