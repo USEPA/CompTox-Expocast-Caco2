@@ -299,7 +299,8 @@ FigBERRankCompare<-ggplot(rank.table, aes(x=r100, y=rcaco)) +
   geom_point(alpha=0.5, size=3) +
   scale_colour_viridis_d()+
   labs(y = expression(bold('BER Rank with F'['bio'])), 
-        x = "BER Rank with 100% Absorption")+
+        x = expression(bold('BER Rank with F'['abs']~'== F'['gut']~'== 1')))+
+  geom_abline(slope=1,intercept=0,linetype="dashed",color="blue")+
   scale_x_log10() + scale_y_log10() +
   gtheme
 print(FigBERRankCompare)
