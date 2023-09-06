@@ -8,6 +8,8 @@ Administered equivalent dose (AED) estimation using in vitro hazard and high thr
 
 ### Data Analysis Vignettes
 
+The following [R](https://cran.r-project.org/ "R") [vignettes](https://r-pkgs.org/vignettes.html "Vignettes") were written in [R Markdown](https://rmarkdown.rstudio.com/ "R Markdown") using [RStudio](https://posit.co/downloads/ "Download RStudio"):
+
 1. [Caco-2 Data Organization and Analysis](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette1-MakeDataFigures.Rmd "Caco-2 Data").
 2. [Machine Learning QSPR for Caco-2 Permeability](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette2-CreateQSPR.Rmd "Machine Learning QSPR").
 3. [Comparison of Oral Absorption Predictions to In Vivo Data](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette3-MakeEvaluationFigures.Rmd "Comparison to In Vivo Data").
@@ -21,24 +23,39 @@ absorption was clear.
 
 #### Principal Investigators 
 John Wambaugh [wambaugh.john@epa.gov]
+
 Elaina Kenyon [kenyon.elaina@epa.gov]
+
 Barbara Wetmore [wetmore.barbara@epa.gov]
 
 #### Full Author List
 
 Gregory Honda<sup>1</sup>
+
 Elaina M. Kenyon<sup>1</sup>
+
 Sarah Davidson-Fritz<sup>1</sup>
+
 Roger Dinallo<sup>2</sup>
+
 Hisham El-Masri<sup>1</sup>
+
 Evgenia Korel-Bexell<sup>1</sup>
+
 Li Li<sup>2</sup>
+
 Katie Paul-Friedman<sup>1</sup>
+
 Robert Pearce<sup>1</sup>
+
 Risa Sayre<sup>1</sup>
+
 Christopher Strock<sup>2</sup>
+
 Russell Thomas<sup>1</sup>
+
 John F. Wambaugh<sup>1</sup>
+
 Barbara A. Wetmore<sup>1</sup>
 
 1.	U.S. Environmental Protection Agency, Office of Research and Development, Center for Computational Toxicology and Exposure, Research Triangle Park, NC 27711, USA
