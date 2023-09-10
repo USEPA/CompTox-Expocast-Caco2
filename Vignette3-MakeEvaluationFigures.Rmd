@@ -1,7 +1,7 @@
 ---
 title: "Honda et al. (unsubmitted): Comparison of Oral Absorption Predictions to In Vivo Data"
 author: "Greg Honda and John Wambaugh"
-date: "August 21, 2023"
+date: "September 10, 2023"
 output: rmarkdown::html_vignette
 vignette: >
  %\VignetteIndexEntry{Honda et al. (unsubmitted): In Vivo Evaluation}
@@ -93,7 +93,8 @@ Load all the parameters needed to make calculations:
 ```{r permeability_params}
 # gut.data; compiled data table of absorption and permeability data 
    load(paste0(loc.wd, "/r_data/processed/all_gut_data_25MAR2019.RData")) 
-   pharma <- read_excel(paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
+   pharma <- read_excel(
+     paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
    
    invivo.table <- gut.data
 # Basiv version for plots:
@@ -154,20 +155,24 @@ Load all the parameters needed to make calculations:
                      !is.na(logP) & 
                      !is.na(MW) & 
                      casrn %in% httk.casrn,
-                   ffpr_us:=calc_Ffp(
+                   ffpr_us:=calc_hep_bioavailability(
                        species="Rat",
                        chem.cas= casrn,
-                       clu=unique(clur_us)),
+                     suppress.messages=TRUE
+                       #clu=unique(clur_us)
+                       ),
                    .(casrn)]
       invivo.table[!is.na(fuph) & 
                      !is.na(clinth) & 
                      !is.na(logP) & 
                      !is.na(MW) & 
                      casrn %in% httk.casrn,
-                   ffph_us:=calc_Ffp(
+                   ffph_us:=calc_hep_bioavailability(
                      species="Human",
                      chem.cas= casrn,
-                     clu=unique(cluh_us)),
+                     suppress.messages=TRUE
+                     #clu=unique(cluh_us)
+                     ),
                    .(casrn)]
       invivo.table[!is.na(fuph) & 
                      !is.na(logP) & 
@@ -235,8 +240,38 @@ Qintesttransport <- 0.5
         .[,fbioh:=ffph*fgh_qg*fah_darwichh] %>% 
         .[,fbior:=ffpr*fgr_qg*fah_darwichr]
    
-   save(invivo.table, file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
+   save(invivo.table, 
+        file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))  
 ```   
+# Add in predictions from ADMet Predictor
+```{r load_admet}
+load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
+
+admet <- as.data.frame(read_excel(paste0(loc.wd, 
+                                         "/r_data/admet/Chemicals_Caco2_export.xlsx")))
+admetids <- as.data.frame(read_excel(paste0(loc.wd, 
+                                         "/r_data/admet/GoodPab310forHisham.xlsx")))
+admet$DTXSID <- admetids[admet[,"Identifier"],"DTXSID"]
+admet$Fgut.ADMet <- signif(as.numeric(admet[,"%Fa_hum-10.0"])/100,5)
+admet$Fbio.ADMet <- signif(as.numeric(admet[,"%Fb_hum-10.0"])/100,5)
+invivo.table <- merge(invivo.table,
+      admet[,c("DTXSID","Fgut.ADMet","Fbio.ADMet")],
+      by="DTXSID",
+      all.x=TRUE)
+
+save(invivo.table, 
+     file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))  
+```
+
+# Create supplemental table with all in vivo data and predictions
+```{r write_suptable_invivodata}
+load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
+
+write.csv(invivo.table,
+          file=paste0(loc.wd,"/r_data/results_for_paper/SupTableInVivoDatandPreds.csv"),
+          row.names=FALSE,
+          na="")
+```
 
 # Measured data from Lanevskij and Didziapetris (2019)
 ```{r make_caco_peff_fig}
@@ -292,7 +327,8 @@ print(FigCacoPredFabs)
     ggsave(FigCacoPredFabs, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFabs.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
-# Measured data collected by Varma et al. (2010)
+
+# Evaluate Caco2 Fgut Prediction using measured data collected by Varma et al. (2010)
 ```{r make_Caco_Fgut_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   FigCacoPredFgut <- ggplot(invivo.table)+
@@ -309,7 +345,31 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
   ggsave(FigCacoPredFgut, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFgut.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
-# Measured data collected by Varma et al. (2010) (ffp=fraction first pass)
+
+# Evaluate ADMet Fgut Prediction using measured data collected by Varma et al. (2010)
+```{r make_ADMet_Fgut_fig}
+load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
+  FigADMetPredFgut <- ggplot(invivo.table)+
+        geom_point(aes(y = Fgut.ADMet, x = vo_Fg, color=Class, shape=Class), 
+                   alpha = 0.75,
+                   size=3)+
+        geom_abline(slope = 1, linetype = "dashed")+
+        labs(y = expression(bold("ADMet Pred.")~bolditalic("F"["gut,h"])),
+             x = expression(bold("Measured")~bolditalic("F"["gut,h"])))+
+        lims(x = c(0,1), y = c(0,1))+
+        scale_colour_viridis_d()+
+        gtheme
+  print(FigADMetPredFgut)
+  ggsave(FigADMetPredFgut, 
+         file = paste0(loc.wd, 
+                              "/r_data/results_for_paper/FigADMetPredFgut.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+  
+summary(lm(vo_Fg ~ Fgut.ADMet, data=invivo.table))
+```
+
+# Evaluate predicted first-pass hepatic metabolism using measured data collected by Varma et al. (2010) 
+ffp=fraction first pass
 ```{r make_httk_Fhep_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   
@@ -328,11 +388,9 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Fbio calculated from measured data
-# using first-pass metabolism only (previous httk model)
+# using first-pass metabolism only (previous httk approach)
 ```{r make_httk_FhepFbio_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
-
-  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
   varma.chems <- subset(invivo.table,!is.na(vo_F))[,
                    c("DTXSID","Class","ffph","vo_F")]
@@ -382,7 +440,8 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
   ggsave(FigCacoPredFbioVarma, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioVarma.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
-# Fbio for rats using Wambaugh et al. (2018) Fbio
+
+# Fbio estimated from rats (Wambaugh et al. (2018) Fbio)
 ```{r make_CacoFabsRat_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
@@ -449,6 +508,41 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
   ggsave(FigCacoPredFbioAll, 
          file = paste0(loc.wd, 
                        "/r_data/results_for_paper/FigCacoPredFbioAll.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+```
+
+# Fbio predicted by ADMet Predictor
+```{r make_admet_Fabs_fig}
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
+
+  varma.chems <- subset(invivo.table,!is.na(vo_F))[,
+                   c("DTXSID","Class","Fbio.ADMet","vo_F")]
+  kim.chems <- subset(invivo.table,!is.na(kim_fbioh))[,
+                 c("DTXSID","Class","Fbio.ADMet","kim_fbioh")]
+  colnames(varma.chems)[4] <- "invivo_fbioh"
+  colnames(kim.chems)[4] <- "invivo_fbioh"
+  varma.chems$Reference <- "Varma2010"
+  kim.chems$Reference <- "Kim2014"
+  fbio.table <- rbind(varma.chems,kim.chems)
+  invivo.table <- fbio.table
+  save(invivo.table,
+     file=paste0(loc.wd, 
+                 "/r_data/processed/admet-invivo-compare-fbioall.RData"))
+
+  FigADMetPredFbio <- ggplot(fbio.table)+
+    geom_point(aes(y = Fbio.ADMet, x = invivo_fbioh, color=Class, shape=Class), 
+                   alpha = 0.75,
+                   size=3)+
+    geom_abline(slope = 1, linetype = "dashed")+
+    labs(y = expression(bold("ADMet Predicted")~bolditalic("F"["bio,h"])),
+         x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
+    lims(x = c(0,1), y = c(0,1))+
+    scale_colour_viridis_d()+
+    gtheme
+  print(FigADMetPredFbio)
+  ggsave(FigADMetPredFbio, 
+         file = paste0(loc.wd, 
+                       "/r_data/results_for_paper/FigADMetPredFbio.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -554,20 +648,24 @@ Load all the parameters needed to make calculations:
                      !is.na(logP) & 
                      !is.na(MW) & 
                      casrn %in% httk.casrn,
-                   ffpr_us:=calc_Ffp(
+                   ffpr_us:=calc_hep_bioavailability(
                      species="Rat",
                      chem.cas= casrn,
-                     clu=unique(clur_us)),
+                     suppress.messages=TRUE
+                     #clu=unique(clur_us)
+                     ),
                    .(casrn)]
       invivo.table[!is.na(fuph) & 
                      !is.na(clinth) & 
                      !is.na(logP) & 
                      !is.na(MW) & 
                      casrn %in% httk.casrn,
-                   ffph_us:=calc_Ffp(
+                   ffph_us:=calc_hep_bioavailability(
                      species="Human",
                      chem.cas= casrn,
-                     clu=unique(cluh_us)),
+                     suppress.messages=TRUE
+                     #clu=unique(cluh_us)
+                     ),
                    .(casrn)]
       invivo.table[!is.na(fuph) & 
                      !is.na(logP) & 
@@ -782,6 +880,8 @@ These calculations should match both the manuscript text and the code in calc_or
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 ### Evaluation Statistics
+We made new versions of "invivo.table" combining the Fbio data from Varma and Kim
+and saved them in different RData files
 ```{r eval_table}
 evaluations <- data.frame()
 evaluations["Peff",c("In Vivo","Predicted","Reference","Data")] <- 
@@ -790,8 +890,11 @@ evaluations["Peff",c("In Vivo","Predicted","Reference","Data")] <-
 evaluations["Fabs",c("In Vivo","Predicted","Reference","Data")] <- 
   c("vo_Fa","fah_darwichh","Varma et al. (2010)",
     "/r_data/processed/caco2-invivo-compare2.RData")
-evaluations["Fgut",c("In Vivo","Predicted","Reference","Data")] <- 
+evaluations["Fgut-QGutModel",c("In Vivo","Predicted","Reference","Data")] <- 
   c("vo_Fg","fgh_qg","Varma et al. (2010)",
+    "/r_data/processed/caco2-invivo-compare2.RData")
+evaluations["Fgut-ADMet",c("In Vivo","Predicted","Reference","Data")] <- 
+  c("vo_Fg","Fgut.ADMet","Varma et al. (2010)",
     "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fhep",c("In Vivo","Predicted","Reference","Data")] <- 
   c("vo_Fh","ffph","Varma et al. (2010)",
@@ -805,6 +908,9 @@ evaluations["Fbio-Rat",c("In Vivo","Predicted","Reference","Data")] <-
 evaluations["Fbio-QSPR",c("In Vivo","Predicted","Reference","Data")] <- 
   c("invivo_fbioh","fbioh","Kim et al. (2014)",
     "/r_data/processed/qspr-invivo-compare-fbioall.RData")
+evaluations["Fbio-ADMet",c("In Vivo","Predicted","Reference","Data")] <- 
+  c("invivo_fbioh","Fbio.ADMet","Kim et al. (2014)",
+    "/r_data/processed/admet-invivo-compare-fbioall.RData")
 evaluations["Fbio-PreviousHTTK",c("In Vivo","Predicted","Reference","Data")] <- 
   c("invivo_fbioh","ffph","Kim et al. (2014)",
     "/r_data/processed/oldhttk-invivo-compare-fbioall.RData")

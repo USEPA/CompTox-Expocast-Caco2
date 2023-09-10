@@ -1186,4 +1186,30 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
   print(FigPabAdjHist)
   print(FigPabUnadjHist)
 ```
+```{r chemclasshistogram}
+   pharma <- read_excel(
+     paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
+
+caco2.perchem$class <- "Other"
+caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Structure_Id,
+              "Class"] <- "Pharmaceutical"
+
+  FigPabAdjClassHist <- ggplot(caco2.perchem)+
+    geom_histogram(aes(x = mPab, fill=class), color = "black")+
+    geom_text(data = labl.dt1, aes(x=x, y=y, label = labl), hjust = 0)+
+    labs(y = expression(bold("Count")), 
+         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    lims(y = c(0, 140))+
+    scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
+    theme_bw()+
+    gtheme+
+    scale_colour_viridis_d()+
+    annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
+                      ymin = 130,ymax = 130,xmax = -3, xmin = -3)
+
+    ggsave(FigPabAdjClassHist, file = paste0(loc.wd, "/r_data/results_for_paper/f2a_mPab_class_histo.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+    print(FigPabAdjClassHist)
+
+```
 
