@@ -408,7 +408,7 @@ Num.chems.both <- length(unique(subset(caco2.filt,
 
 cat(paste("After filtering by Frec, there were a total of ",
           Num.chems.either,
-          " chemicals that had either Pab or Pba and ",
+          " chemicals that had either PappAB or PappBA and ",
           Num.chems.both,
           " that had both. Of these, ",
           Num.good.Pab,
