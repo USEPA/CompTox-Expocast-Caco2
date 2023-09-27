@@ -399,13 +399,18 @@ Num.good.Pab <- length(unique(subset(caco2.filt,
                                              !is.na(Pab))$dtxsid))
 Num.good.Pba <- length(unique(subset(caco2.filt, 
                                              !is.na(Pba))$dtxsid))
-Num.chems <- length(unique(subset(caco2.filt,
+Num.chems.either <- length(unique(subset(caco2.filt,
                                    !is.na(Pab) |
+                                             !is.na(Pba))$dtxsid))
+Num.chems.both <- length(unique(subset(caco2.filt,
+                                   !is.na(Pab) &
                                              !is.na(Pba))$dtxsid))
 
 cat(paste("After filtering by Frec, there were a total of ",
-          Num.chems,
-          " chemicals. Of these, ",
+          Num.chems.either,
+          " chemicals that had either Pab or Pba and ",
+          Num.chems.both,
+          " that had both. Of these, ",
           Num.good.Pab,
           " chemicals had usable PappAB and ",
           Num.good.Pba,
