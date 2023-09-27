@@ -394,6 +394,23 @@ cat(paste("The Caco-2 assay was attempted for ",
                                high_rec_co=2)
 ```
 
+```{r chemical_counts_filtered}
+Num.good.Pab <- length(unique(subset(caco2.filt, 
+                                             !is.na(Pab))$dtxsid))
+Num.good.Pba <- length(unique(subset(caco2.filt, 
+                                             !is.na(Pba))$dtxsid))
+Num.chems <- length(unique(subset(caco2.filt,
+                                   !is.na(Pab) |
+                                             !is.na(Pba))$dtxsid))
+
+cat(paste("After filtering by Frec, there were a total of ",
+          Num.chems,
+          " chemicals. Of these, ",
+          Num.good.Pab,
+          " chemicals had usable PappAB and ",
+          Num.good.Pba,
+          " had a usable PappBA.\n",sep="")) 
+```
 #
 # Analysis of Filtered Data
 #
