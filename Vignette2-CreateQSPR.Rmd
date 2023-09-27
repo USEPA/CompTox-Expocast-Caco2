@@ -582,6 +582,7 @@ save(classmod, train.set, test.set, reduced.desc, file=paste0(loc.wd,"/r_data/cl
 ```{r qspr_testset1}
 load(file=paste0(loc.wd,"/r_data/testset.RData"))
 load(file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
+load(file=paste0(loc.wd,"/r_data/classmodels.RData"))
 
 # Replace NA's with mean of training set:
 for (this.col in colnames(train_msd))
@@ -664,6 +665,8 @@ rfeClass <- suppressMessages(rfe(x=reduced.desc,
 
 save(rfeClass, train.set, reduced.desc, chosen.model,
      file=paste0(loc.wd,"/r_data/recursive_feature_elimination.RData"))
+save(chosen.model,
+     file=paste0(loc.wd,"/r_data/chosen_model.RData"))
 ```
 
 # Find the optimal number of parameters:
@@ -758,6 +761,8 @@ Evaluate the optimal model with the test set:
 load(file=paste0(loc.wd,"/r_data/optimal_model.RData"))
 load(file=paste0(loc.wd,"/r_data/testset.RData"))
 load(file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
+load(file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))
+load(file=paste0(loc.wd,"/r_data/chosen_model.RData"))
 
 # Replace NA's with mean of training set:
 for (this.col in colnames(train_msd))
@@ -770,6 +775,8 @@ for (this.col in colnames(train_msd))
 
 opt.testsetpred <- predict(classmodopt,
                        test.set[,opt.desc])
+test.set$Pab.PredBin <- opt.testsetpred
+test.set$Pab.Pred <- as.numeric(lapply(strsplit(qspr.summary[,chosen.model]," \\("),function(x) x[[1]])[2+as.numeric(opt.testsetpred)])
 ```
 
 ```{r qspr_confusionmatrix}
@@ -784,25 +791,9 @@ save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
 ```
 
 ```{r caco2_qspr_pab_eval_testonly_fig}
-load(file=paste0(loc.wd,"/r_data/optimal_model.RData"))
-load(file=paste0(loc.wd,"/r_data/testset.RData"))
-load(file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
-
-# Replace NA's with mean of training set:
-for (this.col in colnames(train_msd))
-{
-  if (is.numeric(train_msd[1,this.col]))
-  {
-    test.set[is.na(test.set[,this.col]),this.col] <- train_msd[1,this.col]
-  }
-}
-
-opt.testsetpred <- predict(classmodopt,
-                       test.set[,opt.desc])
-
-      FigQSPRPredPabTest <- ggplot(subset(caco2.dt,Test==1))+
+      FigQSPRPredPabTest <- ggplot(test.set)+
       geom_point(aes(x = Pab, 
-                       y = Pab.Pred.Med, 
+                       y = Pab.Pred, 
                        color=Data.Origin, 
                        shape=Data.Origin), 
                    alpha = 0.8,
@@ -810,7 +801,9 @@ opt.testsetpred <- predict(classmodopt,
                    size=3)+
         geom_abline(slope = 1, linetype = "dashed")+
         labs(y = expression(bold("QSPR Predicted log"["10"])*bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
-             x = expression(bold("Measured log"["10"])*bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')))+
+             x = expression(bold("Measured log"["10"])*bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
+             color = "Data Source",
+             shape = "Data Source")+
        # lims(x = c(-5,3), y = c(-5,3)) +
         scale_x_log10()+
         scale_y_log10()+
