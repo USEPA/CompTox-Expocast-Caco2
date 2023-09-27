@@ -31,11 +31,8 @@ knitr::opts_knit$set(root.dir = loc.wd)
 ### Load the relevant libraries
 ```{r r_setup}
 
-packages <- c("ggplot2","hexbin","dplyr","gplots","httk","RColorBrewer",
-        "viridis","data.table","magrittr",
-        "stringr","gridExtra","stringi","RMySQL","DBI","grid","xlsx","lattice",
-        "gtable","ggpubr","randomForest","caret","recipes","quantregForest",
-        "tcpl","scales")
+packages <- c("ggplot2", "readxl", "data.table", "dplyr",
+              "scales", "ggpubr", "xlsx", "viridis")
 sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary her
 ```
 # Function for labeling on log-scale:
@@ -46,6 +43,23 @@ scientific_10 <- function(x) {
   out <- gsub("10\\^01","10",out)                               
   out <- parse(text=gsub("10\\^00","1",out))                    
 }  
+```
+
+### plot configuration
+```{r ggplot_theme}
+gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
+                axis.text.y = element_text(size=10, color = "black",face="bold"),
+                legend.text = element_text(size = 10),
+                legend.title = element_text(size = 10),
+                legend.key.size = unit(10, "points"),
+                panel.background = element_rect(fill="white"),
+                axis.line = element_line(color="black"),
+                axis.ticks.y = element_line(color="black"),
+                legend.position = "top",
+                axis.line.x=element_line(color="black"),
+                axis.ticks.x=element_line(color="black"),
+                axis.text.x = element_text(size = 10,face="bold",color="black"),
+                plot.title = element_text(hjust=0,size=12,face="bold"))
 ```
 
 ###
@@ -232,23 +246,6 @@ merge_chemical_replicates <- function(caco2.dt)
 }
 ```
 
-### plot configuration
-```{r ggplot_theme}
-gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
-                axis.text.y = element_text(size=10, color = "black",face="bold"),
-                legend.text = element_text(size = 10),
-                legend.title = element_text(size = 10),
-                legend.key.size = unit(10, "points"),
-                panel.background = element_rect(fill="white"),
-                axis.line = element_line(color="black"),
-                axis.ticks.y = element_line(color="black"),
-                legend.position = "top",
-                axis.line.x=element_line(color="black"),
-                axis.ticks.x=element_line(color="black"),
-                axis.text.x = element_text(size = 10,face="bold",color="black"),
-                plot.title = element_text(hjust=0,size=12,face="bold"))
-```
-
 ## ANALYSIS
 
 ### Set thresholds for low and high fractional recovery:
@@ -267,6 +264,9 @@ high_rec_co <- 2
 # No adjustment:
   caco2.unfilt <- adjust_for_frec(caco2.unfilt,Pab.thresh=Inf)
   caco2.perchemraw <- merge_chemical_replicates(caco2.unfilt)
+  save(caco2.perchemraw, 
+       file = paste0(loc.wd, 
+                     "/r_data/results_for_paper/RawCaco2Data.RData"))
 ```
 
 ```{r rank_on_duplicates}
@@ -315,6 +315,9 @@ high_rec_co <- 2
 # Analysis of Raw Data
 
 ```{r make_recovery_fraction_histograms}
+  load(file = paste0(loc.wd, 
+                     "/r_data/results_for_paper/RawCaco2Data.RData"))
+
 labl.dt1 <- data.table(x = 2, y = c(150, 125, 100),
                        labl = c(paste0("Mean: ", signif(mean(caco2.perchemraw[, mrec_ab], na.rm = T),2)),
                                 paste0("SD: ", signif(sd(caco2.perchemraw[, mrec_ab], na.rm = T),2)),
@@ -364,6 +367,24 @@ ggsave(FigFrecbaHist, file = paste0(loc.wd, "/r_data/results_for_paper/mrec_ba_h
        height = 3, width = 3, dpi = 600, compression = "lzw")
 print(FigFrecabHist)
 print(FigFrecbaHist)
+```
+```{r chemical_counts}
+  load(file = paste0(loc.wd, 
+                     "/r_data/results_for_paper/RawCaco2Data.RData"))
+
+Num.positive.frec.ab <- length(unique(subset(caco2.perchemraw, 
+                                             mrec_ab > 0)$dtxsid))
+Num.positive.frec.ba <- length(unique(subset(caco2.perchemraw, 
+                                             mrec_ba > 0)$dtxsid))
+Num.chems <- length(unique(caco2.perchemraw$dtxsid))
+
+cat(paste("The Caco-2 assay was attempted for ",
+          Num.chems,
+          " chemicals. Of these, ",
+          Num.positive.frec.ab,
+          " chemicals had a measurable PappAB (apical to basolateral) and ",
+          Num.positive.frec.ba,
+          " had a measurable PappBA.\n",sep="")) 
 ```
 
 # Reload data using cutoffs based on fraction recovered (Frec):
@@ -1087,6 +1108,16 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
 
 # Permeability histograms
 ```{r permeability}
+# load caco2.perchem:
+  load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
+
+   pharma <- read_excel(
+     paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
+
+caco2.perchem$class <- "Other"
+caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
+              "class"] <- "Pharmaceutical"
+
   labl.dt1 <- data.table(x = 0.01, y = 100,
                       labl = paste0("Total Count: ",
                                     caco2.perchem[,.N,.(x1 = !is.na(mPab))][
@@ -1109,65 +1140,89 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
   max(caco2.perchem[,.(mPab,mPba,mPab0,mPba0)], na.rm = T)
   
   FigPabAdjHist <- ggplot(caco2.perchem)+
-    geom_histogram(aes(x = mPab), fill= "grey80", color = "black")+
+        geom_histogram(aes(x = mPab, fill=class), 
+                   color = "black",
+                   alpha=0.4, position="identity")+
+   # geom_histogram(aes(x = mPab), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1, aes(x=x, y=y, label = labl), hjust = 0)+
     labs(y = expression(bold("Count")), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    lims(y = c(0, 140))+
+ #   lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
     gtheme+
-    annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
-                      ymin = 130,ymax = 130,xmax = -3, xmin = -3)
+        scale_fill_viridis(discrete=2)#+
+   # annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
+   #                   ymin = 130,ymax = 130,xmax = -3, xmin = -3)
   
   FigPbaAdjHist <- ggplot(caco2.perchem)+
-    geom_histogram(aes(x = mPba), fill= "grey80", color = "black")+
+        geom_histogram(aes(x = mPba, fill=class), 
+                   color = "black",
+                   alpha=0.4, position="identity")+
+ #   geom_histogram(aes(x = mPba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt2, aes(x=x, y=y, label = labl), hjust = 0)+
     labs(y = expression(bold("Count")), 
          x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
-    lims(y = c(0, 140))+
+#    lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
     gtheme+
-    annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
-                      ymin = 130,ymax = 130,xmax = -3, xmin = -3)
+        scale_fill_viridis(discrete=2)#+
+#    annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
+#                      ymin = 130,ymax = 130,xmax = -3, xmin = -3)
   
   FigEffluxRAdjHist <- ggplot(caco2.perchem)+
-    geom_histogram(aes(x = mefflux), fill= "grey80", color = "black")+
+        geom_histogram(aes(x = mefflux, fill=class), 
+                   color = "black",
+                   alpha=0.4, position="identity")+
+    #    geom_histogram(aes(x = mefflux), fill= "grey80", color = "black")+
     geom_text(data = labl.dt3, aes(x=x, y=y, label = labl), hjust = 0)+
     labs(y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
     theme_bw()+
     scale_x_log10(labels=scientific_10)+
+    geom_vline(xintercept =1,linetype="dashed",color="blue")+
     gtheme+
-    annotation_custom(grob = text_grob("c)", hjust = 0, size = 12, face = "bold"), 
-                      ymin = 28,ymax = 28,xmax = -3, xmin = -3)
+        scale_fill_viridis(discrete=2)#+
+#    annotation_custom(grob = text_grob("c)", hjust = 0, size = 12, face = "bold"), 
+#                      ymin = 28,ymax = 28,xmax = -3, xmin = -3)
   
   FigPabUnadjHist <- ggplot(caco2.perchem)+
-    geom_histogram(aes(x = mPab0), fill= "grey80", color = "black")+
+        geom_histogram(aes(x = mPab0, fill=class), 
+                   color = "black",
+                   alpha=0.4, position="identity")+
+  #  geom_histogram(aes(x = mPab0), fill= "grey80", color = "black")+
     labs(y = expression(bold("Count")), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
-    lims(y = c(0, 140))+
-    lims(y = c(0, 140))+
+ #   lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
+        scale_fill_viridis(discrete=2)+
     gtheme
   
-  FigPbabUnadjHist <- ggplot(caco2.perchem)+
-    geom_histogram(aes(x = mPba0), fill= "grey80", color = "black")+
+  FigPbaUnadjHist <- ggplot(caco2.perchem)+
+        geom_histogram(aes(x = mPba0, fill=class), 
+                   color = "black",
+                   alpha=0.4, position="identity")+
+  #  geom_histogram(aes(x = mPba0), fill= "grey80", color = "black")+
     labs(y = expression(bold("Count")), 
          x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
-    lims(y = c(0, 140))+
+ #   lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
+        scale_fill_viridis(discrete=2)+
     gtheme
   
   FigEffluxRUnadjHist <- ggplot(caco2.perchem)+
-    geom_histogram(aes(x = mefflux0), fill= "grey80", color = "black")+
+        geom_histogram(aes(x = mefflux0, fill=class), 
+                   color = "black",
+                   alpha=0.4, position="identity")+
+    #geom_histogram(aes(x = mefflux0), fill= "grey80", color = "black")+
     labs(y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
     scale_x_log10(labels=scientific_10)+
     theme_bw()+
+        scale_fill_viridis(discrete=2)+
     gtheme
 
   ggsave(FigPabAdjHist, file = paste0(loc.wd, "/r_data/results_for_paper/f2a_mPab_histo.tiff"),
@@ -1179,14 +1234,29 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
   
   ggsave(FigPabUnadjHist, file = paste0(loc.wd, "/r_data/results_for_paper/mPab0_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigPabUnadjHist, file = paste0(loc.wd, "/r_data/results_for_paper/mPba0_histo.tiff"),
+  ggsave(FigPbaUnadjHist, file = paste0(loc.wd, "/r_data/results_for_paper/mPba0_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigEffluxRUnadjHist, file = paste0(loc.wd, "/r_data/results_for_paper/mefflux0_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   print(FigPabAdjHist)
   print(FigPabUnadjHist)
 ```
-```{r chemclasshistogram}
+```{r multipanelfigureforpaper}
+ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist, 
+          labels = c("A", "B", "C"),
+          ncol = 1, nrow = 3,
+          common.legend = TRUE, legend = "bottom")
+tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoDataHists.tiff"),
+         height = 5*200, width = 3*200, compression = "lzw")
+ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist, 
+          labels = c("A", "B", "C"),
+          ncol = 1, nrow = 3,
+          common.legend = TRUE, legend = "bottom"+
+          theme_gray(base_size = 100))
+dev.off()
+```
+
+```{r chemclasshistogram,eval=FALSE}
    pharma <- read_excel(
      paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
 
