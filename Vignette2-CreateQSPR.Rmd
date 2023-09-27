@@ -581,6 +581,8 @@ save(classmod, train.set, test.set, reduced.desc, file=paste0(loc.wd,"/r_data/cl
 
 ```{r qspr_testset1}
 load(file=paste0(loc.wd,"/r_data/testset.RData"))
+load(file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
+
 # Replace NA's with mean of training set:
 for (this.col in colnames(train_msd))
 {
@@ -768,6 +770,9 @@ for (this.col in colnames(train_msd))
 
 opt.testsetpred <- predict(classmodopt,
                        test.set[,opt.desc])
+```
+
+```{r qspr_confusionmatrix}
 opt.confusion <- confusionMatrix(data = opt.testsetpred,
                                  reference = test.set[,chosen.model])
 opt.testsummary <- postResample(pred = opt.testsetpred,
@@ -776,6 +781,46 @@ print(opt.confusion)
 
 save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
      file=paste0(loc.wd,"/r_data/optimal_model_test_set_performance.RData"))                          
+```
+
+```{r caco2_qspr_pab_eval_testonly_fig}
+load(file=paste0(loc.wd,"/r_data/optimal_model.RData"))
+load(file=paste0(loc.wd,"/r_data/testset.RData"))
+load(file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
+
+# Replace NA's with mean of training set:
+for (this.col in colnames(train_msd))
+{
+  if (is.numeric(train_msd[1,this.col]))
+  {
+    test.set[is.na(test.set[,this.col]),this.col] <- train_msd[1,this.col]
+  }
+}
+
+opt.testsetpred <- predict(classmodopt,
+                       test.set[,opt.desc])
+
+      FigQSPRPredPabTest <- ggplot(subset(caco2.dt,Test==1))+
+      geom_point(aes(x = Pab, 
+                       y = Pab.Pred.Med, 
+                       color=Data.Origin, 
+                       shape=Data.Origin), 
+                   alpha = 0.8,
+                   position = position_jitter(w = 0.0, h = 0.1),
+                   size=3)+
+        geom_abline(slope = 1, linetype = "dashed")+
+        labs(y = expression(bold("QSPR Predicted log"["10"])*bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
+             x = expression(bold("Measured log"["10"])*bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')))+
+       # lims(x = c(-5,3), y = c(-5,3)) +
+        scale_x_log10()+
+        scale_y_log10()+
+        scale_colour_viridis_d()+
+        gtheme
+  print(FigQSPRPredPabTest)
+    ggsave(FigQSPRPredPabTest, 
+           file = paste0(loc.wd, 
+                         "/r_data/results_for_paper/FigQSPRPredPabTestOnly.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
 # Make a file of SMILES for Caco2 Predictions:

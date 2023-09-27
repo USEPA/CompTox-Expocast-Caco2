@@ -564,6 +564,9 @@ dev.off()
 ### QSPR Evaluation:
 
 ```{r caco2_qspr_pab_eval_fig}
+  load(file=paste0(loc.wd, 
+                   "/r_data/processed/caco2dt.RData"))
+
 # Annotate chemical class:   
    caco2.dt$Class <- "Other"
    caco2.dt[caco2.dt$DTXSID%in%pharma$DSSTox_Substance_Id,"Class"] <-
@@ -587,6 +590,7 @@ dev.off()
                                          "/r_data/results_for_paper/FigQSPRPredPab.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
+
 
 Repeat all the previous figures, but use the QSPR predictions.
 
