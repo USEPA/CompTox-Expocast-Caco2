@@ -453,9 +453,9 @@ Pab.thresh <- 10
 ```
 
 ```{r adjustforrecovery}
-# Divide Papp values > 10 by Frec:
+# Divide Papp values > 0 by Frec:
   caco2.filt <- adjust_for_frec(caco2.filt, 
-                                  Pab.thresh=10)
+                                  Pab.thresh=0)
 ```
 
 # recovery vs permeability graphs - S1

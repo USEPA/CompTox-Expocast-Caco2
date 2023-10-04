@@ -907,7 +907,7 @@ evaluations["Fbio",c("In Vivo","Predicted","Reference","Data")] <-
   c("invivo_fbioh","fbioh","Kim et al. (2014)",
     "/r_data/processed/caco2-invivo-compare-fbioall.RData")
 evaluations["Fbio-Rat",c("In Vivo","Predicted","Reference","Data")] <- 
-  c("kim_fbioh","pk_fbior","Kim et al. (2014) & Wambaugh et al. (2018)",
+  c("kim_fbioh","pk_fbior","Wambaugh et al. (2018)",
     "/r_data/processed/all_gut_data_invivotable.RData")
 evaluations["Fbio-QSPR",c("In Vivo","Predicted","Reference","Data")] <- 
   c("invivo_fbioh","fbioh","Kim et al. (2014)",

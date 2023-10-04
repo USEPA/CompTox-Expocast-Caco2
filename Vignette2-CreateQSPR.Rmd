@@ -992,5 +992,12 @@ for (this.bin in sort(as.character(unique(httk.caco2.qspr$Pab.Class.Pred))))
 }
 
 save(httk.caco2.qspr,
-     file=paste0(loc.wd,"/r_data/httk_qspr_preds.RData")) 
+     file=paste0(loc.wd,"/r_data/results_for_paper/httk_qspr_preds.RData")) 
+```
+```{r Instructions_to_Update_HTTK}
+cat("Now copy the following files to httk-dev/datatables/CACO-2:\
+  results_for_paper/TableAllCaco2PabData_10e-6cmps.txt\
+  results_for_paper/httk_qspr_preds.RData\
+  processed/caco2-invivo-compare2.RData\
+Rerun load_package_data_tables.R and rebuild httk.\n")
 ```
