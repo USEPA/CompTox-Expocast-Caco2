@@ -462,10 +462,10 @@ ffp=fraction first pass
                  "/r_data/processed/rat-human-compare-fbioall.RData"))
   
   FigCacoPredFbioRat <- ggplot(invivo.table)+
-        geom_point(aes(y = invivo_fbioh, x = pk_fbior, color=Class, shape=Class), 
-                   alpha = 0.75,
+        geom_jitter(aes(y = invivo_fbioh, x = pk_fbior, color=Class, shape=Class), 
+                   alpha = 0.55,
                    size=3,
-                   position="jitter")+
+                   width=0.001,height=0.001)+
         geom_abline(slope = 1, linetype = "dashed")+
         labs(y = expression(bold("Measured")~bolditalic("F"["bio,r"])),
              x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+

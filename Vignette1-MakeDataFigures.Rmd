@@ -657,7 +657,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     paste0("SD: ", signif(sdPab,2)),
    # paste0("CV: ", signif(cvPab,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 1,
+                                                   x = 10,
                                                    y = 0+c(13,11,9#,7
                                                          ))]
   labl.FigWarfarinPabUnadj <- caco2.perchem[casrn == "81-81-2",.(labl = c(
@@ -1127,6 +1127,20 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
   #        height = 3, width = 3, dpi = 600, compression = "lzw")
 ```  
 
+```{r multipanelrefchemdatafigureforpaper}
+ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdjHist, 
+          labels = c("A", "B", "C"),
+          ncol = 1, nrow = 3,
+          common.legend = TRUE, legend = "bottom")
+tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigRefChemsforPaper.tiff"),
+         height = 5*200, width = 3*200, compression = "lzw")
+ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdjHist, 
+          labels = c("A", "B", "C"),
+          ncol = 1, nrow = 3,
+          common.legend = TRUE, legend = "bottom"+
+          theme_gray(base_size = 100))
+dev.off()
+```
 
 # Permeability histograms
 ```{r permeability}
@@ -1263,7 +1277,7 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
   print(FigPabAdjHist)
   print(FigPabUnadjHist)
 ```
-```{r multipanelfigureforpaper}
+```{r multipaneltestchemdatafigureforpaper}
 ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist, 
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,

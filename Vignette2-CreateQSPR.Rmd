@@ -34,7 +34,7 @@ knitr::opts_knit$set(root.dir = loc.wd)
 ```{r r_setup}
 
 packages <- c("ggplot2","randomForest","caret","OneR", "readxl", "httk",
-              "data.table","scales")
+              "data.table","scales","viridis")
 sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary here
 
 ```
