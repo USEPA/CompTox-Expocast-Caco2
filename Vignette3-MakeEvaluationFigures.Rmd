@@ -464,7 +464,8 @@ ffp=fraction first pass
   FigCacoPredFbioRat <- ggplot(invivo.table)+
         geom_point(aes(y = invivo_fbioh, x = pk_fbior, color=Class, shape=Class), 
                    alpha = 0.75,
-                   size=3)+
+                   size=3,
+                   position="jitter")+
         geom_abline(slope = 1, linetype = "dashed")+
         labs(y = expression(bold("Measured")~bolditalic("F"["bio,r"])),
              x = expression(bold("Measured")~bolditalic("F"["bio,h"])))+
