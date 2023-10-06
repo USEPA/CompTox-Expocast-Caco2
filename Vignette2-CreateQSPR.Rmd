@@ -35,7 +35,7 @@ knitr::opts_knit$set(root.dir = loc.wd)
 
 packages <- c("ggplot2","randomForest","caret","OneR", "readxl", "httk",
               "data.table","scales","viridis")
-sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary here
+sapply(packages, require, character.only=TRUE) #Note, the "character.only" argument is necessary here
 
 ```
 # Load and organize Caco2 2 data from chembl
@@ -800,13 +800,13 @@ save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
                    position = position_jitter(w = 0.0, h = 0.1),
                    size=3)+
         geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("QSPR Predicted log"["10"])*bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
-             x = expression(bold("Measured log"["10"])*bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
+        labs(y = expression(bold("QSPR Predicted ")~bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
+             x = expression(bold("Measured ")~bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
              color = "Data Source",
              shape = "Data Source")+
        # lims(x = c(-5,3), y = c(-5,3)) +
-        scale_x_log10()+
-        scale_y_log10()+
+        scale_x_log10(labels=scientific_10)+
+        scale_y_log10(labels=scientific_10)+
         scale_colour_viridis_d()+
         gtheme
   print(FigQSPRPredPabTest)

@@ -353,7 +353,7 @@ g1 <- ggplot(subset(aed.full2,
  # geom_text(data = figtxt.dt,
 ##            mapping = aes(x = x2, y = y2, label = labl2),
  #           hjust = 0, parse = TRUE)+
-  labs(x = "Bioactive:Exposure Ratio", 
+  labs(x = "Bioactivity:Exposure Ratio", 
        y = expression(bold('log'['10']*'(mg/kgBW/day)')))+
   theme_bw()+
   xlim(1,500)+
@@ -382,7 +382,7 @@ FigBERmeas <- ggplot(subset(aed.full2,DTXSID%in%measured.chems &
     geom_point(aes(y = q95, x = rcacomeas), color = "purple") +
   geom_point(aes(y = seem3.u95, x = rcacomeas), color = "yellow")+
 
-  labs(x = "Bioactive:Exposure Ratio", 
+  labs(x = "Bioactivity:Exposure Ratio", 
        y = 'mg/kg BW/day')+
   theme_bw()+
  # xlim(1,500)+
@@ -411,7 +411,7 @@ FigBERall <- ggplot(subset(aed.full2,
     geom_point(aes(y = q95, x = rcaco), color = "purple") +
   geom_point(aes(y = seem3.u95, x = rcaco), color = "yellow")+
 
-  labs(x = "Bioactive:Exposure Ratio", 
+  labs(x = "Bioactivity:Exposure Ratio", 
        y = 'mg/kg BW/day')+
   theme_bw()+
   scale_y_log10(limits=c(10^-8,10^2),labels=scientific_10)+
