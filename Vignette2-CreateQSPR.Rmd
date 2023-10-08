@@ -147,7 +147,7 @@ save(chembl,file=paste0(loc.wd,"/r_data/processed/chembl_caco2_MAY2023.RData"))
 ```{r qspr_compiletrainingset}
   # Load data
   # New data from this paper:
-  caco2.dt2 <- as.data.table(read_excel(paste0(loc.wd, "/r_data/results_for_paper/caco2_data.xlsx")))
+  caco2.dt2 <- as.data.table(read_excel(paste0(loc.wd, "/results_for_paper/caco2_data.xlsx")))
   dim(caco2.dt2)
 # Get rid of data that were filtered out for weird recovery fractions:
   caco2.dt2 <- subset(caco2.dt2,!(Filtered%in%"Y"))
@@ -234,7 +234,7 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
   #  annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
   #                    ymin = 130,ymax = 130,xmax = -3, xmin = -3)
 
-    ggsave(FigPabSourceHist, file = paste0(loc.wd, "/r_data/results_for_paper/Fig_TrainSet_histogram.tiff"),
+    ggsave(FigPabSourceHist, file = paste0(loc.wd, "/results_for_paper/Fig_TrainSet_histogram.tiff"),
          height = 3, width = 5, dpi = 600, compression = "lzw")
     print(FigPabSourceHist)
 
@@ -397,7 +397,7 @@ dim(all.desc)
   save(all.caco2,file=paste0(loc.wd,"/r_data/alldata.RData"))
   write.table(subset(all.caco2,!is.na(dtxsid)), 
               file=paste0(loc.wd,
-                "/r_data/results_for_paper/TableAllCaco2PabData_10e-6cmps.txt"), 
+                "/results_for_paper/TableAllCaco2PabData_10e-6cmps.txt"), 
               row.names=FALSE,
               sep="\t")
 ```
@@ -628,7 +628,7 @@ knitr::kable(qspr.summary,
              floating.environment="sidewaystable") 
 write.csv(qspr.summary,
           na="",
-          file=paste0(loc.wd,"/r_data/results_for_paper/Tableqsprbinnumbersummary.csv"))
+          file=paste0(loc.wd,"/results_for_paper/Tableqsprbinnumbersummary.csv"))
 ```
 
 Although the models with two bins are the most accurate, the 95% intervals for
@@ -692,7 +692,7 @@ FigRFE <- ggplot(rfeClass$results) +
   ylab("Model Accuracy") +
   geom_vline(xintercept=num.opt.desc, color="blue",linetype="dashed")
 ggsave(FigRFE, 
-       file = paste0(loc.wd, "/r_data/results_for_paper/FigRFE.tiff"),
+       file = paste0(loc.wd, "/results_for_paper/Fig_RFE.tiff"),
        height = 3, width = 3, dpi = 600, compression = "lzw")
 print(FigRFE)
 
@@ -750,7 +750,7 @@ hist(classmodopt$resample$Accuracy)
 classmodopt$finalModel
 plot(varImp(classmodopt,estimate="Accuracy",scale=TRUE))
 
-tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigVarImportance.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_VarImportance.tiff"),
        height = 3*200, width = 3*200, compression = "lzw")
 plot(varImp(classmodopt,estimate="Accuracy",scale=TRUE))
 dev.off()
@@ -812,7 +812,7 @@ save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
   print(FigQSPRPredPabTest)
     ggsave(FigQSPRPredPabTest, 
            file = paste0(loc.wd, 
-                         "/r_data/results_for_paper/FigQSPRPredPabTestOnly.tiff"),
+                         "/results_for_paper/Fig_QSPRPredPabTestOnly.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -992,7 +992,7 @@ for (this.bin in sort(as.character(unique(httk.caco2.qspr$Pab.Class.Pred))))
 }
 
 save(httk.caco2.qspr,
-     file=paste0(loc.wd,"/r_data/results_for_paper/httk_qspr_preds.RData")) 
+     file=paste0(loc.wd,"/results_for_paper/httk_qspr_preds.RData")) 
 ```
 ```{r Instructions_to_Update_HTTK}
 cat("Now copy the following files to httk-dev/datatables/CACO-2:\

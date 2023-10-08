@@ -266,7 +266,7 @@ high_rec_co <- 2
   caco2.perchemraw <- merge_chemical_replicates(caco2.unfilt)
   save(caco2.perchemraw, 
        file = paste0(loc.wd, 
-                     "/r_data/results_for_paper/RawCaco2Data.RData"))
+                     "/results_for_paper/RawCaco2Data.RData"))
 ```
 
 ```{r rank_on_duplicates}
@@ -308,7 +308,7 @@ high_rec_co <- 2
     gtheme
 
   ggsave(FigMeanPabvsPab, file = paste0(loc.wd,
-    "/r_data/results_for_paper/f1_replicates.tiff"),
+    "/results_for_paper/FigMeanPabvsPab.tiff"),
     height = 3, width = 3, dpi = 600, compression = "lzw")
   print(FigMeanPabvsPab)
 ```
@@ -316,7 +316,7 @@ high_rec_co <- 2
 
 ```{r make_recovery_fraction_histograms}
   load(file = paste0(loc.wd, 
-                     "/r_data/results_for_paper/RawCaco2Data.RData"))
+                     "/results_for_paper/RawCaco2Data.RData"))
 
 labl.dt1 <- data.table(x = 2, y = c(150, 125, 100),
                        labl = c(paste0("Mean: ", signif(mean(caco2.perchemraw[, mrec_ab], na.rm = T),2)),
@@ -361,16 +361,16 @@ FigFrecbaHist <-
   annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
                     ymin = 195,ymax = 195,xmax = 0.1, xmin = 0.1)
 
-ggsave(FigFrecabHist, file = paste0(loc.wd, "/r_data/results_for_paper/mrec_ab_histo.tiff"),
+ggsave(FigFrecabHist, file = paste0(loc.wd, "/results_for_paper/Fig_mrec_ab_histo.tiff"),
        height = 3, width = 3, dpi = 600, compression = "lzw")
-ggsave(FigFrecbaHist, file = paste0(loc.wd, "/r_data/results_for_paper/mrec_ba_histo.tiff"),
+ggsave(FigFrecbaHist, file = paste0(loc.wd, "/results_for_paper/Fig_mrec_ba_histo.tiff"),
        height = 3, width = 3, dpi = 600, compression = "lzw")
 print(FigFrecabHist)
 print(FigFrecbaHist)
 ```
 ```{r chemical_counts}
   load(file = paste0(loc.wd, 
-                     "/r_data/results_for_paper/RawCaco2Data.RData"))
+                     "/results_for_paper/RawCaco2Data.RData"))
 
 Num.positive.frec.ab <- length(unique(subset(caco2.perchemraw, 
                                              mrec_ab > 0)$dtxsid))
@@ -520,13 +520,13 @@ Pab.thresh <- 10
     annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
                       ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   
-  ggsave(FigPabvsRecovery, file = paste0(loc.wd, "/r_data/results_for_paper/s1a_recab_v_Pab1.tiff"),
+  ggsave(FigPabvsRecovery, file = paste0(loc.wd, "/results_for_paper/Fig_recab_v_Pab1.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigAdjPabvsRecovery, file = paste0(loc.wd, "/r_data/results_for_paper/recab_v_Pab2.tiff"),
+  ggsave(FigAdjPabvsRecovery, file = paste0(loc.wd, "/results_for_paper/Fig_recab_v_Pab2.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigPbavsRecovery, file = paste0(loc.wd, "/r_data/results_for_paper/s1b_recba_v_Pba1.tiff"),
+  ggsave(FigPbavsRecovery, file = paste0(loc.wd, "/results_for_paper/Fig_recba_v_Pba1.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigAdjPbavsRecovery, file = paste0(loc.wd, "/r_data/results_for_paper/recba_v_Pba2.tiff"),
+  ggsave(FigAdjPbavsRecovery, file = paste0(loc.wd, "/results_for_paper/Fig_recba_v_Pba2.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -568,7 +568,7 @@ setcolorder(caco2.publish,
               "rec_ab.unfilt", "rec_ba.unfilt"))
 caco2.publish[, casrn := paste0(" ", casrn)]
 write.xlsx(caco2.publish, 
-           file = paste0(loc.wd, "/r_data/results_for_paper/caco2_data.xlsx"),
+           file = paste0(loc.wd, "/results_for_paper/caco2_data.xlsx"),
            showNA=FALSE)
 save(caco2.publish, file = paste0(loc.wd,"/r_data/processed/our_caco2.RData"))
 
@@ -605,7 +605,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     theme_bw()+
     gtheme
   #print(g1)
-  ggsave(FigMeanPabvsPab, file = paste0(loc.wd, "/r_data/results_for_paper/S2figure.tiff"),
+  ggsave(FigMeanPabvsPab, file = paste0(loc.wd, "/results_for_paper/Fig_MeanPabvsPAb.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -646,7 +646,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
               na="",
               sep=",",
               file = paste0(loc.wd,
-                            "/r_data/results_for_paper/TableMeanChemicalMeasurments.csv"))
+                            "/results_for_paper/TableMeanChemicalMeasurments.csv"))
 ```
 
 ```{r analyze_controls_warfarin}
@@ -786,26 +786,26 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     gtheme
   
   ggsave(FigWarfarinPabAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_Pab_histo.tiff"),
+    "/results_for_paper/Fig_warfarin_Pab_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigWarfarinPbaAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_Pba_histo.tiff"),
+    "/results_for_paper/Fig_warfarin_Pba_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigWarfarinEffluxRAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_efflux_histo.tiff"),
+    "/results_for_paper/Fig_warfarin_efflux_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigWarfarinFrecabHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_recab_histo.tiff"),
+    "/results_for_paper/Fig_warfarin_recab_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigWarfarinFrecbaHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_recba_histo.tiff"),
+    "/results_for_paper/Fig_warfarin_recba_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigWarfarinPabUnadjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/warfarin_Pab0_histo.tiff"),
+    "/results_for_paper/Fig_warfarin_Pab0_histo.tiff"),
     height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/warfarin_Pba0_histo.tiff"),
+  # ggsave(g4b, file = paste0(loc.wd, "/results_for_paper/warfarin_Pba0_histo.tiff"),
   #        height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/warfarin_efflux0_histo.tiff"),
+  # ggsave(g4c, file = paste0(loc.wd, "/results_for_paper/warfarin_efflux0_histo.tiff"),
   #        height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -942,27 +942,27 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     gtheme
   
   ggsave(FigTalinololPabAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_Pab_histo.tiff"),
+    "/results_for_paper/Fig_Talinolol_Pab_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigTalinololPbaAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_Pba_histo.tiff"),
+    "/results_for_paper/Fig_Talinolol_Pba_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigTalinololEffluxRAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_efflux_histo.tiff"),
+    "/results_for_paper/Fig_Talinolol_efflux_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigTalinololFrecbaHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_recab_histo.tiff"),
+    "/results_for_paper/Fig_Talinolol_recab_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigTalinololFrecbaHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_recba_histo.tiff"),
+    "/results_for_paper/Fig_Talinolol_recba_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   
   ggsave(FigTalinololPabUnadjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Talinolol_Pab0_histo.tiff"),
+    "/results_for_paper/Fig_Talinolol_Pab0_histo.tiff"),
           height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/Talinolol_Pba0_histo.tiff"),
+  # ggsave(g4b, file = paste0(loc.wd, "/results_for_paper/Talinolol_Pba0_histo.tiff"),
   #        height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/Talinolol_efflux0_histo.tiff"),
+  # ggsave(g4c, file = paste0(loc.wd, "/results_for_paper/Talinolol_efflux0_histo.tiff"),
   #        height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -1104,26 +1104,26 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     gtheme
   
   ggsave(FigRanitidinePabAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_Pab_histo.tiff"),
+    "/results_for_paper/Fig_Ranitidine_Pab_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigRanitidinePbaAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_Pba_histo.tiff"),
+    "/results_for_paper/Fig_Ranitidine_Pba_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigRanitidineEffluxRAdjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_efflux_histo.tiff"),
+    "/results_for_paper/Fig_Ranitidine_efflux_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigRanitidineFrecabHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_recab_histo.tiff"),
+    "/results_for_paper/Fig_Ranitidine_recab_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigRanitidineFrecbaHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_recba_histo.tiff"),
+    "/results_for_paper/Fig_Ranitidine_recba_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigRanitidinePabUnadjHist, file = paste0(loc.wd,
-    "/r_data/results_for_paper/Ranitidine_Pab0_histo.tiff"),
+    "/results_for_paper/Fig_Ranitidine_Pab0_histo.tiff"),
     height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4b, file = paste0(loc.wd, "/r_data/results_for_paper/Ranitidine_Pba0_histo.tiff"),
+  # ggsave(g4b, file = paste0(loc.wd, "/results_for_paper/Ranitidine_Pba0_histo.tiff"),
   #        height = 3, width = 3, dpi = 600, compression = "lzw")
-  # ggsave(g4c, file = paste0(loc.wd, "/r_data/results_for_paper/Ranitidine_efflux0_histo.tiff"),
+  # ggsave(g4c, file = paste0(loc.wd, "/results_for_paper/Ranitidine_efflux0_histo.tiff"),
   #        height = 3, width = 3, dpi = 600, compression = "lzw")
 ```  
 
@@ -1132,7 +1132,7 @@ ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdj
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigRefChemsforPaper.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/FigRefChemsforPaper.tiff"),
          height = 5*200, width = 3*200, compression = "lzw")
 ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdjHist, 
           labels = c("A", "B", "C"),
@@ -1261,18 +1261,18 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
         scale_fill_viridis(discrete=2)+
     gtheme
 
-  ggsave(FigPabAdjHist, file = paste0(loc.wd, "/r_data/results_for_paper/f2a_mPab_histo.tiff"),
+  ggsave(FigPabAdjHist, file = paste0(loc.wd, "/results_for_paper/Fig_mPab_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigPbaAdjHist, file = paste0(loc.wd, "/r_data/results_for_paper/f2b_mPba_histo.tiff"),
+  ggsave(FigPbaAdjHist, file = paste0(loc.wd, "/results_for_paper/Fig_mPba_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigEffluxRAdjHist, file = paste0(loc.wd, "/r_data/results_for_paper/f2c_mefflux_histo.tiff"),
+  ggsave(FigEffluxRAdjHist, file = paste0(loc.wd, "/results_for_paper/Fig_mefflux_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   
-  ggsave(FigPabUnadjHist, file = paste0(loc.wd, "/r_data/results_for_paper/mPab0_histo.tiff"),
+  ggsave(FigPabUnadjHist, file = paste0(loc.wd, "/results_for_paper/Fig_mPab0_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigPbaUnadjHist, file = paste0(loc.wd, "/r_data/results_for_paper/mPba0_histo.tiff"),
+  ggsave(FigPbaUnadjHist, file = paste0(loc.wd, "/results_for_paper/Fig_mPba0_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigEffluxRUnadjHist, file = paste0(loc.wd, "/r_data/results_for_paper/mefflux0_histo.tiff"),
+  ggsave(FigEffluxRUnadjHist, file = paste0(loc.wd, "/results_for_paper/Fig_mefflux0_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   print(FigPabAdjHist)
   print(FigPabUnadjHist)
@@ -1282,7 +1282,7 @@ ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist,
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoDataHists.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/FigCacoDataHists.tiff"),
          height = 5*200, width = 3*200, compression = "lzw")
 ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist, 
           labels = c("A", "B", "C"),
@@ -1315,7 +1315,7 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
     annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
                       ymin = 130,ymax = 130,xmax = -3, xmin = -3)
 
-    ggsave(FigPabAdjClassHist, file = paste0(loc.wd, "/r_data/results_for_paper/f2a_mPab_class_histo.tiff"),
+    ggsave(FigPabAdjClassHist, file = paste0(loc.wd, "/results_for_paper/f2a_mPab_class_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
     print(FigPabAdjClassHist)
 

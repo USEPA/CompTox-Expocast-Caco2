@@ -283,7 +283,7 @@ scale_fill_discrete(name="",labels=c(expression('BER','F'['abs'],'F'['gut'])))+
   scale_colour_viridis_d()
 print(FigBERHistogram)
 ggsave(FigBERHistogram, 
-       file = paste0(loc.wd, "/r_data/results_for_paper/BERhistogram.tiff"), 
+       file = paste0(loc.wd, "/results_for_paper/Fig_BERhistogram.tiff"), 
        dpi = 600, height = 5, width = 5, compression = "lzw")
 ```
 
@@ -305,7 +305,7 @@ FigBERRankCompare<-ggplot(rank.table, aes(x=r100, y=rcaco)) +
   gtheme
 print(FigBERRankCompare)
 ggsave(FigBERRankCompare, 
-       file = paste0(loc.wd, "/r_data/results_for_paper/BERrankcompare.tiff"), 
+       file = paste0(loc.wd, "/results_for_paper/Fig_BERrankcompare.tiff"), 
        dpi = 600, height = 5, width = 5, compression = "lzw")
 ```
 ```{r clacmccsscheck}
@@ -331,7 +331,7 @@ Figcsstest<-ggplot(css.table, aes(x=Fgutchange, y=Fbio.eff)) +
   gtheme
 print(Figcsstest)
 ggsave(Figcsstest, 
-       file = paste0(loc.wd, "/r_data/results_for_paper/csstest.tiff"), 
+       file = paste0(loc.wd, "/results_for_paper/Fig_CssTest.tiff"), 
        dpi = 600, height = 5, width = 5, compression = "lzw")
 ```
 
@@ -364,12 +364,15 @@ g2 <- marrangeGrob(grobs = list(g1, gleg), nrow = 2, ncol = 1, top = NULL, layou
 print(g2)
 ggsave(g2, 
        file = paste0(loc.wd,
-                       "/r_data/results_for_paper/BERrankzoom.tiff"),
+                       "/results_for_paper/Fig_BERrankzoom.tiff"),
        dpi = 600, height = 5, width = 7.5, compression = "lzw")
 ```
 
 ```{r makemeasurecacoBERfig}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+# load Css values
+load(file = paste0(loc.wd, "/r_data/AEDtable.RData"))
+
 FigBERmeas <- ggplot(subset(aed.full2,DTXSID%in%measured.chems &
                     !is.na(q95) &
                     gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])"))+
@@ -393,7 +396,7 @@ FigBERleg <- marrangeGrob(grobs = list(FigBERmeas, gleg), nrow = 2, ncol = 1, to
 print(FigBERleg)
 ggsave(FigBERleg, 
        file = paste0(loc.wd,
-                       "/r_data/results_for_paper/BERrankmeascaco2.tiff"),
+                       "/results_for_paper/Fig_BERrankmeascaco2.tiff"),
        dpi = 600, height = 5, width = 7.5, compression = "lzw")
 ```
 
@@ -421,7 +424,7 @@ FigBERleg <- marrangeGrob(grobs = list(FigBERall, gleg), nrow = 2, ncol = 1, top
 print(FigBERleg)
 ggsave(FigBERleg, 
        file = paste0(loc.wd,
-                       "/r_data/results_for_paper/BERrankallcaco2.tiff"),
+                       "/results_for_paper/Fig_BERrankallcaco2.tiff"),
        dpi = 600, height = 5, width = 7.5, compression = "lzw")
 ```
 ```{r multipanelBER}
@@ -429,7 +432,7 @@ ggarrange(FigBERmeas, FigBERall,
           labels = c("A", "B"),
           ncol = 1, nrow = 2,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigTwoPanelBER.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_TwoPanelBER.tiff"),
          height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigBERmeas, FigBERall, 
           labels = c("A", "B"),
@@ -460,5 +463,5 @@ low.fabs.table <- low.fabs.table[order(low.fabs.table$Fbio),]
 knitr::kable(low.fabs.table, 
              caption = "Chemicals with Low Caco2-Predicted Fabs (Poorly absorbed chemicals)",
              floating.environment="sidewaystable") 
-write.csv(low.fabs.table,file=paste0(loc.wd,"/r_data/results_for_paper/Tablepoorlyabsorbedchemcials.csv"))
+write.csv(low.fabs.table,file=paste0(loc.wd,"/results_for_paper/Tablepoorlyabsorbedchemcials.csv"))
 ```

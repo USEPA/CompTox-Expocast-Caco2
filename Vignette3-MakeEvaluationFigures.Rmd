@@ -268,7 +268,7 @@ save(invivo.table,
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
 write.csv(invivo.table,
-          file=paste0(loc.wd,"/r_data/results_for_paper/SupTableInVivoDatandPreds.csv"),
+          file=paste0(loc.wd,"/results_for_paper/SupTableInVivoDatandPreds.csv"),
           row.names=FALSE,
           na="")
 ```
@@ -290,7 +290,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
         gtheme +
         theme(axis.title = element_text(size = 8)) 
 print(FigCacoPredPeff)
-    ggsave(FigCacoPredPeff, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredPeff.tiff"),
+    ggsave(FigCacoPredPeff, file = paste0(loc.wd, "/results_for_paper/FigCacoPredPeff.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Measured data from Kim et al. (2014)
@@ -307,7 +307,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
         scale_colour_viridis_d()+
         gtheme
 print(FigCacoPredFbioKim)
-    ggsave(FigCacoPredFbioKim, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioKim.tiff"),
+    ggsave(FigCacoPredFbioKim, file = paste0(loc.wd, "/results_for_paper/FigCacoPredFbioKim.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Measured data collected by Varma et al. (2010)
@@ -324,7 +324,7 @@ FigCacoPredFabs <- ggplot(invivo.table)+
         scale_colour_viridis_d()+
         gtheme 
 print(FigCacoPredFabs)
-    ggsave(FigCacoPredFabs, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFabs.tiff"),
+    ggsave(FigCacoPredFabs, file = paste0(loc.wd, "/results_for_paper/FigCacoPredFabs.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -342,7 +342,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
         scale_colour_viridis_d()+
         gtheme
   print(FigCacoPredFgut)
-  ggsave(FigCacoPredFgut, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFgut.tiff"),
+  ggsave(FigCacoPredFgut, file = paste0(loc.wd, "/results_for_paper/FigCacoPredFgut.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -362,7 +362,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
   print(FigADMetPredFgut)
   ggsave(FigADMetPredFgut, 
          file = paste0(loc.wd, 
-                              "/r_data/results_for_paper/FigADMetPredFgut.tiff"),
+                              "/results_for_paper/FigADMetPredFgut.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
   
 summary(lm(vo_Fg ~ Fgut.ADMet, data=invivo.table))
@@ -384,7 +384,7 @@ ffp=fraction first pass
   scale_colour_viridis_d() +
   gtheme
   print(FighttkPredFhep)
-  ggsave(FighttkPredFhep, file = paste0(loc.wd, "/r_data/results_for_paper/FighttkPredFhep.tiff"),
+  ggsave(FighttkPredFhep, file = paste0(loc.wd, "/results_for_paper/FighttkPredFhep.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Fbio calculated from measured data
@@ -418,7 +418,7 @@ ffp=fraction first pass
   gtheme
   print(FigOldhttkPredFbio)
   ggsave(FigOldhttkPredFbio, 
-         file = paste0(loc.wd, "/r_data/results_for_paper/FigoldhttkPredFbio.tiff"),
+         file = paste0(loc.wd, "/results_for_paper/FigoldhttkPredFbio.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -437,7 +437,7 @@ ffp=fraction first pass
     scale_colour_viridis_d()+
     gtheme
   print(FigCacoPredFbioVarma)
-  ggsave(FigCacoPredFbioVarma, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioVarma.tiff"),
+  ggsave(FigCacoPredFbioVarma, file = paste0(loc.wd, "/results_for_paper/FigCacoPredFbioVarma.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -473,7 +473,7 @@ ffp=fraction first pass
         scale_colour_viridis_d()+
         gtheme
   print(FigCacoPredFbioRat)
-  ggsave(FigCacoPredFbioRat, file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioRat.tiff"),
+  ggsave(FigCacoPredFbioRat, file = paste0(loc.wd, "/results_for_paper/FigCacoPredFbioRat.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -508,7 +508,7 @@ ffp=fraction first pass
   print(FigCacoPredFbioAll)
   ggsave(FigCacoPredFbioAll, 
          file = paste0(loc.wd, 
-                       "/r_data/results_for_paper/FigCacoPredFbioAll.tiff"),
+                       "/results_for_paper/FigCacoPredFbioAll.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -543,7 +543,7 @@ ffp=fraction first pass
   print(FigADMetPredFbio)
   ggsave(FigADMetPredFbio, 
          file = paste0(loc.wd, 
-                       "/r_data/results_for_paper/FigADMetPredFbio.tiff"),
+                       "/results_for_paper/FigADMetPredFbio.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -553,7 +553,7 @@ ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FighttkPredFhep,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/r_data/results_for_paper/FigCacoPredFbioComponents.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/FigCacoPredFbioComponents.tiff"),
          height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FighttkPredFhep, 
           labels = c("A", "B", "C", "D"),
@@ -588,7 +588,7 @@ dev.off()
         gtheme
   print(FigQSPRPredPab)
     ggsave(FigQSPRPredPab, file = paste0(loc.wd, 
-                                         "/r_data/results_for_paper/FigQSPRPredPab.tiff"),
+                                         "/results_for_paper/FigQSPRPredPab.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -751,7 +751,7 @@ These calculations should match both the manuscript text and the code in calc_or
     theme(axis.title = element_text(size = 8)) 
   print(FigQSPRPredPeff)
   ggsave(FigQSPRPredPeff, file = 
-           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredPeff.tiff"),
+           paste0(loc.wd, "/results_for_paper/FigQSPRPredPeff.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 ```{r make_QSPR_Fbio_kim_fig}
@@ -769,7 +769,7 @@ These calculations should match both the manuscript text and the code in calc_or
   gtheme
   print(FigQSPRPredFbioKim)
   ggsave(FigQSPRPredFbioKim, file = 
-           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFbioKim.tiff"),
+           paste0(loc.wd, "/results_for_paper/FigQSPRPredFbioKim.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -789,7 +789,7 @@ These calculations should match both the manuscript text and the code in calc_or
 
   print(FigQSPRPredFabs)
   ggsave(FigQSPRPredFabs, file = 
-           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFabs.tiff"),
+           paste0(loc.wd, "/results_for_paper/FigQSPRPredFabs.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -809,7 +809,7 @@ These calculations should match both the manuscript text and the code in calc_or
   print(FigQSPRPredFgut)
   
   ggsave(FigQSPRPredFgut, file = 
-           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFgut.tiff"),
+           paste0(loc.wd, "/results_for_paper/FigQSPRPredFgut.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -828,7 +828,7 @@ These calculations should match both the manuscript text and the code in calc_or
     gtheme
   print(FigQSPRPredFhep)
   ggsave(FigQSPRPredFhep, file = 
-           paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFhep.tiff"),
+           paste0(loc.wd, "/results_for_paper/FigQSPRPredFhep.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -848,7 +848,7 @@ These calculations should match both the manuscript text and the code in calc_or
   print(FigQSPRPredFbioVarma)
   ggsave(FigQSPRPredFbioVarma, 
          file = paste0(loc.wd, 
-                       "/r_data/results_for_paper/FigQSPRPredFbioVarma.tiff"),
+                       "/results_for_paper/FigQSPRPredFbioVarma.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 # Fbio using both Kim et al. (2014) and Varma et al. (2010)
@@ -881,7 +881,7 @@ These calculations should match both the manuscript text and the code in calc_or
     gtheme
   print(FigQSPRPredFbioAll)
   ggsave(FigQSPRPredFbioAll, file = 
-         paste0(loc.wd, "/r_data/results_for_paper/FigQSPRPredFbioAll.tiff"),
+         paste0(loc.wd, "/results_for_paper/FigQSPRPredFbioAll.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 ### Evaluation Statistics
@@ -948,5 +948,5 @@ for (this.evaluation in row.names(evaluations))
 knitr::kable(eval.table, 
              caption = "Evaluation of predictions against in vivo data for Fbio and contributing factors.",
              floating.environment="sidewaystable") 
-write.csv(eval.table,file=paste0(loc.wd,"/r_data/results_for_paper/Tableinvivoevaluationsummary.csv"))
+write.csv(eval.table,file=paste0(loc.wd,"/results_for_paper/Tableinvivoevaluationsummary.csv"))
 ```
