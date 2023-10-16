@@ -187,7 +187,8 @@ aed.full2[gutabs == "bold('Caco-2')~bolditalic('F'['bio'])" &
             DTXSID %in% measured.chems,"BER"])]
 aed.full2[,
           c("Fbio", "Fabs", "Fgut", "Fhep") :=
-            calc_fbio.oral(chem.cas=CAS,suppress.messages=TRUE),by=CAS]
+            calc_fbio.oral(chem.cas=CAS,
+            suppress.messages=TRUE),by=CAS]
 
 save(aed.full2,file=paste0(loc.wd, "/r_data/BERtable.RData"))
 ```
@@ -308,7 +309,7 @@ ggsave(FigBERRankCompare,
        file = paste0(loc.wd, "/results_for_paper/Fig_BERrankcompare.tiff"), 
        dpi = 600, height = 5, width = 5, compression = "lzw")
 ```
-```{r clacmccsscheck}
+```{r calcmccsscheck}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
 css.table <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              c("DTXSID","q50","Fgut", "Fabs")]
@@ -400,7 +401,7 @@ ggsave(FigBERleg,
        dpi = 600, height = 5, width = 7.5, compression = "lzw")
 ```
 
-```{r makemeasurecacoBERfig}
+```{r makemeasurecacoBERfig2}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
 FigBERall <- ggplot(subset(aed.full2,
                     !is.na(q95) &

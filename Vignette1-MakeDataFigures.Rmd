@@ -611,7 +611,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
 
 ```{r calculate_stats_per_chemical_on_filtered_data}  
   caco2.perchem <- merge_chemical_replicates(caco2.filt)
-# This table has one measerument per chemical:
+# This table has one measurement per chemical:
   save(caco2.perchem,
        file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
   write.table(caco2.perchem[!duplicated(caco2.perchem$dtxsid),c(
@@ -646,7 +646,7 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
               na="",
               sep=",",
               file = paste0(loc.wd,
-                            "/results_for_paper/TableMeanChemicalMeasurments.csv"))
+                            "/results_for_paper/TableMeanChemicalMeasurements.csv"))
 ```
 
 ```{r analyze_controls_warfarin}
@@ -1132,7 +1132,7 @@ ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdj
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/FigRefChemsforPaper.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsforPaper.tiff"),
          height = 5*200, width = 3*200, compression = "lzw")
 ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdjHist, 
           labels = c("A", "B", "C"),
@@ -1282,7 +1282,7 @@ ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist,
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/FigCacoDataHists.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_CacoDataHists.tiff"),
          height = 5*200, width = 3*200, compression = "lzw")
 ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist, 
           labels = c("A", "B", "C"),
