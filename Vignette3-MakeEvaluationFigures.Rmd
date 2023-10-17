@@ -30,8 +30,7 @@ knitr::opts_knit$set(root.dir = loc.wd)
 
 ### Load the relevant libraries
 ```{r r_setup}
-
-packages <- c("ggplot2","scales","httk")
+packages <- c("ggplot2","scales","httk","readxl", "viridis","ggpubr")
 sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary here
 ```
 # Function for labeling on log-scale:
@@ -75,6 +74,113 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
                 axis.text.x = element_text(size = 10,face="bold",color="black"),
                 plot.title = element_text(hjust=0,size=12,face="bold"))
 ```
+```{r load_pharma_list}
+   pharma <- read_excel(
+     paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
+```
+### Lay out the range of predictions
+```{r make_prediction_histograms1}
+load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
+
+caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE) &
+                !is.na(caco2.perchem$mPab),
+              c("Fbio.oral","Fabs.oral","Fgut.oral","Fhep.oral") :=
+              calc_fbio.oral(dtxsid=dtxsid,
+                               suppress.messages=TRUE),
+              by=dtxsid]
+   caco2.perchem$Class <- "Other"
+   caco2.perchem[caco2.perchem$dtxsid%in%pharma$DSSTox_Substance_Id,"Class"] <-
+     "Pharmaceutical"
+```
+
+```{r make_prediction_histograms2}
+  FigPredFabsHist <- ggplot(caco2.perchem)+
+        geom_histogram(aes(x = Fabs.oral, fill=Class), 
+                   color = "black",
+                   alpha=0.4,
+                 boundary = 0.
+                   #, position="identity"
+                   ) +
+    labs(y = expression(bold("Count")), 
+         x = expression(bold("Predicted"~F[abs]))) +
+ #   scale_x_log10(labels=scientific_10)+
+# First bin from QSPR:
+    geom_vline(xintercept =  calc_fabs.oral(parameters=list(Caco2.Pab=0.23)), 
+      linetype="dashed", 
+      color = "blue", size=1)+
+# Second bin from QSPR:
+    geom_vline(xintercept =  calc_fabs.oral(parameters=list(Caco2.Pab=2.08)), 
+      linetype="dashed", 
+      color = "blue", size=1)+
+# Third bin from QSPR:
+    geom_vline(xintercept =  calc_fabs.oral(parameters=list(Caco2.Pab=20)), 
+      linetype="dashed", 
+      color = "blue", size=1)+
+    theme_bw()+
+        scale_fill_viridis(discrete=2)+
+    gtheme
+print(FigPredFabsHist)
+
+  FigPredFgutHist <- ggplot(caco2.perchem)+
+        geom_histogram(aes(x = Fgut.oral, fill=Class), 
+                   color = "black",
+                   alpha=0.4,
+                 boundary = 0.
+                   #, position="identity"
+                   ) +
+    labs(y = expression(bold("Count")), 
+         x = expression(bold("Predicted"~F[gut]))) +
+    theme_bw()+
+        scale_fill_viridis(discrete=2)+
+    gtheme
+  
+  FigPredFhepHist <- ggplot(caco2.perchem)+
+        geom_histogram(aes(x = Fhep.oral, fill=Class), 
+                   color = "black",
+                   alpha=0.4,
+                 boundary = 0.
+                   #, position="identity"
+                   ) +
+    labs(y = expression(bold("Count")), 
+         x = expression(bold("Predicted"~F[hep]))) +
+    theme_bw()+
+        scale_fill_viridis(discrete=2)+
+    gtheme
+  
+  FigPredFbioHist <- ggplot(caco2.perchem)+
+        geom_histogram(aes(x = Fbio.oral, fill=Class), 
+                   color = "black",
+                   alpha=0.4,
+                 boundary = 0.
+                   #, position="identity"
+                   ) +
+    labs(y = expression(bold("Count")), 
+         x = expression(bold("Predicted"~F[bio]))) +
+    theme_bw()+
+        scale_fill_viridis(discrete=2)+
+    gtheme
+```
+
+```{r make_prediction_histograms3}
+ggarrange(FigPredFabsHist, FigPredFgutHist, 
+          FigPredFhepHist, FigPredFbioHist,
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom")
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_FbioPredHists.tiff"),
+         height = 5*200, width = 3*200, compression = "lzw")
+ggarrange(FigPredFabsHist, FigPredFgutHist, 
+          FigPredFhepHist, FigPredFbioHist,
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom")
+dev.off()
+
+Pab <- 10^seq(log10(0.01),log10(20),0.1)
+Fabs <- NULL
+for (this.Pab in Pab) { Fabs <- c(Fabs,calc_fabs.oral(parameters=list(Caco2.Pab=this.Pab)))}
+```
+
 
 ### Comparison of In Vivo Data with Predictions based on In vitro Caco2 Measurements 
 
@@ -98,8 +204,7 @@ Load all the parameters needed to make calculations:
 ```{r permeability_params}
 # gut.data; compiled data table of absorption and permeability data 
    load(paste0(loc.wd, "/r_data/processed/all_gut_data_25MAR2019.RData")) 
-   pharma <- read_excel(
-     paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
+
    
    invivo.table <- gut.data
 # Basiv version for plots:
@@ -957,40 +1062,96 @@ write.csv(eval.table,file=paste0(loc.wd,"/results_for_paper/Tableinvivoevaluatio
 ```
 ```{r make_prediction_histograms1}
 load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
-caco2.perchem[,c("Fbio.oral","Fabs.oral","Fgut.oral","Fhep.oral") :=
-                ifelse(dtxsid%in%get_cheminfo(info="dtxsid"),
-                       calc_fbio.oral(dtxsid=dtxsid,
-                               overwrite.invivo = TRUE,
+caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE),
+              c("Fbio.oral","Fabs.oral","Fgut.oral","Fhep.oral") :=
+              calc_fbio.oral(dtxsid=dtxsid,
                                suppress.messages=TRUE),
-                       NA),by=dtxsid]
+              by=dtxsid]
    caco2.perchem$Class <- "Other"
    caco2.perchem[caco2.perchem$dtxsid%in%pharma$DSSTox_Substance_Id,"Class"] <-
      "Pharmaceutical"
 ```
+
 ```{r make_prediction_histograms2}
-```
   FigPredFabsHist <- ggplot(caco2.perchem)+
         geom_histogram(aes(x = Fabs.oral, fill=Class), 
                    color = "black",
-                   alpha=0.4, position="identity")+
-    #geom_histogram(aes(x = mefflux0), fill= "grey80", color = "black")+
+                   alpha=0.4,
+                 boundary = 0.
+                   #, position="identity"
+                   ) +
     labs(y = expression(bold("Count")), 
          x = expression(bold("Predicted"~F[abs]))) +
-    scale_x_log10(labels=scientific_10)+
+ #   scale_x_log10(labels=scientific_10)+
+# First bin from QSPR:
+    geom_vline(xintercept =  calc_fabs.oral(Params=list(Caco2.Pab=0.23)), 
+      linetype="dashed", 
+      color = "blue", size=1)+
+# Second bin from QSPR:
+    geom_vline(xintercept =  calc_fabs.oral(Params=list(Caco2.Pab=2.08)), 
+      linetype="dashed", 
+      color = "blue", size=1)+
+# Third bin from QSPR:
+    geom_vline(xintercept =  calc_fabs.oral(Params=list(Caco2.Pab=20)), 
+      linetype="dashed", 
+      color = "blue", size=1)+
     theme_bw()+
         scale_fill_viridis(discrete=2)+
     gtheme
+print(FigPredFabsHist)
+
+  FigPredFgutHist <- ggplot(caco2.perchem)+
+        geom_histogram(aes(x = Fgut.oral, fill=Class), 
+                   color = "black",
+                   alpha=0.4,
+                 boundary = 0.
+                   #, position="identity"
+                   ) +
+    labs(y = expression(bold("Count")), 
+         x = expression(bold("Predicted"~F[gut]))) +
+    theme_bw()+
+        scale_fill_viridis(discrete=2)+
+    gtheme
+  
+  FigPredFhepHist <- ggplot(caco2.perchem)+
+        geom_histogram(aes(x = Fhep.oral, fill=Class), 
+                   color = "black",
+                   alpha=0.4,
+                 boundary = 0.
+                   #, position="identity"
+                   ) +
+    labs(y = expression(bold("Count")), 
+         x = expression(bold("Predicted"~F[hep]))) +
+    theme_bw()+
+        scale_fill_viridis(discrete=2)+
+    gtheme
+  
+  FigPredFbioHist <- ggplot(caco2.perchem)+
+        geom_histogram(aes(x = Fbio.oral, fill=Class), 
+                   color = "black",
+                   alpha=0.4,
+                 boundary = 0.
+                   #, position="identity"
+                   ) +
+    labs(y = expression(bold("Count")), 
+         x = expression(bold("Predicted"~F[bio]))) +
+    theme_bw()+
+        scale_fill_viridis(discrete=2)+
+    gtheme
+```
+
 ```{r make_prediction_histograms3}
-ggarrange(FigPredFabsHist, FigPredFgutHist, FigPredFhepHist, FigPredFbioHist
+ggarrange(FigPredFabsHist, FigPredFgutHist, 
+          FigPredFhepHist, FigPredFbioHist,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_CacoDataHists.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_FbioPredHists.tiff"),
          height = 5*200, width = 3*200, compression = "lzw")
-ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist, 
+ggarrange(FigPredFabsHist, FigPredFgutHist, 
+          FigPredFhepHist, FigPredFbioHist,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
-          common.legend = TRUE, legend = "bottom"+
-          theme_gray(base_size = 100))
+          common.legend = TRUE, legend = "bottom")
 dev.off()
 ```
