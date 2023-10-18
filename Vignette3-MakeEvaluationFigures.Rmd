@@ -93,6 +93,45 @@ caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE) &
      "Pharmaceutical"
 ```
 
+# This table has one row per chemical:
+```{r create_supplemental_table_perchemvalues}
+  write.table(caco2.perchem[!duplicated(caco2.perchem$dtxsid),c(
+                            "compound",
+                            "casrn",                 
+                            "dtxsid",
+                             "mPab",
+                             "sdPab",
+                             "mPba",
+                             "sdPba",
+                             "mPab0",
+                             "sdPab0",
+                             "mPba0",
+                             "sdPba0",
+                             "mefflux",
+                             "sdefflux",
+                             "mefflux0",
+                             "sdefflux0",
+                             "mrec_ab",
+                             "mrec_ba",
+                             "sdrec_ab",
+                             "sdrec_ba",
+                             "ntotal_recab",
+                             "ntotal_recba",
+                             "ntotal",
+                             "ntotal_ab",
+                             "ntotal_ba",
+                             "ntotal_efflux",
+                             "ntotal_rab",
+                             "ntotal_rba",
+                            "Fbio.oral","Fabs.oral","Fgut.oral","Fhep.oral"
+                            )],
+              row.names=FALSE,
+              na="",
+              sep=",",
+              file = paste0(loc.wd,
+                            "/results_for_paper/TableMeanChemicalMeasurements.csv"))
+```
+
 ```{r make_prediction_histograms2}
   FigPredFabsHist <- ggplot(caco2.perchem)+
         geom_histogram(aes(x = Fabs.oral, fill=Class), 
@@ -203,11 +242,19 @@ caco2.dt$Pab.Pred.High <- sapply(caco2.dt$Pab.Quant.Pred,function(x) as.numeric(
 Load all the parameters needed to make calculations:
 ```{r permeability_params}
 # gut.data; compiled data table of absorption and permeability data 
-   load(paste0(loc.wd, "/r_data/processed/all_gut_data_25MAR2019.RData")) 
+  load(paste0(loc.wd, "/r_data/processed/all_gut_data.RData")) 
 
+# Out of all the chemicals with measured Fbio (or components) in Kim, Varma
+# and Musther, we only want the ones that 1) have in vitro measured Caco-2 or
+# 2) have both in vivo Fbio human and in vivo Fbio rat (only for rat-human
+# comparison)
+  invivo.table <- subset(gut.data, dtxsid %in% subset(
+    chem.physical_and_invitro.data, 
+                        !is.na(chem.physical_and_invitro.data$Human.Caco2.Pab) |
+                        (!is.na(chem.physical_and_invitro.data$Human.Foral) &
+                        !is.na(chem.physical_and_invitro.data$Rat.Foral)))$DTXSID)
    
-   invivo.table <- gut.data
-# Basiv version for plots:
+# Basic version for plots:
    save(invivo.table,file=paste0(loc.wd, "/r_data/processed/all_gut_data_invivotable.RData"))
    colnames(invivo.table)[colnames(invivo.table)=="dtxsid"] <- "DTXSID"
    invivo.table <- merge(invivo.table,caco2.dt,by="DTXSID")
@@ -219,9 +266,18 @@ Load all the parameters needed to make calculations:
 # Figure out which chemicals we have sufficient HTTK for to make predictions:
    httk.casrn <- get_cheminfo()
    
-   invivo.table[,logP:=chem.physical_and_invitro.data[unlist(sapply(invivo.table$DTXSID, function(x) which(x==chem.physical_and_invitro.data$DTXSID))),"logP"]]
-   invivo.table[,MW:=chem.physical_and_invitro.data[unlist(sapply(invivo.table$DTXSID, function(x) which(x==chem.physical_and_invitro.data$DTXSID))),"MW"]]
-   
+   invivo.table[, logP:=chem.physical_and_invitro.data[
+     unlist(sapply(invivo.table$DTXSID, function(x) 
+       which(x==chem.physical_and_invitro.data$DTXSID))),"logP"]]
+   invivo.table[, MW:=chem.physical_and_invitro.data[
+     unlist(sapply(invivo.table$DTXSID, function(x) 
+       which(x==chem.physical_and_invitro.data$DTXSID))),"MW"]]
+   invivo.table[, Fbio_human:=chem.physical_and_invitro.data[
+     unlist(sapply(invivo.table$DTXSID, function(x) 
+       which(x==chem.physical_and_invitro.data$DTXSID))),"Human.Foral"]]
+   invivo.table[, Fbio_rat:=chem.physical_and_invitro.data[
+     unlist(sapply(invivo.table$DTXSID, function(x) 
+       which(x==chem.physical_and_invitro.data$DTXSID))),"Rat.Foral"]]
       invivo.table[!is.na(fuph) & 
                      !is.na(clinth) & 
                      casrn %in% httk.casrn, 
@@ -551,28 +607,12 @@ ffp=fraction first pass
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-# Fbio estimated from rats (Wambaugh et al. (2018) Fbio)
+# Fbio estimated from rats
 ```{r make_CacoFabsRat_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
-  varma.chems <- subset(invivo.table,!is.na(pk_fbior) &
-                          !is.na(vo_F))[,
-                   c("DTXSID","Class","pk_fbior","vo_F")]
-  kim.chems <- subset(invivo.table,!is.na(pk_fbior) &
-                        !is.na(kim_fbioh))[,
-                 c("DTXSID","Class","pk_fbior","kim_fbioh")]
-  colnames(varma.chems)[4] <- "invivo_fbioh"
-  colnames(kim.chems)[4] <- "invivo_fbioh"
-  varma.chems$Reference <- "Varma2010"
-  kim.chems$Reference <- "Kim2014"
-  fbio.table <- rbind(varma.chems,kim.chems)
-  invivo.table <- fbio.table
-  save(invivo.table,
-     file=paste0(loc.wd, 
-                 "/r_data/processed/rat-human-compare-fbioall.RData"))
-  
-  FigCacoPredFbioRat <- ggplot(invivo.table)+
-        geom_jitter(aes(y = invivo_fbioh, x = pk_fbior, color=Class, shape=Class), 
+  FigHumanRatInVivo <- ggplot(invivo.table)+
+        geom_jitter(aes(x = Fbio_human, y = Fbio_rat, color=Class, shape=Class), 
                    alpha = 0.55,
                    size=3,
                    width=0.001,height=0.001)+
@@ -582,8 +622,8 @@ ffp=fraction first pass
         lims(x = c(0,1), y = c(0,1))+
         scale_colour_viridis_d()+
         gtheme
-  print(FigCacoPredFbioRat)
-  ggsave(FigCacoPredFbioRat, file = paste0(loc.wd, "/results_for_paper/Fig_CacoPredFbioRat.tiff"),
+  print(FigHumanRatInVivo)
+  ggsave(FigHumanRatInVivo, file = paste0(loc.wd, "/results_for_paper/Fig_HumanRatInVivo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
@@ -1018,8 +1058,8 @@ evaluations["Fbio",c("In Vivo","Predicted","Reference","Data")] <-
   c("invivo_fbioh","fbioh","Kim et al. (2014)",
     "/r_data/processed/caco2-invivo-compare-fbioall.RData")
 evaluations["Fbio-Rat",c("In Vivo","Predicted","Reference","Data")] <- 
-  c("kim_fbioh","pk_fbior","Wambaugh et al. (2018)",
-    "/r_data/processed/all_gut_data_invivotable.RData")
+  c("Fbio_human","Fbio_rat","Musther et al. (2014), Wambaugh et al. (2018)",
+    "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fbio-QSPR",c("In Vivo","Predicted","Reference","Data")] <- 
   c("invivo_fbioh","fbioh","Kim et al. (2014)",
     "/r_data/processed/qspr-invivo-compare-fbioall.RData")
@@ -1059,99 +1099,4 @@ knitr::kable(eval.table,
              caption = "Evaluation of predictions against in vivo data for Fbio and contributing factors.",
              floating.environment="sidewaystable") 
 write.csv(eval.table,file=paste0(loc.wd,"/results_for_paper/Tableinvivoevaluationsummary.csv"))
-```
-```{r make_prediction_histograms1}
-load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
-caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE),
-              c("Fbio.oral","Fabs.oral","Fgut.oral","Fhep.oral") :=
-              calc_fbio.oral(dtxsid=dtxsid,
-                               suppress.messages=TRUE),
-              by=dtxsid]
-   caco2.perchem$Class <- "Other"
-   caco2.perchem[caco2.perchem$dtxsid%in%pharma$DSSTox_Substance_Id,"Class"] <-
-     "Pharmaceutical"
-```
-
-```{r make_prediction_histograms2}
-  FigPredFabsHist <- ggplot(caco2.perchem)+
-        geom_histogram(aes(x = Fabs.oral, fill=Class), 
-                   color = "black",
-                   alpha=0.4,
-                 boundary = 0.
-                   #, position="identity"
-                   ) +
-    labs(y = expression(bold("Count")), 
-         x = expression(bold("Predicted"~F[abs]))) +
- #   scale_x_log10(labels=scientific_10)+
-# First bin from QSPR:
-    geom_vline(xintercept =  calc_fabs.oral(Params=list(Caco2.Pab=0.23)), 
-      linetype="dashed", 
-      color = "blue", size=1)+
-# Second bin from QSPR:
-    geom_vline(xintercept =  calc_fabs.oral(Params=list(Caco2.Pab=2.08)), 
-      linetype="dashed", 
-      color = "blue", size=1)+
-# Third bin from QSPR:
-    geom_vline(xintercept =  calc_fabs.oral(Params=list(Caco2.Pab=20)), 
-      linetype="dashed", 
-      color = "blue", size=1)+
-    theme_bw()+
-        scale_fill_viridis(discrete=2)+
-    gtheme
-print(FigPredFabsHist)
-
-  FigPredFgutHist <- ggplot(caco2.perchem)+
-        geom_histogram(aes(x = Fgut.oral, fill=Class), 
-                   color = "black",
-                   alpha=0.4,
-                 boundary = 0.
-                   #, position="identity"
-                   ) +
-    labs(y = expression(bold("Count")), 
-         x = expression(bold("Predicted"~F[gut]))) +
-    theme_bw()+
-        scale_fill_viridis(discrete=2)+
-    gtheme
-  
-  FigPredFhepHist <- ggplot(caco2.perchem)+
-        geom_histogram(aes(x = Fhep.oral, fill=Class), 
-                   color = "black",
-                   alpha=0.4,
-                 boundary = 0.
-                   #, position="identity"
-                   ) +
-    labs(y = expression(bold("Count")), 
-         x = expression(bold("Predicted"~F[hep]))) +
-    theme_bw()+
-        scale_fill_viridis(discrete=2)+
-    gtheme
-  
-  FigPredFbioHist <- ggplot(caco2.perchem)+
-        geom_histogram(aes(x = Fbio.oral, fill=Class), 
-                   color = "black",
-                   alpha=0.4,
-                 boundary = 0.
-                   #, position="identity"
-                   ) +
-    labs(y = expression(bold("Count")), 
-         x = expression(bold("Predicted"~F[bio]))) +
-    theme_bw()+
-        scale_fill_viridis(discrete=2)+
-    gtheme
-```
-
-```{r make_prediction_histograms3}
-ggarrange(FigPredFabsHist, FigPredFgutHist, 
-          FigPredFhepHist, FigPredFbioHist,
-          labels = c("A", "B", "C", "D"),
-          ncol = 2, nrow = 2,
-          common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_FbioPredHists.tiff"),
-         height = 5*200, width = 3*200, compression = "lzw")
-ggarrange(FigPredFabsHist, FigPredFgutHist, 
-          FigPredFhepHist, FigPredFbioHist,
-          labels = c("A", "B", "C", "D"),
-          ncol = 2, nrow = 2,
-          common.legend = TRUE, legend = "bottom")
-dev.off()
 ```

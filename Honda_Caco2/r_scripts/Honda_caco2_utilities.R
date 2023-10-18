@@ -196,7 +196,7 @@ prep_caco2 <- function(caco2_qc_file = "caco2_QC_rec0d4to2",
   
   #### Initialize ####
   {
-    load(paste0(loc.wd, "/r_data/processed/all_gut_data_25MAR2019.RData")) # gut.data; compiled data table of absorption and permeability data 
+    load(paste0(loc.wd, "/r_data/processed/all_gut_data.RData")) # gut.data; compiled data table of absorption and permeability data 
     load(paste0(loc.wd, "/r_data/chemprop/gut_chems_all.RData")) # gut.chems.all; dtxsid, qsar_ready_smiles, matched to reference chem names
     load(paste0(loc.wd, "/r_data/chemprop/combined_chemprop.RData")) # chemprops.dt
     
