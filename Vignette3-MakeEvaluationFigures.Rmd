@@ -745,6 +745,9 @@ dev.off()
 
 Repeat all the previous figures, but use the QSPR predictions.
 
+We potentially have more chemicals with in vivo values because we are predicting
+Caco-2 Papp rather than restricting to those chemicals with measured values.
+
 Load all the parameters needed to make calculations:
 ```{r qspr_permeability_params}
    load_honda2023(overwrite=TRUE)
