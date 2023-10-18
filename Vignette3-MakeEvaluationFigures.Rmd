@@ -26,11 +26,13 @@ rm(list=ls())
 loc.wd <- "C:/Users/jwambaug/git/comptox-caco2/Honda_Caco2"
 knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
 knitr::opts_knit$set(root.dir = loc.wd)
+setwd(loc.wd)
 ```
 
 ### Load the relevant libraries
 ```{r r_setup}
-packages <- c("ggplot2","scales","httk","readxl", "viridis","ggpubr")
+packages <- c("ggplot2", "scales", "httk", 
+              "readxl", "viridis", "ggpubr", "cramer")
 sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary here
 ```
 # Function for labeling on log-scale:
@@ -1038,6 +1040,24 @@ These calculations should match both the manuscript text and the code in calc_or
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 ### Evaluation Statistics
+```{r adjusted.rsquared.resample}
+resample.adj.rsquared <- function(obs, pred, p=1)
+{
+  N <- length(obs)
+  
+  new.samp<- sample(1:N, N, replace=TRUE)
+  new.obs <- obs[new.samp]
+  new.pred <- pred[new.samp]
+  
+  SS.tot<- sum((new.obs-mean(new.obs))^2)
+  SS.res <- sum((new.obs-new.pred)^2)
+  
+  rsquared <- 1 - SS.res/SS.tot
+  
+  adj.rsquared <- 1 - (1 -rsquared)*(N-1)/(N-p-1)
+}
+```
+
 We made new versions of "invivo.table" combining the Fbio data from Varma and Kim
 and saved them in different RData files
 ```{r eval_table}
@@ -1084,20 +1104,34 @@ for (this.evaluation in row.names(evaluations))
                       !is.na(invivo.table[, evaluations[this.evaluation,"In Vivo"]]) &
                       !is.na(invivo.table[, evaluations[this.evaluation,"Predicted"]]))
   num.chem <- dim(this.data)[1]
-  this.fit <- lm(this.data[, evaluations[this.evaluation,"In Vivo"]] ~
-                 this.data[, evaluations[this.evaluation,"Predicted"]])
-  R2 <- summary(this.fit)$adj.r.squared
-  p.value <- summary(this.fit)$coefficients[2,4]
-  RMSE <- sqrt(mean((this.data[, evaluations[this.evaluation,"In Vivo"]]  -
-                     this.data[, evaluations[this.evaluation,"Predicted"]])^2))
-  eval.table[this.evaluation,c("N.Chem","Reference","R2","p.Value","RMSE")] <- c(
+  set.seed(1234)
+  R2.samples <- NULL
+  pvalue.samples <- NULL
+  RMSE.samples <- NULL
+  obs <- this.data[, evaluations[this.evaluation,"In Vivo"]]
+  pred <- this.data[, evaluations[this.evaluation,"Predicted"]]
+  for (i in 1:10000)
+  {
+    these.samples <- sample(1:length(obs),length(obs),replace=TRUE)  
+    this.obs <- obs[these.samples]
+    this.pred <- pred[these.samples]
+    this.fit <- lm(obs~pred,data=data.frame(obs=this.obs,pred=this.pred))
+    R2.samples[i] <- summary(this.fit)$adj.r.squared
+    pvalue.samples[i] <- summary(this.fit)$coefficients[2,4]
+    RMSE.samples[i] <- sqrt(mean(this.obs - this.pred)^2)
+  }
+  eval.table[this.evaluation,c("N.Chem","Reference","R2","R2.Range","RMSE")] <- c(
     num.chem,
     evaluations[this.evaluation,"Reference"],
-    signif(R2,2),
-    signif(p.value,2),
-    signif(RMSE,3)
+    signif(median(R2.samples),2),
+    paste(signif(quantile(R2.samples,probs=0.025),2),"-",
+          signif(quantile(R2.samples,probs=0.975),2)),
+    signif(median(RMSE.samples),3)
   )
 }
+```
+
+```{r display_evaluation_table}
 knitr::kable(eval.table, 
              caption = "Evaluation of predictions against in vivo data for Fbio and contributing factors.",
              floating.environment="sidewaystable") 
