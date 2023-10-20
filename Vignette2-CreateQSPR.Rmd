@@ -234,7 +234,7 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
   #  annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
   #                    ymin = 130,ymax = 130,xmax = -3, xmin = -3)
 
-    ggsave(FigPabSourceHist, file = paste0(loc.wd, "/results_for_paper/Fig_TrainSet_histogram.tiff"),
+    ggsave(FigPabSourceHist, file = paste0(loc.wd, "/results_for_paper/Fig_QSPR_TrainSet_histogram.tiff"),
          height = 3, width = 5, dpi = 600, compression = "lzw")
     print(FigPabSourceHist)
 
@@ -701,7 +701,7 @@ FigRFE <- ggplot(rfeClass$results) +
   ylab("Model Accuracy") +
   geom_vline(xintercept=num.opt.desc, color="blue",linetype="dashed")
 ggsave(FigRFE, 
-       file = paste0(loc.wd, "/results_for_paper/Fig_RFE.tiff"),
+       file = paste0(loc.wd, "/results_for_paper/Fig_QSPR_RFE.tiff"),
        height = 3, width = 3, dpi = 600, compression = "lzw")
 print(FigRFE)
 
@@ -759,7 +759,7 @@ hist(classmodopt$resample$Accuracy)
 classmodopt$finalModel
 plot(varImp(classmodopt,estimate="Accuracy",scale=TRUE))
 
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_VarImportance.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_QSPR_VarImportance.tiff"),
        height = 3*200, width = 3*200, compression = "lzw")
 plot(varImp(classmodopt,estimate="Accuracy",scale=TRUE))
 dev.off()
