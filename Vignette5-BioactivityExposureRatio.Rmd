@@ -337,6 +337,12 @@ ggsave(Figcsstest,
 ```
 
 
+```{r extra_chems}
+cat(paste(length(unique(subset(aed.full2,!is.na(BER))$DTXSID)) - 
+          length(unique(subset(aed.full2,!is.na(BER) &
+                                         DTXSID %in% measured.chems)$DTXSID)),
+          "extra chemicals with BER thanks to the QSPR."))
+```
 
 ```{r makeallchemBERfig}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
@@ -433,7 +439,7 @@ ggarrange(FigBERmeas, FigBERall,
           labels = c("A", "B"),
           ncol = 1, nrow = 2,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_TwoPanelBER.tiff"),
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_BERTwoPanel.tiff"),
          height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigBERmeas, FigBERall, 
           labels = c("A", "B"),

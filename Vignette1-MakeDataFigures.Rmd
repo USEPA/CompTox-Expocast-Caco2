@@ -616,6 +616,19 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
        file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
 ```
 
+```{r basic_stats}
+load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
+cat(paste("Across the newly measured chemicals the mean Pab was ",
+          signif(mean(caco2.perchem$mPab,na.rm=TRUE),2),
+          " 10-6 cm/s, the median was ",
+          signif(median(caco2.perchem$mPab,na.rm=TRUE),2),
+          ", the min was ",
+          signif(min(caco2.perchem$mPab,na.rm=TRUE),2),
+          ", and the max was ",
+          signif(max(caco2.perchem$mPab,na.rm=TRUE),2),
+          ".\n",sep=""))
+```
+
 ```{r analyze_controls_warfarin}
   min(caco2.publish[casrn %in% "81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)
   max(caco2.publish[casrn == " 81-81-2",.(Pab,Pba,Pab0,Pba0)], na.rm = T)

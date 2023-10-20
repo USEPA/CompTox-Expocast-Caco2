@@ -604,18 +604,27 @@ for (this.model in names(classmod))
 
 # Summarize the results for different data binning strategies:
 ```{r qspr_results}
+SIGFIGS <- 2
 qspr.summary <- as.data.frame(lapply(classmod,function(x) signif(x$testsummary,3)))
+# Keep only the models where clustering was used for binning:
+qspr.summary <- qspr.summary[,regexpr("LogPab",colnames(qspr.summary))!=-1]
 for (this.model in colnames(qspr.summary))
 {
   for (this.bin in sort(unique(train.set[,this.model])))
   {
     qspr.summary[paste0("Bin",this.bin),this.model] <-
-      paste0(signif(median(train.set[train.set[,this.model]==this.bin,"Pab"]),3),
-                   " (",
-                   signif(quantile(train.set[train.set[,this.model]==this.bin,"Pab"], 0.025),3),
-                   " - ",
-                   signif(quantile(train.set[train.set[,this.model]==this.bin,"Pab"], 0.975),3),
-                   ")")
+      paste0(signif(median(
+               train.set[train.set[,this.model]==this.bin,"Pab"]),
+               SIGFIGS),
+             " (",
+             signif(quantile(
+               train.set[train.set[,this.model]==this.bin,"Pab"], 0.025),
+               SIGFIGS),
+             " - ",
+             signif(quantile(
+               train.set[train.set[,this.model]==this.bin,"Pab"], 0.975),
+               SIGFIGS),
+             ")")
   }
 }
 save(qspr.summary,file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))

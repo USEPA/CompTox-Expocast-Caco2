@@ -93,11 +93,14 @@ caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE) &
    caco2.perchem$Class <- "Other"
    caco2.perchem[caco2.perchem$dtxsid%in%pharma$DSSTox_Substance_Id,"Class"] <-
      "Pharmaceutical"
+   save(caco2.perchem, file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements2.RData"))
 ```
 
 # This table has one row per chemical:
 ```{r create_supplemental_table_perchemvalues}
-  write.table(caco2.perchem[!duplicated(caco2.perchem$dtxsid),c(
+load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements2.RData")) 
+
+write.table(caco2.perchem[!duplicated(caco2.perchem$dtxsid),c(
                             "compound",
                             "casrn",                 
                             "dtxsid",
@@ -135,6 +138,8 @@ caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE) &
 ```
 
 ```{r make_prediction_histograms2}
+  load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements2.RData")) 
+
   FigPredFabsHist <- ggplot(caco2.perchem)+
         geom_histogram(aes(x = Fabs.oral, fill=Class), 
                    color = "black",
@@ -209,7 +214,7 @@ ggarrange(FigPredFabsHist, FigPredFgutHist,
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
 tiff(file = paste0(loc.wd, "/results_for_paper/Fig_FbioPredHists.tiff"),
-         height = 5*200, width = 3*200, compression = "lzw")
+         height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigPredFabsHist, FigPredFgutHist, 
           FigPredFhepHist, FigPredFbioHist,
           labels = c("A", "B", "C", "D"),
@@ -274,9 +279,11 @@ Load all the parameters needed to make calculations:
    invivo.table[, MW:=chem.physical_and_invitro.data[
      unlist(sapply(invivo.table$DTXSID, function(x) 
        which(x==chem.physical_and_invitro.data$DTXSID))),"MW"]]
+   # In Vivo human fraction sysemically bioavailable from oral dose:
    invivo.table[, Fbio_human:=chem.physical_and_invitro.data[
      unlist(sapply(invivo.table$DTXSID, function(x) 
        which(x==chem.physical_and_invitro.data$DTXSID))),"Human.Foral"]]
+   # In Vivo rat fraction sysemically bioavailable from oral dose:
    invivo.table[, Fbio_rat:=chem.physical_and_invitro.data[
      unlist(sapply(invivo.table$DTXSID, function(x) 
        which(x==chem.physical_and_invitro.data$DTXSID))),"Rat.Foral"]]
