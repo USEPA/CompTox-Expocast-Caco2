@@ -49,6 +49,50 @@ source(paste0(loc.wd,"/r_scripts/Honda_caco2_utilities.R"))
 
 ```
 
+# Plot Setup
+
+```{r BERplotsetup}
+# make BER plot theme
+gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
+                axis.text.y = element_text(size=10, color = "black",face="bold"),
+                legend.text = element_text(size = 10),
+                legend.title = element_text(size = 10),
+                legend.key.size = unit(10, "points"),
+                panel.background = element_rect(fill="white"),
+                axis.line = element_line(color="black"),
+                strip.background = element_blank(),
+                axis.ticks.y = element_line(color="black"),
+                legend.position = "top",
+                axis.line.x=element_line(color="black"),
+                axis.ticks.x=element_line(color="black"),
+                axis.text.x = element_text(size = 10,face="bold",color="black"),
+                plot.title = element_text(hjust=0,size=12,face="bold"))
+
+legend.dt <- data.table(x = 1:3, y = 1:3, 
+                        leg.labl = c("AED","Exposure", "Overlap"), 
+                        leg.color = c("purple", "yellow", "orange")) %>% 
+  .[, leg.labl := factor(leg.labl, levels = c("AED","Exposure", "Overlap"))]
+g1leg <- ggplot(legend.dt)+
+  geom_point(aes(x = x, y = y, color = leg.labl))+
+  scale_color_manual(labels = c("AED","Exposure", "Overlap"),
+                     values = c("purple","yellow","orange"))+
+  labs(color = "")+
+  theme_bw()+
+  gtheme+
+  theme(legend.position = "bottom")
+gleg <- get_legend(g1leg)
+```
+
+# Function for labeling on log-scale:
+```{r label_logscale}
+scientific_10 <- function(x) {                                  
+  out <- gsub("1e", "10^", scientific_format()(x))              
+  out <- gsub("\\+","",out)                                     
+  out <- gsub("10\\^01","10",out)                               
+  out <- parse(text=gsub("10\\^00","1",out))                    
+}  
+```
+
 # BER plots
 ```{r calc_mc_css_options}
 # collect httk chems for IVIVE
@@ -196,47 +240,6 @@ save(aed.full2,file=paste0(loc.wd, "/r_data/BERtable.RData"))
 
 
 ### Bioactivty:Exposure Ratio Plots
-```{r BERplotsetup}
-# make BER plot theme
-gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
-                axis.text.y = element_text(size=10, color = "black",face="bold"),
-                legend.text = element_text(size = 10),
-                legend.title = element_text(size = 10),
-                legend.key.size = unit(10, "points"),
-                panel.background = element_rect(fill="white"),
-                axis.line = element_line(color="black"),
-                strip.background = element_blank(),
-                axis.ticks.y = element_line(color="black"),
-                legend.position = "top",
-                axis.line.x=element_line(color="black"),
-                axis.ticks.x=element_line(color="black"),
-                axis.text.x = element_text(size = 10,face="bold",color="black"),
-                plot.title = element_text(hjust=0,size=12,face="bold"))
-
-legend.dt <- data.table(x = 1:3, y = 1:3, 
-                        leg.labl = c("AED","Exposure", "Overlap"), 
-                        leg.color = c("purple", "yellow", "orange")) %>% 
-  .[, leg.labl := factor(leg.labl, levels = c("AED","Exposure", "Overlap"))]
-g1leg <- ggplot(legend.dt)+
-  geom_point(aes(x = x, y = y, color = leg.labl))+
-  scale_color_manual(labels = c("AED","Exposure", "Overlap"),
-                     values = c("purple","yellow","orange"))+
-  labs(color = "")+
-  theme_bw()+
-  gtheme+
-  theme(legend.position = "bottom")
-gleg <- get_legend(g1leg)
-```
-
-# Function for labeling on log-scale:
-```{r label_logscale}
-scientific_10 <- function(x) {                                  
-  out <- gsub("1e", "10^", scientific_format()(x))              
-  out <- gsub("\\+","",out)                                     
-  out <- gsub("10\\^01","10",out)                               
-  out <- parse(text=gsub("10\\^00","1",out))                    
-}  
-```
 
 ```{r makehistogram}
 load(file=paste0(loc.wd, "/r_data/BERtable.RData"))

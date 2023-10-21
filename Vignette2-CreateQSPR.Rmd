@@ -140,7 +140,7 @@ for (this.unit in unique(chembl[,"Standard Units"]))
 chembl <- subset(chembl,QSPR.Units %in% "10^-6 cm/s")
 dim(chembl)
 
-save(chembl,file=paste0(loc.wd,"/r_data/processed/chembl_caco2_MAY2023.RData")) 
+save(chembl,file=paste0(loc.wd,"/r_data/QSPR/chembl_caco2.RData")) 
 ```
 
 
@@ -155,7 +155,7 @@ save(chembl,file=paste0(loc.wd,"/r_data/processed/chembl_caco2_MAY2023.RData"))
 # Literature date identified by Greg:
   load(paste0(loc.wd,"/r_data/processed/lit_caco2_26MAR2019.RData"))
 # Pull from ChEMBL by Risa:
-  load(paste0(loc.wd,"/r_data/processed/chembl_caco2_MAY2023.RData"))
+  load(paste0(loc.wd,"/r_data/QSPR/chembl_caco2.RData"))
   caco2.dt2$Data.Origin <- "EPA"
   colnames(lit.caco2.dt)[colnames(lit.caco2.dt)=="repref"] <- "Data.Origin"
 
@@ -244,7 +244,7 @@ Dashboard (CCD). We then write them to a .SMI file for use by descriptor
 predictors.
 ```{r qspr_writeoutdtxsidsforCCD}
   write.table(subset(train.set,regexpr("DTXSID",dtxsid)!=-1)$dtxsid, 
-                     file=paste0(loc.wd,"/r_data/DataDTXIDsforDashboard.txt"), 
+                     file=paste0(loc.wd,"/r_data/QSPR/DataDTXIDsforDashboard.txt"), 
                row.names=FALSE,
                col.names=FALSE,
                quote=FALSE)
@@ -255,7 +255,7 @@ SMILES are text descriptions of chemical structure according to the
 Simplified molecular-input line-entry system ("SMILES"). See Weininger (1988) (doi:10.1021/ci00057a005).
 ```{r qspr_mergesmiles}
   CCD <- as.data.frame(
-    read_excel(paste0(loc.wd,"/r_data/smilesfromCCD.xlsx"),sheet=2))
+    read_excel(paste0(loc.wd,"/r_data/QSPR/smilesfromCCD.xlsx"),sheet=2))
   dim(CCD)
   # Get rid of multiple values:
   CCD$QSAR_READY_SMILES <- sapply(CCD[,"QSAR_READY_SMILES"],
@@ -308,7 +308,7 @@ length(unique(smiles$dtxsid))
   write.table(smiles,
             col.names=FALSE,sep="\t",row.names=FALSE,
             quote = FALSE,
-            file=paste0(loc.wd,"/r_data/trainset.smi"))
+            file=paste0(loc.wd,"/r_data/QSPR/trainset.smi"))
 ```
 
 I prefer to use OPERA+PADEL over CDK, but it's another option we explored.
@@ -328,7 +328,7 @@ all.desc <- merge(CCD,descs,by="DTXSID",all.x=TRUE)
 
 # Read both OPERA predictions and Padel descriptors:
 ```{r qspr_read_opera_padel_descriptors}
-opera <- read.csv(paste0(loc.wd,"/r_data/trainset-smi_OPERA2.9Pred.csv"))
+opera <- read.csv(paste0(loc.wd,"/r_data/QSPR/trainset-smi_OPERA2.9Pred.csv"))
 desc.cols <- rep(TRUE, dim(opera)[2])
 colnames(opera)[1] <- "dtxsid"
 sum(train.set$dtxsid%in%opera$dtxsid)
@@ -387,23 +387,25 @@ dim(all.desc)
   
   test.set <- subset(all.desc,Test==1)
   train.set <- subset(all.desc,Test==0)
-  save(test.set,file=paste0(loc.wd,"/r_data/testset.RData"))
-  save(train.set,file=paste0(loc.wd,"/r_data/trainset.RData"))
+  save(all.desc, file=paste0(loc.wd, "/r_data/QSPR/all.desc.RData"))
+  save(test.set,file=paste0(loc.wd, "/r_data/QSPR/testset.RData"))
+  save(train.set,file=paste0(loc.wd, "/r_data/QSPR/trainset.RData"))
   write.table(train.set,sep="\t",row.names=FALSE,
-            file=paste0(loc.wd,"/r_data/trainset.txt"))
+            file=paste0(loc.wd,"/r_data/QSPR/trainset.txt"))
 # This table has all measurements in training and test set with column "Test"
 # indicating which:
   all.caco2 <- all.desc[,c("dtxsid","Pab","Data.Origin","Test")]
-  save(all.caco2,file=paste0(loc.wd,"/r_data/alldata.RData"))
+  save(all.caco2,file=paste0(loc.wd,"/r_data/QSPR/alldata.RData"))
   write.table(subset(all.caco2,!is.na(dtxsid)), 
               file=paste0(loc.wd,
                 "/results_for_paper/TableAllCaco2PabData_10e-6cmps.txt"), 
               row.names=FALSE,
               sep="\t")
 ```
+
 ```{r qspr_resultsforpaper}
-load(file=paste0(loc.wd,"/r_data/testset.RData"))
-load(file=paste0(loc.wd,"/r_data/trainset.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/testset.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/trainset.RData"))
   
 print(paste0(dim(test.set)[1]," measurements in test set."))
 print(paste0(dim(subset(test.set,Data.Origin=="EPA"))[1]," EPA measurements in test set."))
@@ -490,7 +492,7 @@ for(i in 1:dim(train_msd)[2]){
   train_msd[1,i] <- (mean(reduced.desc[,i],na.rm=TRUE))
   train_msd[2,i] <- (sd(reduced.desc[,i],na.rm=TRUE))
 }
-save(train_msd, file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
+save(train_msd, file=paste0(loc.wd,"/r_data/QSPR/trainingdata-meansd.RData"))
 ```
 
 ```{r qspr_removeNAs}
@@ -526,8 +528,9 @@ save(train_msd, file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
   reduced.desc <- reduced.desc[,!(colnames(reduced.desc) %in% Losers)]
   dim(reduced.desc)
   
-  save(reduced.desc,file=paste0(loc.wd,"/r_data/trainingdata-reduced.RData"))
+  save(reduced.desc,file=paste0(loc.wd,"/r_data/QSPR/trainingdata-reduced.RData"))
 ```
+
 ```{r qspr_tenfoldCV}
 ######Conduct 5 fold cross validation on overall dataset using caret
 control <- trainControl(method="repeatedcv", number = 5, repeats = 10, savePredictions = "all")
@@ -576,13 +579,13 @@ for (this.model in c("Pab2Bin",
   classmod[[this.model]]$results # the average across all cross-validations and reps
   hist(classmod[[this.model]]$resample$Accuracy)
 }
-save(classmod, train.set, test.set, reduced.desc, file=paste0(loc.wd,"/r_data/classmodels.RData"))
+save(classmod, train.set, test.set, reduced.desc, file=paste0(loc.wd,"/r_data/QSPR/classmodels.RData"))
 ```
 
 ```{r qspr_testset1}
-load(file=paste0(loc.wd,"/r_data/testset.RData"))
-load(file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
-load(file=paste0(loc.wd,"/r_data/classmodels.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/testset.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/trainingdata-meansd.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/classmodels.RData"))
 
 # Replace NA's with mean of training set:
 for (this.col in colnames(train_msd))
@@ -618,20 +621,20 @@ for (this.model in colnames(qspr.summary))
                SIGFIGS),
              " (",
              signif(quantile(
-               train.set[train.set[,this.model]==this.bin,"Pab"], 0.025),
+               test.set[test.set[,this.model]==this.bin,"Pab"], 0.025),
                SIGFIGS),
              " - ",
              signif(quantile(
-               train.set[train.set[,this.model]==this.bin,"Pab"], 0.975),
+               test.set[test.set[,this.model]==this.bin,"Pab"], 0.975),
                SIGFIGS),
              ")")
   }
 }
-save(qspr.summary,file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))
+save(qspr.summary,file=paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
 ```
 
 ```{r qspr_resultstable}
-load(paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))
+load(paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
 knitr::kable(qspr.summary, 
              caption = "Summary of test set performance of RF models as a function of how Caco2 data are subdivided into categories. Row's labeled \"Bin[Number]\" give the median and 95% interval for the measurments withing each bin.",
              floating.environment="sidewaystable") 
@@ -650,7 +653,7 @@ focus on making an optimized model using the "LogPab3Bin" categories. We use
 recursive feature elimination to reduce erroneous predictors and making the
 loadings on true key predictors more clear.
 ```{r qspr_rfe}
-load(file=paste0(loc.wd,"/r_data/classmodels.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/classmodels.RData"))
 chosen.model <- "LogPab3Bin"
 # 5-fold cross-validation performed over ten replicates of allocating the folds:
 ctrl <- suppressMessages(rfeControl(functions = rfFuncs,
@@ -673,14 +676,14 @@ rfeClass <- suppressMessages(rfe(x=reduced.desc,
                 maximize=TRUE))
 
 save(rfeClass, train.set, reduced.desc, chosen.model,
-     file=paste0(loc.wd,"/r_data/recursive_feature_elimination.RData"))
+     file=paste0(loc.wd,"/r_data/QSPR/recursive_feature_elimination.RData"))
 save(chosen.model,
-     file=paste0(loc.wd,"/r_data/chosen_model.RData"))
+     file=paste0(loc.wd,"/r_data/QSPR/chosen_model.RData"))
 ```
 
 # Find the optimal number of parameters:
 ```{r qspr_parsimony}
-load(paste0(loc.wd,"/r_data/recursive_feature_elimination.RData"))
+load(paste0(loc.wd,"/r_data/QSPR/recursive_feature_elimination.RData"))
 
 ggplot(rfeClass$results) + 
   geom_line(aes(x=Variables, y=Accuracy)) +
@@ -714,11 +717,11 @@ desc.order <- order(desc.set[, c("x")], decreasing = TRUE)[1:num.opt.desc]
 opt.desc <-desc.set[desc.order, 1]
 
 save(opt.desc,num.opt.desc, 
-     file=paste0(loc.wd,"/r_data/optimal_parameters.RData"))
+     file=paste0(loc.wd,"/r_data/QSPR/optimal_parameters.RData"))
 ```
 
 ```{r qspr_buildoptmodel}
-load(file=paste0(loc.wd,"/r_data/optimal_parameters.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/optimal_parameters.RData"))
 #Now, fit classification model with classvars
 metric <- "Accuracy"
 set.seed(seed)
@@ -746,12 +749,12 @@ classmodopt <- suppressMessages(train(
   trControl=control, 
   tuneGrid = tunegrid))
 save(classmodopt, train.set, reduced.desc, opt.desc, chosen.model,
-     file=paste0(loc.wd,"/r_data/optimal_model.RData"))
+     file=paste0(loc.wd,"/r_data/QSPR/optimal_model.RData"))
 ```
 
 Get optimal model results for paper
 ```{r qspr_optmodelresults}
-load(paste0(loc.wd,"/r_data/optimal_model.RData"))
+load(paste0(loc.wd,"/r_data/QSPR/optimal_model.RData"))
 
 print(paste0(length(opt.desc)," parameters used for model"))
 classmodopt$results
@@ -767,11 +770,11 @@ dev.off()
 
 Evaluate the optimal model with the test set:
 ```{r qspr_testset2}
-load(file=paste0(loc.wd,"/r_data/optimal_model.RData"))
-load(file=paste0(loc.wd,"/r_data/testset.RData"))
-load(file=paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
-load(file=paste0(loc.wd,"/r_data/qsprbinnumbersummary.RData"))
-load(file=paste0(loc.wd,"/r_data/chosen_model.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/optimal_model.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/testset.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/trainingdata-meansd.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/chosen_model.RData"))
 
 # Replace NA's with mean of training set:
 for (this.col in colnames(train_msd))
@@ -796,7 +799,7 @@ opt.testsummary <- postResample(pred = opt.testsetpred,
 print(opt.confusion)
 
 save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
-     file=paste0(loc.wd,"/r_data/optimal_model_test_set_performance.RData"))                          
+     file=paste0(loc.wd,"/r_data/QSPR/optimal_model_test_set_performance.RData"))                          
 ```
 
 ```{r caco2_qspr_pab_eval_testonly_fig}
@@ -823,190 +826,4 @@ save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
            file = paste0(loc.wd, 
                          "/results_for_paper/Fig_QSPRPredPabTestOnly.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-```
-
-# Make a file of SMILES for Caco2 Predictions:
-The table httk::chem.physical_and_invitro.data includes the QSAR_READY_SMILES
-from the CCD in the column SMILES.desalt. We will use these to get descriptors
-needed to predict Caco2 Pab for all the chemicals.
-```{r qspr_makenewpredictionccdfile}
-  httk.chems <- httk::chem.physical_and_invitro.data[,"DTXSID"]
-  tox21.chems <- read.csv(paste0(
-    loc.wd,"/r_data/chemical_lists/Chemical List TOX21SL-2023-05-05.csv"))$DTXSID
-  toxcast.chems <- read.csv(paste0(
-    loc.wd,"/r_data/chemical_lists/Chemical List TOXCAST-2023-05-05.csv"))$DTXSID
-  pfas1.chems <- read.csv(paste0(
-    loc.wd,"/r_data/chemical_lists/Chemical List EPAPFAS75S1-2023-05-05.csv"))$DTXSID
-  pfas2.chems <- read.csv(paste0(
-    loc.wd,"/r_data/chemical_lists/Chemical List EPAPFAS75S2-2023-05-05.csv"))$DTXSID  
-  consumer.chems <- read.csv(paste0(
-    loc.wd,"/r_data/chemical_lists/Chemical List EPACONS-2023-05-05.csv"))$DTXSID 
-  cvt.chems <- read.csv(paste0(
-    loc.wd,"/r_data/chemical_lists/cvt_test_substances.csv"))$dsstox_substance_id
-  new.httk.chems <- read.table(paste0(
-    loc.wd,"/r_data/chemical_lists/HTTK-status-all.txt"),header=TRUE)$DTXSID
-  apcra.chems <- read.csv(paste0(
-    loc.wd,"/r_data/chemical_lists/APCRA_Chelsea.csv"))$DTXSID 
-  nhanes.chems <- as.data.frame(read_excel(paste0(
-    loc.wd,"/r_data/chemical_lists/NHANES_finalBloodSerumChems_2023-05-05.xlsx")))$DTXSID
-  dawsonpfas.chems <- read.csv(paste0(
-    loc.wd,"/r_data/chemical_lists/S3_Dawsonetal_PFAS_HL_101122.csv"))
-  # only want ones in domain of applicability:
-  dawsonpfas.chems <-length(unique(subset(dawsonpfas.chems,AMAD==1)$DTXSID))
-  
- chems.to.predict <- sort(unique(c(httk.chems,
-                                   tox21.chems,
-                                   toxcast.chems,
-                                   pfas1.chems,
-                                   pfas2.chems,
-                                   consumer.chems,
-                                   cvt.chems,
-                                   new.httk.chems,
-                                   apcra.chems,
-                                   nhanes.chems,
-                                   dawsonpfas.chems)))
- 
- # don't need predictions for chemicals we already had predictions for
- chems.to.predict <- chems.to.predict[!chems.to.predict %in% opera$dtxsid]
- chems.to.predict <- chems.to.predict[!is.na(chems.to.predict)]
- chems.to.predict <- chems.to.predict[regexpr("DTXSID",chems.to.predict)!=-1]
- chems.to.predict <- gsub(
-   "https://comptox.epa.gov/dashboard/chemical/details/","",
-    chems.to.predict)
- chems.to.predict <- gsub("\\|c:10\t","",chems.to.predict)
- chems.to.predict <- sort(unique(chems.to.predict))
- length(chems.to.predict)
-
-   write.table(chems.to.predict, 
-               file=paste0(loc.wd,"/r_data/QSPRPredictionDTXIDsforDashboard.txt"),
-               row.names=FALSE,
-               col.names=FALSE,
-               quote=FALSE)
-```
-
-```{r qspr_makenewpredictionsmifile}
-  CCD <- read.csv(paste0(loc.wd,"/r_data/QSPRPredictionsmilesfromCCD.csv"))
-  dim(CCD)
-  # Get rid of multiple values:
-  CCD$QSAR_READY_SMILES <- sapply(CCD[,"QSAR_READY_SMILES"],
-                                  function(x) strsplit(x, ",")[[1]][1])
-  # Get rid of quotation marks:
-  CCD$QSAR_READY_SMILES <- gsub("\"","",CCD$QSAR_READY_SMILES)
-  # Get rid of blank SMILES:
-  CCD <- subset(CCD, !is.na(QSAR_READY_SMILES))
-  CCD <- subset(CCD, DTXSID != "N/A")
-  CCD <- subset(CCD, QSAR_READY_SMILES != "N/A")
-  dim(CCD)
-  # Get rid of duplicate rows:
-  CCD <- subset(CCD,!duplicated(CCD))
-  dim(CCD)
-
-  write.table(CCD[,c("QSAR_READY_SMILES","DTXSID")],
-            col.names=FALSE,sep="\t",
-            row.names=FALSE,
-            quote = FALSE,
-            file=paste0(loc.wd,"/r_data/QSPRPrediction.smi"))
-```
-Reload the finale model here in case we're making predictions in a subsequent
-session:
-```{r qspr_loadoptimalmodel}
-load(paste0(loc.wd,"/r_data/optimal_model.RData"))
-```
-# Read both OPERA predictions and Padel descriptors for httk library
-```{r qspr_read_newpredictions_opera_padel_descriptors}
-httk.desc <- read.csv(paste0(loc.wd,"/r_data/QSPRPrediction-smi_OPERA2.9Pred.csv"))
-dim(httk.desc)
-
-#for comparing data vs. qspr let's add in all the training/test chemicals:
-data.desc <- read.csv(paste0(loc.wd,"/r_data/trainset-smi_OPERA2.9Pred.csv"))
-httk.desc <- rbind(httk.desc, data.desc)
-dim(httk.desc)
-
-httk.desc$MoleculeID <- gsub("\\|c:10\t","",httk.desc$MoleculeID)
-
-# Ionization fractions:
-for (i in 1:dim(httk.desc)[1])
-{
-  out <- calc_ionization(pH=7.4, 
-                         pKa_Donor=all.desc[i,"pKa_a_pred"],
-                         pKa_Accept=all.desc[i,"pKa_b_pred"])
-  for (this.col in names(out)) httk.desc[i,this.col] <- out[[this.col]]
-}
-dim(httk.desc)
-httk.ids <- httk.desc[,"MoleculeID"]
-httk.desc <- httk.desc[,opt.desc]
-dim(httk.desc)
-```
-Replace NA's with mean of training set:
-```{r qspr_replacehttkNAs}
-load(paste0(loc.wd,"/r_data/trainingdata-meansd.RData"))
-
-for (this.col in opt.desc)
-{
-  if (is.numeric(train_msd[1,this.col]))
-  {
-    httk.desc[is.na(httk.desc[,this.col]),this.col] <- train_msd[1,this.col]
-  }
-}
-```
-
-USe the Roy et al. (2015) method to determine applicability domain:
-```{r qspr_royapplicabilitydomain}
-httk.Ski <- httk.desc
-httk.Ski[] <- NA
-
-# Roy et al. Algorithm Step a:
-for (this.col in opt.desc)
-{
-  httk.Ski[,this.col] <- abs(httk.desc[this.col] - train_msd[1,this.col]) /
-    train_msd[2,this.col]
-}
-# Roy et al. Algorithm Step b (no extreme descriptors):
-httk.Si.max.k <- apply(httk.Ski, 1, max)
-httk.AD <- rep(NA,length(httk.Si.max.k))
-httk.AD[httk.Si.max.k <= 3] <- 1 # Inside applicability domain
-# Roy et al. Algorithm Step c (all extreme descriptors:
-httk.Si.min.k <- apply(httk.Ski,1,min)
-httk.AD[httk.Si.max.k > 3 &
-        httk.Si.min.k > 3] <- 0 # Outside applicability domain
-# Roy et al. Algorithm Step d (some extreme descriptors):
-httk.S.new.k <- apply(httk.Ski, 1, mean) + 1.28*apply(httk.Ski, 1, sd)
-httk.AD[httk.Si.max.k > 3 &
-        httk.Si.min.k <= 3 &
-        httk.S.new.k <= 3] <- 1 # Inside applicability domain
-httk.AD[httk.Si.max.k > 3 &
-        httk.Si.min.k <= 3 &
-        httk.S.new.k > 3] <- 0 # Outside applicability domain
-print(paste0(sum(httk.AD)," HTTK chemicals (",
-             signif(sum(httk.AD)/length(httk.AD),3)*100,
-             "%) are in the Roy et al. (2015) estimated domain o applicability"))
-```
-
-Use optimal model to predict across HTTK library
-```{r qspr_makehttkpredictions}
-httk.pred <- predict(classmodopt, httk.desc)
-httk.caco2.qspr <- data.frame(DTXSID=httk.ids, 
-                              Pab.Class.Pred=httk.pred,
-                              Pab.Pred.AD = httk.AD)
-httk.caco2.qspr <- merge(httk.caco2.qspr,chem.physical_and_invitro.data[,c("DTXSID","CAS")],by="DTXSID",all.x=TRUE)
-
-for (this.bin in sort(as.character(unique(httk.caco2.qspr$Pab.Class.Pred))))
-{
-  bin.value <- qspr.summary[paste0("Bin",this.bin),chosen.model]
-  bin.value <- gsub(" \\(",",",bin.value)
-  bin.value <- gsub(" - ",",",bin.value)
-  bin.value <- gsub("\\)","",bin.value)
-  httk.caco2.qspr[as.character(httk.caco2.qspr$Pab.Class.Pred)==this.bin,
-                  "Pab.Quant.Pred"] <- bin.value
-}
-
-save(httk.caco2.qspr,
-     file=paste0(loc.wd,"/results_for_paper/httk_qspr_preds.RData")) 
-```
-```{r Instructions_to_Update_HTTK}
-cat("Now copy the following files to httk-dev/datatables/CACO-2:\
-  results_for_paper/TableAllCaco2PabData_10e-6cmps.txt\
-  results_for_paper/httk_qspr_preds.RData\
-  processed/caco2-invivo-compare2.RData\
-Rerun load_package_data_tables.R and rebuild httk.\n")
 ```

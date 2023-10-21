@@ -1,0 +1,240 @@
+---
+title: "Honda et al. (unsubmitted): Machine Learning QSPR for Caco-2 Permeability"
+author: "Greg Honda and John Wambaugh"
+date: "August 21, 2023"
+output: rmarkdown::html_vignette
+vignette: >
+ %\VignetteIndexEntry{Honda et al. (unsubmitted): Machine Learning QSPR}
+ %\VignetteEngine{knitr::rmarkdown}
+ %\VignetteEncoding{UTF-8}
+---
+wambaugh.john@epa.gov
+
+## Abstract
+Administered equivalent dose (AED) estimation using in vitro hazard and high throughput toxicokinetics (HTTK) can be improved by refining assumptions regarding fraction absorbed (Fabs) through the intestine, a component of oral bioavailability (Fbio). Although in vivo data to inform Fabs are often unavailable for non-pharmaceuticals, in vitro measures of apparent permeability (Papp) using the Caco-2 cell line have been highly correlated with Fabs when used in in vitro-in vivo extrapolation (IVIVE) modeling. To address data gaps for non-drug chemicals, bidirectional Papp was evaluated using the Caco-2 assay for over 400 chemicals. A random forest quantitative structure-property relationship (QSPR) model was developed using these and peer-reviewed pharmaceutical data. Both Caco-2 data (R2=0.35) and the QSPR model (R2=0.27) were better at predicting human bioavailability compared to in vivo rat data (R2=0.18). The httk-predicted plasma steady state concentrations (Css) for IVIVE were updated, leading to modest changes for poorly absorbed chemicals. Experimental data were evaluated for sources of measurement uncertainty, which was then accounted for using the Monte Carlo method. Revised AEDs were subsequently compared with exposure estimates to evaluate influence on bioactivity:exposure ratios as a surrogate for risk. Ultimately, Papp incorporation to adjust for Fbio in httk modeling improves AED estimations used in HT risk prioritization. 
+
+## Prepare for session
+
+### Clear memory
+```{r setup}
+# Delete all objects from memory:
+rm(list=ls())
+```
+
+### Set the figure size and working directory
+```{r knitr_setup}
+loc.wd <- "C:/Users/jwambaug/git/Comptox-Caco2/Honda_Caco2"
+knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
+knitr::opts_knit$set(root.dir = loc.wd)
+```
+
+###### qspr #######
+
+### Load the relevant libraries
+```{r r_setup}
+
+packages <- c("readxl", "httk",
+              "data.table","scales","viridis")
+sapply(packages, require, character.only=TRUE) #Note, the "character.only" argument is necessary here
+
+```
+ Read both OPERA predictions and Padel descriptors:
+```{r qspr_read_opera_padel_descriptors}
+opera <- read.csv(paste0(loc.wd,"/r_data/qspr/trainset-smi_OPERA2.9Pred.csv"))
+desc.cols <- rep(TRUE, dim(opera)[2])
+colnames(opera)[1] <- "dtxsid"
+desc.cols[regexpr("AD_",colnames(opera))!=-1] <- FALSE
+desc.cols[regexpr("_predRange",colnames(opera))!=-1] <- FALSE
+desc.cols[regexpr("Conf_index",colnames(opera))!=-1] <- FALSE
+opera <- subset(opera,!duplicated(opera))
+```
+
+# Make a file of SMILES for Caco2 Predictions:
+The table httk::chem.physical_and_invitro.data includes the QSAR_READY_SMILES
+from the CCD in the column SMILES.desalt. We will use these to get descriptors
+needed to predict Caco2 Pab for all the chemicals.
+```{r qspr_makenewpredictionccdfile}
+  httk.chems <- httk::chem.physical_and_invitro.data[,"DTXSID"]
+  tox21.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List TOX21SL-2023-05-05.csv"))$DTXSID
+  toxcast.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List TOXCAST-2023-05-05.csv"))$DTXSID
+  pfas1.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List EPAPFAS75S1-2023-05-05.csv"))$DTXSID
+  pfas2.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List EPAPFAS75S2-2023-05-05.csv"))$DTXSID  
+  consumer.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/Chemical List EPACONS-2023-05-05.csv"))$DTXSID 
+  cvt.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/cvt_test_substances.csv"))$dsstox_substance_id
+  new.httk.chems <- read.table(paste0(
+    loc.wd,"/r_data/chemical_lists/HTTK-status-all.txt"),header=TRUE)$DTXSID
+  apcra.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/APCRA_Chelsea.csv"))$DTXSID 
+  nhanes.chems <- as.data.frame(read_excel(paste0(
+    loc.wd,"/r_data/chemical_lists/NHANES_finalBloodSerumChems_2023-05-05.xlsx")))$DTXSID
+  dawsonpfas.chems <- read.csv(paste0(
+    loc.wd,"/r_data/chemical_lists/S3_Dawsonetal_PFAS_HL_101122.csv"))
+  # only want ones in domain of applicability:
+  dawsonpfas.chems <-length(unique(subset(dawsonpfas.chems,AMAD==1)$DTXSID))
+  
+ chems.to.predict <- sort(unique(c(httk.chems,
+                                   tox21.chems,
+                                   toxcast.chems,
+                                   pfas1.chems,
+                                   pfas2.chems,
+                                   consumer.chems,
+                                   cvt.chems,
+                                   new.httk.chems,
+                                   apcra.chems,
+                                   nhanes.chems,
+                                   dawsonpfas.chems)))
+ 
+ # don't need predictions for chemicals we already had predictions for
+ chems.to.predict <- chems.to.predict[!chems.to.predict %in% opera$dtxsid]
+ chems.to.predict <- chems.to.predict[!is.na(chems.to.predict)]
+ chems.to.predict <- chems.to.predict[regexpr("DTXSID",chems.to.predict)!=-1]
+ chems.to.predict <- gsub(
+   "https://comptox.epa.gov/dashboard/chemical/details/","",
+    chems.to.predict)
+ chems.to.predict <- gsub("\\|c:10\t","",chems.to.predict)
+ chems.to.predict <- sort(unique(chems.to.predict))
+ length(chems.to.predict)
+
+   write.table(chems.to.predict, 
+               file=paste0(loc.wd,"/r_data/QSPR/QSPRPredictionDTXIDsforDashboard.txt"),
+               row.names=FALSE,
+               col.names=FALSE,
+               quote=FALSE)
+```
+
+```{r qspr_makenewpredictionsmifile}
+  CCD <- read.csv(paste0(loc.wd,"/r_data/QSPR/QSPRPredictionsmilesfromCCD.csv"))
+  dim(CCD)
+  # Get rid of multiple values:
+  CCD$QSAR_READY_SMILES <- sapply(CCD[,"QSAR_READY_SMILES"],
+                                  function(x) strsplit(x, ",")[[1]][1])
+  # Get rid of quotation marks:
+  CCD$QSAR_READY_SMILES <- gsub("\"","",CCD$QSAR_READY_SMILES)
+  # Get rid of blank SMILES:
+  CCD <- subset(CCD, !is.na(QSAR_READY_SMILES))
+  CCD <- subset(CCD, DTXSID != "N/A")
+  CCD <- subset(CCD, QSAR_READY_SMILES != "N/A")
+  dim(CCD)
+  # Get rid of duplicate rows:
+  CCD <- subset(CCD,!duplicated(CCD))
+  dim(CCD)
+
+  write.table(CCD[,c("QSAR_READY_SMILES","DTXSID")],
+            col.names=FALSE,sep="\t",
+            row.names=FALSE,
+            quote = FALSE,
+            file=paste0(loc.wd,"/r_data/QSPR/QSPRPrediction.smi"))
+```
+Reload the final model here in case we're making predictions in a subsequent
+session:
+```{r qspr_loadoptimalmodel}
+load(paste0(loc.wd,"/r_data/QSPR/optimal_model.RData"))
+```
+
+# Read both OPERA predictions and Padel descriptors for httk library
+```{r qspr_read_newpredictions_opera_padel_descriptors}
+httk.desc <- read.csv(paste0(loc.wd,"/r_data/QSPR/QSPRPrediction-smi_OPERA2.9Pred.csv"))
+dim(httk.desc)
+
+#for comparing data vs. qspr let's add in all the training/test chemicals:
+data.desc <- read.csv(paste0(loc.wd,"/r_data/QSPR/trainset-smi_OPERA2.9Pred.csv"))
+httk.desc <- rbind(httk.desc, data.desc)
+dim(httk.desc)
+
+httk.desc$MoleculeID <- gsub("\\|c:10\t","",httk.desc$MoleculeID)
+
+# Ionization fractions:
+for (i in 1:dim(httk.desc)[1])
+{
+  out <- calc_ionization(pH=7.4, 
+                         pKa_Donor=httk.desc[i,"pKa_a_pred"],
+                         pKa_Accept=httk.desc[i,"pKa_b_pred"])
+  for (this.col in names(out)) httk.desc[i,this.col] <- out[[this.col]]
+}
+dim(httk.desc)
+httk.ids <- httk.desc[,"MoleculeID"]
+httk.desc <- httk.desc[,opt.desc]
+dim(httk.desc)
+```
+Replace NA's with mean of training set:
+```{r qspr_replacehttkNAs}
+load(paste0(loc.wd,"/r_data/QSPR/trainingdata-meansd.RData"))
+
+for (this.col in opt.desc)
+{
+  if (is.numeric(train_msd[1,this.col]))
+  {
+    httk.desc[is.na(httk.desc[,this.col]),this.col] <- train_msd[1,this.col]
+  }
+}
+```
+
+USe the Roy et al. (2015) method to determine applicability domain:
+```{r qspr_royapplicabilitydomain}
+httk.Ski <- httk.desc
+httk.Ski[] <- NA
+
+# Roy et al. Algorithm Step a:
+for (this.col in opt.desc)
+{
+  httk.Ski[,this.col] <- abs(httk.desc[this.col] - train_msd[1,this.col]) /
+    train_msd[2,this.col]
+}
+# Roy et al. Algorithm Step b (no extreme descriptors):
+httk.Si.max.k <- apply(httk.Ski, 1, max)
+httk.AD <- rep(NA,length(httk.Si.max.k))
+httk.AD[httk.Si.max.k <= 3] <- 1 # Inside applicability domain
+# Roy et al. Algorithm Step c (all extreme descriptors:
+httk.Si.min.k <- apply(httk.Ski,1,min)
+httk.AD[httk.Si.max.k > 3 &
+        httk.Si.min.k > 3] <- 0 # Outside applicability domain
+# Roy et al. Algorithm Step d (some extreme descriptors):
+httk.S.new.k <- apply(httk.Ski, 1, mean) + 1.28*apply(httk.Ski, 1, sd)
+httk.AD[httk.Si.max.k > 3 &
+        httk.Si.min.k <= 3 &
+        httk.S.new.k <= 3] <- 1 # Inside applicability domain
+httk.AD[httk.Si.max.k > 3 &
+        httk.Si.min.k <= 3 &
+        httk.S.new.k > 3] <- 0 # Outside applicability domain
+print(paste0(sum(httk.AD)," HTTK chemicals (",
+             signif(sum(httk.AD)/length(httk.AD),3)*100,
+             "%) are in the Roy et al. (2015) estimated domain o applicability"))
+```
+
+Use optimal model to predict across HTTK library
+```{r qspr_makehttkpredictions}
+load(paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
+
+httk.pred <- predict(classmodopt, httk.desc)
+httk.caco2.qspr <- data.frame(DTXSID=httk.ids, 
+                              Pab.Class.Pred=httk.pred,
+                              Pab.Pred.AD = httk.AD)
+httk.caco2.qspr <- merge(httk.caco2.qspr,chem.physical_and_invitro.data[,c("DTXSID","CAS")],by="DTXSID",all.x=TRUE)
+
+for (this.bin in sort(as.character(unique(httk.caco2.qspr$Pab.Class.Pred))))
+{
+  bin.value <- qspr.summary[paste0("Bin",this.bin),chosen.model]
+  bin.value <- gsub(" \\(",",",bin.value)
+  bin.value <- gsub(" - ",",",bin.value)
+  bin.value <- gsub("\\)","",bin.value)
+  httk.caco2.qspr[as.character(httk.caco2.qspr$Pab.Class.Pred)==this.bin,
+                  "Pab.Quant.Pred"] <- bin.value
+}
+
+save(httk.caco2.qspr,
+     file=paste0(loc.wd,"/results_for_paper/httk_qspr_preds.RData")) 
+```
+
+```{r Instructions_to_Update_HTTK}
+cat("Now copy the following files to httk-dev/datatables/CACO-2:\
+  results_for_paper/TableAllCaco2PabData_10e-6cmps.txt\
+  results_for_paper/httk_qspr_preds.RData\
+  processed/all_gut_data.RData\
+Rerun load_package_data_tables.R and rebuild httk.\n")
+```
