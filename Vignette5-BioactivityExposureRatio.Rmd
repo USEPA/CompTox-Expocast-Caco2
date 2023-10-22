@@ -152,13 +152,13 @@ use.dt[, css_fgutabs100 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
                                      output.units = "uM",
                                          suppress.messages=TRUE)))),.(CAS)] #%>% 
  
-save(use.dt, measured.chems, file = paste0(loc.wd, "/r_data/AEDtable.RData"))
+save(use.dt, measured.chems, file = paste0(loc.wd, "/r_data/processed/AEDtable.RData"))
 ```
 
 ###
 ```{r ber_table}
 # load Css values
-load(file = paste0(loc.wd, "/r_data/AEDtable.RData"))
+load(file = paste0(loc.wd, "/r_data/processed/AEDtable.RData"))
 
 # load ToxCast Summary file
 load(file = paste0(loc.wd, "/r_data/BER/toxcast_summary_15AUG2019.RData"))
@@ -234,7 +234,7 @@ aed.full2[,
             calc_fbio.oral(chem.cas=CAS,
             suppress.messages=TRUE),by=CAS]
 
-save(aed.full2,file=paste0(loc.wd, "/r_data/BERtable.RData"))
+save(aed.full2,file=paste0(loc.wd, "/r_data/processed/BERtable.RData"))
 ```
 
 
@@ -242,7 +242,7 @@ save(aed.full2,file=paste0(loc.wd, "/r_data/BERtable.RData"))
 ### Bioactivty:Exposure Ratio Plots
 
 ```{r makehistogram}
-load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+load(file=paste0(loc.wd, "/r_data/processed/BERtable.RData"))
 hist.table.fabs <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              c("DTXSID","Fabs")]
 hist.table.fabs$label <- "Fabs"
@@ -256,7 +256,7 @@ hist.table.ber <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/g
 hist.table.ber$label <- "BER"
 colnames(hist.table.ber)[2] <- "Value"
 hist.table <- rbind(hist.table.fabs, hist.table.ber)
-save(hist.table,file=paste0(loc.wd, "/r_data/histograms.RData"))
+save(hist.table,file=paste0(loc.wd, "/r_data/processed/BER-histograms.RData"))
 
 print(paste("We are assuming that systemic bioavailability of an oral dose is a function of three processes: first-pass hepatic metabolism (independent of gut permeability), gut absorption, and gut metabolism. HTTK already included first-pass hepatic metabolism either by modeling flow from the gut through the liver before it reaches systemic circulation or by multiplying the absorbed dose by Fhep. Therefore, shifts in the predictions of HTTK will be due to only gut absorption (no longer 100%) and gut metabolism (no longer zero).",
             "For the chemicals where we can calculate BER the median value of Fabs is predicted to be",
@@ -292,7 +292,7 @@ ggsave(FigBERHistogram,
 ```
 
 ```{r makerankcomparison}
-load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+load(file=paste0(loc.wd, "/r_data/processed/BERtable.RData"))
 rank.table <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              c("DTXSID","r100")]
 rank.table <- cbind(rank.table, aed.full2[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
@@ -313,7 +313,7 @@ ggsave(FigBERRankCompare,
        dpi = 600, height = 5, width = 5, compression = "lzw")
 ```
 ```{r calcmccsscheck}
-load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+load(file=paste0(loc.wd, "/r_data/processed/BERtable.RData"))
 css.table <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              c("DTXSID","q50","Fgut", "Fabs")]
 css.table <- cbind(css.table, aed.full2[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
@@ -348,7 +348,7 @@ cat(paste(length(unique(subset(aed.full2,!is.na(BER))$DTXSID)) -
 ```
 
 ```{r makeallchemBERfig}
-load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+load(file=paste0(loc.wd, "/r_data/processed/BERtable.RData"))
 g1 <- ggplot(subset(aed.full2,
                     IVIVE=="bold('Nominal Conc.')"))+
   facet_grid(rows= vars(gutabs), labeller = label_parsed) +
@@ -379,9 +379,9 @@ ggsave(g2,
 ```
 
 ```{r makemeasurecacoBERfig}
-load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+load(file=paste0(loc.wd, "/r_data/processed/BERtable.RData"))
 # load Css values
-load(file = paste0(loc.wd, "/r_data/AEDtable.RData"))
+load(file = paste0(loc.wd, "/r_data/processed/AEDtable.RData"))
 
 FigBERmeas <- ggplot(subset(aed.full2,DTXSID%in%measured.chems &
                     !is.na(q95) &
@@ -411,7 +411,7 @@ ggsave(FigBERleg,
 ```
 
 ```{r makemeasurecacoBERfig2}
-load(file=paste0(loc.wd, "/r_data/BERtable.RData"))
+load(file=paste0(loc.wd, "/r_data/processed/BERtable.RData"))
 FigBERall <- ggplot(subset(aed.full2,
                     !is.na(q95) &
                     gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])"))+

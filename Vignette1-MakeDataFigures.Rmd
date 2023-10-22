@@ -613,11 +613,11 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
   caco2.perchem <- merge_chemical_replicates(caco2.filt)
 # This table has one row per chemical:
   save(caco2.perchem,
-       file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
+       file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements.RData"))
 ```
 
 ```{r basic_stats}
-load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
+load(file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements.RData"))
 cat(paste("Across the newly measured chemicals the mean Pab was ",
           signif(mean(caco2.perchem$mPab,na.rm=TRUE),2),
           " 10-6 cm/s, the median was ",
@@ -1125,7 +1125,7 @@ dev.off()
 # Permeability histograms
 ```{r permeability}
 # load caco2.perchem:
-  load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
+  load(file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements.RData"))
 
    pharma <- read_excel(
      paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))

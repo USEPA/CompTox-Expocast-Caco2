@@ -23,7 +23,7 @@ rm(list=ls())
 
 ### Set the figure size
 ```{r knitr_setup}
-loc.wd <- "C:/Users/jwambaug/git/comptox-caco2/Honda_Caco2"
+loc.wd <- "C:/Users/jwambaug/git/Comptox-Caco2/Honda_Caco2"
 knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
 knitr::opts_knit$set(root.dir = loc.wd)
 setwd(loc.wd)
@@ -82,7 +82,7 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
 ```
 ### Lay out the range of predictions
 ```{r make_prediction_histograms1}
-load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements.RData"))
+load(file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements.RData"))
 
 caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE) &
                 !is.na(caco2.perchem$mPab),
@@ -93,12 +93,12 @@ caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE) &
    caco2.perchem$Class <- "Other"
    caco2.perchem[caco2.perchem$dtxsid%in%pharma$DSSTox_Substance_Id,"Class"] <-
      "Pharmaceutical"
-   save(caco2.perchem, file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements2.RData"))
+   save(caco2.perchem, file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements2.RData"))
 ```
 
 # This table has one row per chemical:
 ```{r create_supplemental_table_perchemvalues}
-load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements2.RData")) 
+load(file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements2.RData")) 
 
 write.table(caco2.perchem[!duplicated(caco2.perchem$dtxsid),c(
                             "compound",
@@ -138,7 +138,7 @@ write.table(caco2.perchem[!duplicated(caco2.perchem$dtxsid),c(
 ```
 
 ```{r make_prediction_histograms2}
-  load(file = paste0(loc.wd, "/r_data/MeanChemicalMeasurements2.RData")) 
+  load(file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements2.RData")) 
 
   FigPredFabsHist <- ggplot(caco2.perchem)+
         geom_histogram(aes(x = Fabs.oral, fill=Class), 
