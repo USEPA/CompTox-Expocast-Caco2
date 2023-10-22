@@ -621,11 +621,11 @@ for (this.model in colnames(qspr.summary))
                SIGFIGS),
              " (",
              signif(quantile(
-               test.set[test.set[,this.model]==this.bin,"Pab"], 0.025),
+               test.set[classmod[[this.model]]$testsetpred==this.bin,"Pab"], 0.025),
                SIGFIGS),
              " - ",
              signif(quantile(
-               test.set[test.set[,this.model]==this.bin,"Pab"], 0.975),
+               test.set[classmod[[this.model]]$testsetpred==this.bin,"Pab"], 0.975),
                SIGFIGS),
              ")")
   }
@@ -636,7 +636,7 @@ save(qspr.summary,file=paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
 ```{r qspr_resultstable}
 load(paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
 knitr::kable(qspr.summary, 
-             caption = "Summary of test set performance of RF models as a function of how Caco2 data are subdivided into categories. Row's labeled \"Bin[Number]\" give the median and 95% interval for the measurments withing each bin.",
+             caption = "Summary of test set performance of RF models as a function of how Caco2 data are subdivided into categories. Row's labeled \"Bin[Number]\" give the median of the training data bin while the 95% interval is calculated from the test set measurments withing each bin.",
              floating.environment="sidewaystable") 
 write.csv(qspr.summary,
           na="",
