@@ -297,7 +297,7 @@ rank.table <- aed.full2[gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut']
                              c("DTXSID","r100")]
 rank.table <- cbind(rank.table, aed.full2[gutabs != "bold('100 Percent')~bolditalic('F'['abs/gut'])",
                              "rcaco"])
-save(rank.table,file=paste0(loc.wd, "/r_data/ranks.RData"))
+save(rank.table,file=paste0(loc.wd, "/r_data/processed/ranks.RData"))
 
 FigBERRankCompare<-ggplot(rank.table, aes(x=r100, y=rcaco)) + 
   geom_point(alpha=0.5, size=3) +
