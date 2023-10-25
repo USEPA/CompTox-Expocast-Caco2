@@ -287,9 +287,9 @@ We will attempt to make a model for each and take the most accurate.
   # Divide Pab into Bins:
   for (num.bins in 2:5)
   {
-    train.set[,paste0("Pab",num.bins,"Bin")] <-
-      bin(train.set$Pab, nbins=num.bins, 
-          labels=1:num.bins, method="content")
+#    train.set[,paste0("Pab",num.bins,"Bin")] <-
+#      bin(train.set$Pab, nbins=num.bins, 
+#          labels=1:num.bins, method="content")
     nozeros <- train.set$Pab
     nozeros[nozeros==0] <- 10^-6
     train.set[,paste0("LogPab",num.bins,"Bin")] <-
@@ -440,13 +440,13 @@ print(paste0(length(unique(subset(train.set,regexpr("ChEMBL",Data.Origin)!=-1)$d
                           "Molecule.ChEMBL.ID",
                           "dtxsid.1",
                           "Pab",
-                          "Pab2Bin",
+#                          "Pab2Bin",
                           "LogPab2Bin",
-                          "Pab3Bin",
+#                          "Pab3Bin",
                           "LogPab3Bin",
-                          "Pab4Bin",
+#                          "Pab4Bin",
                           "LogPab4Bin",
-                          "Pab5Bin",
+#                          "Pab5Bin",
                           "LogPab5Bin",
                           "Test"))]
   dim(all.desc)
@@ -543,13 +543,13 @@ metric <- "Accuracy"
 ```{r qspr_train}
 set.seed(seed)
 classmod <- list()
-for (this.model in c("Pab2Bin",
+for (this.model in c(#"Pab2Bin",
                      "LogPab2Bin",
-                     "Pab3Bin",
+                     #"Pab3Bin",
                      "LogPab3Bin",
-                     "Pab4Bin",
+                     #"Pab4Bin",
                      "LogPab4Bin",
-                     "Pab5Bin",
+                     #"Pab5Bin",
                      "LogPab5Bin"))
 {
   print(this.model)
