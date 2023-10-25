@@ -365,13 +365,7 @@ dim(all.desc)
                                                  "Pab5Bin"])))
   }
   
-# Drop equal weight bins (useful for dividing data, not needed for model 
-#  building):
-  all.desc <- all.desc[, !(colnames(all.desc) %in% c("Pab2Bin",
-                                                     "Pab3Bin",
-                                                     "Pab4Bin",
-                                                     "Pab5bin"))]
-  
+
   # Try to ensure reproducible pseudo-random sampling of test set chemicals:
   set.seed(12052012)
   for (this.bin in 1:5)
@@ -383,11 +377,18 @@ dim(all.desc)
 # Put all measurements of test chems into the test bin:
     all.desc[all.desc$dtxsid%in%test.chems,"Test"] <- 1
   }
-# Put all the control chemicals in the training set:
+
+  # Put all the control chemicals in the training set:
   all.desc[all.desc$dtxsid%in%
              c("DTXSID8045191", "DTXSID6046426", "DTXSID5023742"),
            "Test"] <- 0
-  
+
+  # Drop equal weight bins (useful for dividing data, not needed for model 
+  #  building):
+  all.desc <- all.desc[, !(colnames(all.desc) %in% c("Pab2Bin",
+                                                     "Pab3Bin",
+                                                     "Pab4Bin",
+                                                     "Pab5Bin"))]  
   dim(all.desc)
   dim(subset(all.desc, Test==0))
   dim(subset(all.desc, Test==1))
