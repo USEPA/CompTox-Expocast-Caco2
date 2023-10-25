@@ -287,9 +287,9 @@ We will attempt to make a model for each and take the most accurate.
   # Divide Pab into Bins:
   for (num.bins in 2:5)
   {
-#    train.set[,paste0("Pab",num.bins,"Bin")] <-
-#      bin(train.set$Pab, nbins=num.bins, 
-#          labels=1:num.bins, method="content")
+    train.set[,paste0("Pab",num.bins,"Bin")] <-
+      bin(train.set$Pab, nbins=num.bins, 
+          labels=1:num.bins, method="content")
     nozeros <- train.set$Pab
     nozeros[nozeros==0] <- 10^-6
     train.set[,paste0("LogPab",num.bins,"Bin")] <-
