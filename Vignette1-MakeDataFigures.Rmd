@@ -350,7 +350,7 @@ FigFrecbaHist <-
   geom_histogram(aes(x = mrec_ba), fill= "grey80", color = "black")+
   geom_vline(xintercept = 1, linetype = "dashed")+
   geom_text(data = labl.dt2, aes(x = x, y = y, label = labl), hjust = 0)+
-  labs(#title = "b) Talinolol",
+  labs(#title = "Talinolol",
     y = expression(bold("Count")), 
     x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
   scale_x_continuous(limits = c(0, 5), breaks = c(0,1,2,3,4), expand = c(0,0))+
@@ -679,7 +679,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
     geom_text(data = labl.FigWarfarinPabAdj,
               aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
+    labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^2.5))+
@@ -692,7 +692,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
     geom_text(data = labl.FigWarfarinPabUnadj,
               aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
+    labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-0.5,10^2.5))+
@@ -704,7 +704,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigWarfarinPbaAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1b,aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
+    labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^1.75))+
@@ -714,7 +714,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigWarfarinPbaUnadjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
-    labs(title = "a) Warfarin",
+    labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
     lims(y = c(0, 12))+
@@ -725,7 +725,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigWarfarinEffluxRAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1c,aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
+    labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
     #lims(x = c(0.75,2.25))+
@@ -735,7 +735,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigWarfarinEffluxRUnadjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x =efflux0), fill= "grey80", color = "black")+
-    labs(title = "a) Warfarin",
+    labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
     #lims(x = c(0.75,2.25))+
@@ -747,7 +747,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1d, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
+    labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
     lims(x = c(0,2.2))+
@@ -758,7 +758,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1e, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "a) Warfarin",
+    labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
     lims(x = c(0,2.2))+
@@ -837,7 +837,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
     geom_text(data = labl.dtFigTalinololPabAdj, 
               aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
+    labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_y_continuous(breaks = c(0,5,10), limits = c(0,10))+
@@ -850,7 +850,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
     geom_text(data = labl.dtFigTalinololPabUnadj, 
               aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
+    labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
     lims(x = c(-2.5,0.5))+
@@ -862,7 +862,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigTalinololPbaAdjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt2b, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
+    labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2.5))+
@@ -871,7 +871,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigTalinololPbaUnadjHist  <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
-    labs(title = "b) Talinolol",
+    labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2.5))+
@@ -881,7 +881,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigTalinololEffluxRAdjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
     geom_text(data = labl.dt2c, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
+    labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
     #lims(x = c(0.75,2.25))+
@@ -891,7 +891,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigTalinololEffluxRUnadjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = efflux0), fill= "grey80", color = "black")+
-    labs(title = "b) Talinolol",
+    labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
     #lims(x = c(0.75,2.25))+
@@ -903,7 +903,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
     geom_text(data = labl.dt2d, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
+    labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
     lims(x = c(0,2.2))+
@@ -914,7 +914,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt2e, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "b) Talinolol",
+    labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
     lims(x = c(0,2.2))+
@@ -930,9 +930,9 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   ggsave(FigTalinololEffluxRAdjHist, file = paste0(loc.wd,
     "/results_for_paper/Fig_Talinolol_efflux_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
-  ggsave(FigTalinololFrecbaHist, file = paste0(loc.wd,
-    "/results_for_paper/Fig_Talinolol_recab_histo.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
+    ggsave(FigTalinololFrecabHist, file = paste0(loc.wd,
+      "/results_for_paper/Fig_Talinolol_recab_histo.tiff"),
+           height = 3, width = 3, dpi = 600, compression = "lzw")
   ggsave(FigTalinololFrecbaHist, file = paste0(loc.wd,
     "/results_for_paper/Fig_Talinolol_recba_histo.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
@@ -998,7 +998,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
     geom_text(data = labl.dtFigRanitidinePabAdjHist, 
               aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
+    labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-2,10^0))+
@@ -1011,7 +1011,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pab0), fill= "grey80", color = "black")+
     geom_text(data = labl.dtFigRanitidinePabUnadjHist, 
               aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
+    labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-2,10^0))+
@@ -1022,7 +1022,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigRanitidinePbaAdjHist <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt3b, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
+    labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2))+
@@ -1031,7 +1031,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigRanitidinePbaUnadjHist <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
-    labs(title = "c) Ranitidine",
+    labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2))+
@@ -1042,7 +1042,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = log10(efflux.ratio)), fill= "grey80", color = "black")+
     geom_text(data = labl.dt3c, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
+    labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
     #lims(x = c(0.75,2.25))+
@@ -1054,7 +1054,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
     geom_text(data = labl.dt3d, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
+    labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
     lims(x = c(0,2.2))+
@@ -1066,7 +1066,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt3e, aes(x = x, y= y, label = labl), hjust = 0)+
-    labs(title = "c) Ranitidine",
+    labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
     lims(x = c(0,2.2))+
@@ -1075,7 +1075,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
 
   FigRanitidineEffluxRUnadjHist  <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = efflux0), fill= "grey80", color = "black")+
-    labs(title = "c) Ranitidine",
+    labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
     #lims(x = c(0.75,2.25))+
