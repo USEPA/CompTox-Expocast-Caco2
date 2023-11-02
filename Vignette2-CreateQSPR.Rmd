@@ -224,7 +224,7 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
                    alpha=1)+
    # geom_text(data = labl.dt1, aes(x=x, y=y, label = labl), hjust = 0)+
     labs(y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     #lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
@@ -820,8 +820,8 @@ save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
                    position = position_jitter(w = 0.0, h = 0.1),
                    size=3)+
         geom_abline(slope = 1, linetype = "dashed")+
-        labs(y = expression(bold("QSPR Predicted ")~bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
-             x = expression(bold("Measured ")~bolditalic("P"["ab"])~bold('(10'^'-6'~'cm/s)')),
+        labs(y = expression(bold("QSPR Predicted ")~bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)')),
+             x = expression(bold("Measured ")~bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)')),
              color = "Data Source",
              shape = "Data Source")+
        # lims(x = c(-5,3), y = c(-5,3)) +

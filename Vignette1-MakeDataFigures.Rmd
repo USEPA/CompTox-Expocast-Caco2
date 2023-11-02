@@ -300,8 +300,8 @@ high_rec_co <- 2
     geom_text(data = txt.dt, 
               aes(x = x, y = y, label = compound, hjust = hjust))+
     labs(y = 
-           expression(bold("Mean")*bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)')), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+           expression(bold("Mean")*bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)')), 
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10)+
     scale_y_log10(labels=scientific_10)+
     theme_bw() +
@@ -468,7 +468,7 @@ Pab.thresh <- 10
                       subset(caco2.filt,Pab0>Pab.thresh), method = "lm")+
     geom_text(data = labl.dt1,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
     labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB")), 
-         y = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         y = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     lims(x=c(0,2.5),y=c(0,200))+
     theme_bw()+
     gtheme+
@@ -484,7 +484,7 @@ Pab.thresh <- 10
     geom_text(data = labl.dt2,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
     lims(y = c(0,150))+
     labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB")), 
-         y = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         y = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
     gtheme+
     annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
@@ -499,7 +499,7 @@ Pab.thresh <- 10
     geom_text(data = labl.dt3,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
     lims(y= c(0,160))+
     labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA")),
-         y = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         y = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
     gtheme+
     annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
@@ -514,7 +514,7 @@ Pab.thresh <- 10
     geom_text(data = labl.dt4,aes(x = x, y=y, label = labl), parse = T, hjust = 0)+
     lims(y = c(0,160))+
     labs(x = expression(bold("Recovery")[bolditalic("BA")]), 
-         y = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         y = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
     gtheme+
     annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
@@ -600,8 +600,8 @@ length(unique(caco2.publish[!is.na(Pba) & !is.na(Pab), casrn])) # 302
     geom_point(aes(x = hcPab, y = Pab95), 
                fill = "grey90", color = "black",
                size = 3, shape = 16, alpha = 0.5) +
-    labs(x = expression(bold("Warfarin log"["10"])*bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)')), 
-         y = expression(bold("95%")~bold("log"["10"])*bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+    labs(x = expression(bold("Warfarin log"["10"])*bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)')), 
+         y = expression(bold("95%")~bold("log"["10"])*bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
     gtheme
   #print(g1)
@@ -637,7 +637,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     paste0("SD: ", signif(sdPab,2)),
    # paste0("CV: ", signif(cvPab,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 10,
+                                                   x = 4,
                                                    y = 0+c(13,11,9#,7
                                                          ))]
   labl.FigWarfarinPabUnadj <- caco2.perchem[casrn == "81-81-2",.(labl = c(
@@ -645,35 +645,35 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     paste0("SD: ", signif(sdPab0,2)),
    # paste0("CV: ", signif(cvPab0,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 4,
+                                                   x = 1,
                                                    y = -4+c(13,11,9#,10
                                                               ))]
-  labl.dt1b <- caco2.perchem[casrn == "81-81-2",.(labl = c(
+  labl.FigWarfarinPbaAdjHist <- caco2.perchem[casrn == "81-81-2",.(labl = c(
     paste0("Mean: ",signif(mPba,2)),
     paste0("SD: ", signif(sdPba,2)),
     paste0("Total Count: ", ntotal_ba)),
-                                                 x = 10,
-                                                 y = c(8,7,6))]
-  labl.dt1c <- caco2.perchem[casrn == "81-81-2",.(labl = c(
+                                                 x = 4,
+                                                 y = c(8,7,6)-1)]
+  labl.FigWarfarinEffluxRAdjHist <- caco2.perchem[casrn == "81-81-2",.(labl = c(
     paste0("Mean: ",signif(mefflux,2)),
     paste0("SD: ", signif(sdefflux,2)),
     paste0("Total Count: ", ntotal_efflux)),
                                                  x = 0.1,
                                                  y = c(8,7,6))]
   
-  labl.dt1d <- caco2.perchem[casrn == "81-81-2",.(labl = c(
+  labl.FigWarfarinFrecabHist <- caco2.perchem[casrn == "81-81-2",.(labl = c(
     paste0("Mean: ",signif(mrec_ab,2)),
     paste0("SD: ", signif(sdrec_ab,2)),
     paste0("Total Count: ", ntotal_recab
                                                               )),
-                                                     x = 10,
+                                                     x = 1.1,
                                                      y = c(7,6,5))]
-  labl.dt1e <- caco2.perchem[casrn == "81-81-2",.(labl = c(
+  labl.FigWarfarinFrecbaHist <- caco2.perchem[casrn == "81-81-2",.(labl = c(
     paste0("Mean: ",signif(mrec_ba,2)),
     paste0("SD: ", signif(sdrec_ba,2)),
     paste0("Total Count: ", ntotal_recba
                                                               )),
-                                                     x = 10,
+                                                     x = 1.1,
                                                      y = c(10,8,6))]
   FigWarfarinPabAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = Pab), fill= "grey80", color = "black")+
@@ -681,7 +681,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
               aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Warfarin",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^2.5))+
     scale_y_continuous(breaks = c(0, 5, 10, 15))+
     theme_bw()+
@@ -694,7 +694,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
               aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Warfarin",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-0.5,10^2.5))+
     scale_y_continuous(breaks = c(0,5,10), limits = c(0,10))+
     theme_bw()+
@@ -703,10 +703,10 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigWarfarinPbaAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt1b,aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigWarfarinPbaAdjHist,aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Warfarin",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^1.75))+
     theme_bw()+
     gtheme
@@ -716,7 +716,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
     labs(title = "Warfarin",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     lims(y = c(0, 12))+
     scale_x_log10(labels=scientific_10,limits=c(10^-0.5,10^2.5))+
     theme_bw()+
@@ -724,7 +724,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigWarfarinEffluxRAdjHist <- ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt1c,aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigWarfarinEffluxRAdjHist, aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
@@ -746,7 +746,8 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigWarfarinFrecabHist <- 
     ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt1d, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigWarfarinFrecabHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
@@ -757,7 +758,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigWarfarinFrecbaHist <- 
     ggplot(caco2.publish[casrn == " 81-81-2",])+
     geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt1e, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigWarfarinFrecbaHist, aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
@@ -795,42 +796,43 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     paste0("SD: ", signif(sdPab,2)),
     #paste0("CV: ", signif(cvPab,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 0.002,
-                                                   y = 0+c(9.5,8.5,7.5#,6.5
+                                                   x = 0.001,
+                                                   y = -1+c(9.5,8.5,7.5#,6.5
                                                          ))]
   labl.dtFigTalinololPabUnadj <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
     paste0("Mean: ",signif(mPab0,2)),
     paste0("SD: ", signif(sdPab0,2)),
    # paste0("CV: ", signif(cvPab0,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 0.002,
-                                                   y = 0+c(9.5,8.5,7.5#,6.5
+                                                   x = 0.001,
+                                                   y = -1+c(9.5,8.5,7.5#,6.5
                                                          ))]
-  labl.dt2b <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
+  labl.FigTalinololPbaAdjHist <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
     paste0("Mean: ",signif(mPba,2)),
     paste0("SD: ", signif(sdPba,2)),
     paste0("Total Count: ", ntotal_ba)),
                                                     x = 0.1,
                                                     y = c(7.5,6.5,5.5))]
-  labl.dt2c <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
+  labl.FigTalinololEffluxRAdjHist <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
     paste0("Mean: ",signif(mefflux,2)),
     paste0("SD: ", signif(sdefflux,2)),
     paste0("Total Count: ", ntotal_efflux)),
                                                     x = 1,
-                                                    y = c(7.5,6.5,5.5))]
-  labl.dt2d <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
+                                                    y = -2+c(7.5,6.5,5.5))]
+  
+  labl.FigTalinololFrecabHist <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
     paste0("Mean: ",signif(mrec_ab,2)),
     paste0("SD: ", signif(sdrec_ab,2)),
     paste0("Total Count: ", ntotal_recab
                                                               )),
-                                                     x = 10,
+                                                     x = 1.1,
                                                      y = c(10,8,6))]
-  labl.dt2e <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
+  labl.FigTalinololFrecbaHist <- caco2.perchem[casrn == "57460-41-0",.(labl = c(
     paste0("Mean: ",signif(mrec_ba,2)),
     paste0("SD: ", signif(sdrec_ba,2)),
     paste0("Total Count: ", ntotal_recba
                                                               )),
-                                                     x = 10,
+                                                     x = 1.1,
                                                      y = c(10,8,6))]
   
   FigTalinololPabAdjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
@@ -839,7 +841,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
               aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Talinolol",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     scale_y_continuous(breaks = c(0,5,10), limits = c(0,10))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3,10^0.5))+
     theme_bw()+
@@ -852,7 +854,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
               aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Talinolol",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     lims(x = c(-2.5,0.5))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3,10^0.5))+
     theme_bw()+
@@ -861,10 +863,10 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigTalinololPbaAdjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt2b, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigTalinololPbaAdjHist, aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Talinolol",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2.5))+
     theme_bw()+
     gtheme
@@ -873,14 +875,15 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
     labs(title = "Talinolol",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2.5))+
     theme_bw()+
     gtheme
   
   FigTalinololEffluxRAdjHist <- ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = efflux.ratio), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt2c, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigTalinololEffluxRAdjHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
@@ -902,7 +905,8 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigTalinololFrecabHist <- 
     ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt2d, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigTalinololFrecabHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
@@ -913,7 +917,8 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigTalinololFrecbaHist <- 
     ggplot(caco2.publish[casrn == " 57460-41-0",])+
     geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt2e, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigTalinololFrecbaHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Talinolol",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
@@ -963,35 +968,35 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   #  paste0("CV: ", signif(cvPab0,2)),
     paste0("Total Count: ", ntotal_ab)),
                                                    x = 0.01,
-                                                   y = 0+c(8,7,6#,5
+                                                   y = -1+c(8,7,6#,5
                                                            ))]
-  labl.dt3b <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
+  labl.FigRanitidinePbaAdjHist <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
     paste0("Mean: ",signif(mPba,2)),
     paste0("SD: ", signif(sdPba,2)),
     paste0("Total Count: ", ntotal_ba
                                                              )),
                                                     x = 0.1,
                                                     y = c(7,6,5))]
-  labl.dt3c <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
+  labl.FigRanitidineEffluxRAdjHist <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
     paste0("Mean: ",signif(mefflux,2)),
     paste0("SD: ", signif(sdefflux,2)),
     paste0("Total Count: ", ntotal_efflux
                                                              )),
-                                                    x = 1,
-                                                    y = c(4,3.5,3))]
-  labl.dt3d <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
+                                                    x = 0.4,
+                                                    y = -1+c(4,3.5,3))]
+  labl.FigRanitidineFrecabHist <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
     paste0("Mean: ",signif(mrec_ab,2)),
     paste0("SD: ", signif(sdrec_ab,2)),
      paste0("Total Count: ", ntotal_recab
                                                               )),
-                                                     x = 10,
+                                                     x = 1.1,
                                                      y = c(7,6,5))]
-  labl.dt3e <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
+  labl.FigRanitidineFrecbaHist <- caco2.perchem[casrn == "66357-35-5",.(labl = c(
     paste0("Mean: ",signif(mrec_ba,2)),
     paste0("SD: ", signif(sdrec_ba,2)),
     paste0("Total Count: ", ntotal_recba
                                                               )),
-                                                     x = 10,
+                                                     x = 1.1,
                                                      y = c(10,8,6))]
   
   FigRanitidinePabAdjHist <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
@@ -1000,7 +1005,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
               aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Ranitidine",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-2,10^0))+
     scale_y_continuous(breaks = c(0,5,10), labels = c(0,5,10), limits = c(0,10))+
     theme_bw()+
@@ -1013,7 +1018,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
               aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Ranitidine",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-2,10^0))+
     theme_bw()+
     gtheme
@@ -1021,10 +1026,11 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   
   FigRanitidinePbaAdjHist <- ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = Pba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt3b, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigRanitidinePbaAdjHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Ranitidine",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2))+
     theme_bw()+
     gtheme
@@ -1033,7 +1039,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     geom_histogram(aes(x = Pba0), fill= "grey80", color = "black")+
     labs(title = "Ranitidine",
          y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     scale_x_log10(labels=scientific_10,limits=c(10^-1,10^2))+
     theme_bw()+
     gtheme
@@ -1041,7 +1047,8 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigRanitidineEffluxRAdjHist <- 
     ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = log10(efflux.ratio)), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt3c, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigRanitidineEffluxRAdjHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bold("Efflux Ratio"))) +
@@ -1053,7 +1060,8 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigRanitidineFrecabHist <- 
     ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = rec_ab), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt3d, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigRanitidineFrecabHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB"))) +
@@ -1065,7 +1073,8 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
   FigRanitidineFrecbaHist  <- 
     ggplot(caco2.publish[casrn == " 66357-35-5",])+
     geom_histogram(aes(x = rec_ba), fill= "grey80", color = "black")+
-    geom_text(data = labl.dt3e, aes(x = x, y= y, label = labl), hjust = 0)+
+    geom_text(data = labl.FigRanitidineFrecbaHist, 
+              aes(x = x, y= y, label = labl), hjust = 0)+
     labs(title = "Ranitidine",
          y = expression(bold("Count")), 
          x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA"))) +
@@ -1162,7 +1171,7 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
    # geom_histogram(aes(x = mPab), fill= "grey80", color = "black")+
     geom_text(data = labl.dt1, aes(x=x, y=y, label = labl), hjust = 0)+
     labs(y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
  #   lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
@@ -1178,7 +1187,7 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
  #   geom_histogram(aes(x = mPba), fill= "grey80", color = "black")+
     geom_text(data = labl.dt2, aes(x=x, y=y, label = labl), hjust = 0)+
     labs(y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
 #    lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
@@ -1209,7 +1218,7 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
                    alpha=0.4, position="identity")+
   #  geom_histogram(aes(x = mPab0), fill= "grey80", color = "black")+
     labs(y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
  #   lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
@@ -1222,7 +1231,7 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
                    alpha=0.4, position="identity")+
   #  geom_histogram(aes(x = mPba0), fill= "grey80", color = "black")+
     labs(y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["BA"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
  #   lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
@@ -1286,7 +1295,7 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
                    alpha=0.2, position="identity")+
     geom_text(data = labl.dt1, aes(x=x, y=y, label = labl), hjust = 0)+
     labs(y = expression(bold("Count")), 
-         x = expression(bolditalic("P"["AB"])~bold('(10'^'-6'~'cm/s)'))) +
+         x = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     lims(y = c(0, 140))+
     scale_x_log10(labels=scientific_10,limits=c(10^-3.5,10^2.5))+
     theme_bw()+
