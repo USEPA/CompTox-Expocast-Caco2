@@ -10,8 +10,30 @@ vignette: >
 ---
 wambaugh.john@epa.gov
 
-## Abstract
-Administered equivalent dose (AED) estimation using in vitro hazard and high throughput toxicokinetics (HTTK) can be improved by refining assumptions regarding fraction absorbed (Fabs) through the intestine, a component of oral bioavailability (Fbio). Although in vivo data to inform Fabs are often unavailable for non-pharmaceuticals, in vitro measures of apparent permeability (Papp) using the Caco-2 cell line have been highly correlated with Fabs when used in in vitro-in vivo extrapolation (IVIVE) modeling. To address data gaps for non-drug chemicals, bidirectional Papp was evaluated using the Caco-2 assay for over 400 chemicals. A random forest quantitative structure-property relationship (QSPR) model was developed using these and peer-reviewed pharmaceutical data. Both Caco-2 data (R2=0.35) and the QSPR model (R2=0.27) were better at predicting human bioavailability compared to in vivo rat data (R2=0.18). The httk-predicted plasma steady state concentrations (Css) for IVIVE were updated, leading to modest changes for poorly absorbed chemicals. Experimental data were evaluated for sources of measurement uncertainty, which was then accounted for using the Monte Carlo method. Revised AEDs were subsequently compared with exposure estimates to evaluate influence on bioactivity:exposure ratios as a surrogate for risk. Ultimately, Papp incorporation to adjust for Fbio in httk modeling improves AED estimations used in HT risk prioritization. 
+This vignette uses the QSPR model generated in vignette 2 to make a set of 
+predictions of apical:basal membrane permeability.
+
+## Overall Manuscript Abstract
+Administered equivalent dose (AED) estimation using *in vitro* hazard and high 
+throughput toxicokinetics (HTTK) can be improved by refining assumptions 
+regarding fraction absorbed ($F_{abs}$) through the intestine, a component of 
+oral bioavailability ($F_{bio}$). Although *in vivo* data to inform $F_{abs}$ 
+are often unavailable for non-pharmaceuticals, *in vitro* measures of apparent 
+permeability ($P_{app}$) using the Caco-2 cell line have been highly correlated 
+with $F_{abs}$ when used in *in vitro-in vivo* extrapolation (IVIVE) modeling. 
+To address data gaps for non-drug chemicals, bidirectional $P_{app}$ was 
+evaluated using the Caco-2 assay for over 400 chemicals. A random forest 
+quantitative structure-property relationship (QSPR) model was developed using 
+these and peer-reviewed pharmaceutical data. Both Caco-2 data ($R^2$=0.37) and 
+the QSPR model ($R^2$=0.3) were better at predicting human bioavailability 
+compared to *in vivo* rat data ($R^2$=0.2). The httk-predicted plasma steady 
+state concentrations ($C_{ss}$) for IVIVE were updated, leading to modest 
+changes for poorly absorbed chemicals. Experimental data were evaluated for 
+sources of measurement uncertainty, which was then accounted for using the Monte 
+Carlo method. Revised AEDs were subsequently compared with exposure estimates to
+evaluate influence on bioactivity:exposure ratios as a surrogate for risk. 
+Ultimately, $P_{app}$ incorporation to adjust for $F_{bio}$ in httk modeling 
+improves AED estimations used in HT risk prioritization. 
 
 ## Prepare for session
 
@@ -28,7 +50,6 @@ knitr::opts_chunk$set(echo = TRUE, fig.width=5, fig.height=4)
 knitr::opts_knit$set(root.dir = loc.wd)
 ```
 
-###### qspr #######
 
 ### Load the relevant libraries
 ```{r r_setup}
@@ -38,7 +59,9 @@ packages <- c("readxl", "httk",
 sapply(packages, require, character.only=TRUE) #Note, the "character.only" argument is necessary here
 
 ```
- Read both OPERA predictions and Padel descriptors:
+## Making QSPR Predictions for Membrane Permeability
+
+Read both OPERA predictions and Padel descriptors:
 ```{r qspr_read_opera_padel_descriptors}
 opera <- read.csv(paste0(loc.wd,"/r_data/qspr/trainset-smi_OPERA2.9Pred.csv"))
 desc.cols <- rep(TRUE, dim(opera)[2])
@@ -49,7 +72,7 @@ desc.cols[regexpr("Conf_index",colnames(opera))!=-1] <- FALSE
 opera <- subset(opera,!duplicated(opera))
 ```
 
-# Make a file of SMILES for Caco2 Predictions:
+### Make a file of SMILES for Caco2 Predictions:
 The table httk::chem.physical_and_invitro.data includes the QSAR_READY_SMILES
 from the CCD in the column SMILES.desalt. We will use these to get descriptors
 needed to predict Caco2 Pab for all the chemicals.
@@ -137,7 +160,7 @@ session:
 load(paste0(loc.wd,"/r_data/QSPR/optimal_model.RData"))
 ```
 
-# Read both OPERA predictions and Padel descriptors for httk library
+### Read both OPERA predictions and Padel descriptors for httk library
 ```{r qspr_read_newpredictions_opera_padel_descriptors}
 httk.desc <- read.csv(paste0(loc.wd,"/r_data/QSPR/QSPRPrediction-smi_OPERA2.9Pred.csv"))
 dim(httk.desc)
@@ -175,7 +198,8 @@ for (this.col in opt.desc)
 }
 ```
 
-USe the Roy et al. (2015) method to determine applicability domain:
+### Aplicability Domain
+Use the Roy et al. (2015) method to determine applicability domain:
 ```{r qspr_royapplicabilitydomain}
 httk.Ski <- httk.desc
 httk.Ski[] <- NA
@@ -207,7 +231,7 @@ print(paste0(sum(httk.AD)," HTTK chemicals (",
              "%) are in the Roy et al. (2015) estimated domain o applicability"))
 ```
 
-Use optimal model to predict across HTTK library
+### Use optimal model to predict across HTTK library
 ```{r qspr_makehttkpredictions}
 load(paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
 

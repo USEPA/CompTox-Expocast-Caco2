@@ -10,8 +10,31 @@ vignette: >
 ---
 wambaugh.john@epa.gov
 
-## Abstract
-Administered equivalent dose (AED) estimation using in vitro hazard and high throughput toxicokinetics (HTTK) can be improved by refining assumptions regarding fraction absorbed (Fabs) through the intestine, a component of oral bioavailability (Fbio). Although in vivo data to inform Fabs are often unavailable for non-pharmaceuticals, in vitro measures of apparent permeability (Papp) using the Caco-2 cell line have been highly correlated with Fabs when used in in vitro-in vivo extrapolation (IVIVE) modeling. To address data gaps for non-drug chemicals, bidirectional Papp was evaluated using the Caco-2 assay for over 400 chemicals. A random forest quantitative structure-property relationship (QSPR) model was developed using these and peer-reviewed pharmaceutical data. Both Caco-2 data (R2=0.35) and the QSPR model (R2=0.27) were better at predicting human bioavailability compared to in vivo rat data (R2=0.18). The httk-predicted plasma steady state concentrations (Css) for IVIVE were updated, leading to modest changes for poorly absorbed chemicals. Experimental data were evaluated for sources of measurement uncertainty, which was then accounted for using the Monte Carlo method. Revised AEDs were subsequently compared with exposure estimates to evaluate influence on bioactivity:exposure ratios as a surrogate for risk. Ultimately, Papp incorporation to adjust for Fbio in httk modeling improves AED estimations used in HT risk prioritization. 
+This vignette incorporates the Caco-2 data into estimates of oral 
+bioavailability and prioritizes chemical risk based on bioactivity:exposure 
+ratio.
+
+## Overall Manuscript Abstract
+Administered equivalent dose (AED) estimation using *in vitro* hazard and high 
+throughput toxicokinetics (HTTK) can be improved by refining assumptions 
+regarding fraction absorbed ($F_{abs}$) through the intestine, a component of 
+oral bioavailability ($F_{bio}$). Although *in vivo* data to inform $F_{abs}$ 
+are often unavailable for non-pharmaceuticals, *in vitro* measures of apparent 
+permeability ($P_{app}$) using the Caco-2 cell line have been highly correlated 
+with $F_{abs}$ when used in *in vitro-in vivo* extrapolation (IVIVE) modeling. 
+To address data gaps for non-drug chemicals, bidirectional $P_{app}$ was 
+evaluated using the Caco-2 assay for over 400 chemicals. A random forest 
+quantitative structure-property relationship (QSPR) model was developed using 
+these and peer-reviewed pharmaceutical data. Both Caco-2 data ($R^2$=0.37) and 
+the QSPR model ($R^2$=0.3) were better at predicting human bioavailability 
+compared to *in vivo* rat data ($R^2$=0.2). The httk-predicted plasma steady 
+state concentrations ($C_{ss}$) for IVIVE were updated, leading to modest 
+changes for poorly absorbed chemicals. Experimental data were evaluated for 
+sources of measurement uncertainty, which was then accounted for using the Monte 
+Carlo method. Revised AEDs were subsequently compared with exposure estimates to
+evaluate influence on bioactivity:exposure ratios as a surrogate for risk. 
+Ultimately, $P_{app}$ incorporation to adjust for $F_{bio}$ in httk modeling 
+improves AED estimations used in HT risk prioritization.
 
 ## Prepare for session
 
@@ -49,8 +72,8 @@ source(paste0(loc.wd,"/r_scripts/Honda_caco2_utilities.R"))
 
 ```
 
-# Plot Setup
-
+### Plot Configuration
+Here we set standard aspects of all plots, like font size
 ```{r BERplotsetup}
 # make BER plot theme
 gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
@@ -83,7 +106,7 @@ g1leg <- ggplot(legend.dt)+
 gleg <- get_legend(g1leg)
 ```
 
-# Function for labeling on log-scale:
+### Function for labeling plot tick-marks on log-scale:
 ```{r label_logscale}
 scientific_10 <- function(x) {                                  
   out <- gsub("1e", "10^", scientific_format()(x))              
@@ -93,7 +116,7 @@ scientific_10 <- function(x) {
 }  
 ```
 
-# BER plots
+## BER plots
 ```{r calc_mc_css_options}
 # collect httk chems for IVIVE
 chem.dt <- as.data.table(chem.physical_and_invitro.data)
@@ -133,7 +156,7 @@ use.dt <- temp[!is.na(adj.fuph) & !is.na(clinth), ]
 use.dt <- use.dt[DTXSID %in% measplusqspr.chems,]
 dim(use.dt)
 ```
-# Calculate css for different IVIVE assumptions
+### Calculate css for different IVIVE assumptions
 ```{r calc_css}
 set.seed(6252019)
 use.dt[, css_caco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
@@ -155,7 +178,6 @@ use.dt[, css_fgutabs100 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
 save(use.dt, measured.chems, file = paste0(loc.wd, "/r_data/processed/AEDtable.RData"))
 ```
 
-###
 ```{r ber_table}
 # load Css values
 load(file = paste0(loc.wd, "/r_data/processed/AEDtable.RData"))
@@ -451,7 +473,7 @@ ggarrange(FigBERmeas, FigBERall,
           theme_gray(base_size = 18))
 dev.off()
 ```
-# Identify the poorly absorbed chemicals:
+### Identify the poorly absorbed chemicals:
 ```{r lowfabstable}
 low.fabs <- subset(aed.full2,Fabs<0.5)
 low.fabs.table <- subset(low.fabs,gutabs == "bold('100 Percent')~bolditalic('F'['abs/gut'])")

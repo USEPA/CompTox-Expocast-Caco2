@@ -10,8 +10,31 @@ vignette: >
 ---
 wambaugh.john@epa.gov
 
-## Abstract
-Administered equivalent dose (AED) estimation using in vitro hazard and high throughput toxicokinetics (HTTK) can be improved by refining assumptions regarding fraction absorbed (Fabs) through the intestine, a component of oral bioavailability (Fbio). Although in vivo data to inform Fabs are often unavailable for non-pharmaceuticals, in vitro measures of apparent permeability (Papp) using the Caco-2 cell line have been highly correlated with Fabs when used in in vitro-in vivo extrapolation (IVIVE) modeling. To address data gaps for non-drug chemicals, bidirectional Papp was evaluated using the Caco-2 assay for over 400 chemicals. A random forest quantitative structure-property relationship (QSPR) model was developed using these and peer-reviewed pharmaceutical data. Both Caco-2 data (R2=0.35) and the QSPR model (R2=0.27) were better at predicting human bioavailability compared to in vivo rat data (R2=0.18). The httk-predicted plasma steady state concentrations (Css) for IVIVE were updated, leading to modest changes for poorly absorbed chemicals. Experimental data were evaluated for sources of measurement uncertainty, which was then accounted for using the Monte Carlo method. Revised AEDs were subsequently compared with exposure estimates to evaluate influence on bioactivity:exposure ratios as a surrogate for risk. Ultimately, Papp incorporation to adjust for Fbio in httk modeling improves AED estimations used in HT risk prioritization. 
+This vignette uses *in vivo* measurements from the scientific literature to 
+evaluate various aspects of the models for relating *in vitro* Caco-2 apparent
+permeabilities to fraction orally absorbed.
+
+## Overall Manuscript Abstract
+Administered equivalent dose (AED) estimation using *in vitro* hazard and high 
+throughput toxicokinetics (HTTK) can be improved by refining assumptions 
+regarding fraction absorbed ($F_{abs}$) through the intestine, a component of 
+oral bioavailability ($F_{bio}$). Although *in vivo* data to inform $F_{abs}$ 
+are often unavailable for non-pharmaceuticals, *in vitro* measures of apparent 
+permeability ($P_{app}$) using the Caco-2 cell line have been highly correlated 
+with $F_{abs}$ when used in *in vitro-in vivo* extrapolation (IVIVE) modeling. 
+To address data gaps for non-drug chemicals, bidirectional $P_{app}$ was 
+evaluated using the Caco-2 assay for over 400 chemicals. A random forest 
+quantitative structure-property relationship (QSPR) model was developed using 
+these and peer-reviewed pharmaceutical data. Both Caco-2 data ($R^2$=0.37) and 
+the QSPR model ($R^2$=0.3) were better at predicting human bioavailability 
+compared to *in vivo* rat data ($R^2$=0.2). The httk-predicted plasma steady 
+state concentrations ($C_{ss}$) for IVIVE were updated, leading to modest 
+changes for poorly absorbed chemicals. Experimental data were evaluated for 
+sources of measurement uncertainty, which was then accounted for using the Monte 
+Carlo method. Revised AEDs were subsequently compared with exposure estimates to
+evaluate influence on bioactivity:exposure ratios as a surrogate for risk. 
+Ultimately, $P_{app}$ incorporation to adjust for $F_{bio}$ in httk modeling 
+improves AED estimations used in HT risk prioritization.
 
 ## Prepare for session
 
@@ -35,7 +58,7 @@ packages <- c("ggplot2", "scales", "httk",
               "readxl", "viridis", "ggpubr", "cramer")
 sapply(packages, require,character.only=TRUE) #Note, the "character.only" argument is necessary here
 ```
-# Function for labeling on log-scale:
+### Function for labeling on log-scale:
 ```{r label_logscale}
 scientific_10 <- function(x) {                                  
   out <- gsub("1e", "10^", scientific_format()(x))              
@@ -56,12 +79,9 @@ source(paste0(loc.wd,"/r_scripts/Honda_caco2_utilities.R"))
 
 ```
 
-## ANALYSIS
-
-Configure figure theme
-```{r summary}
-low_rec_co <- 0.4
-high_rec_co <- 2
+### Plot Configuration
+Here we set standard aspects of all plots, like font size.
+```{r ggplot_theme}
 gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
                 axis.text.y = element_text(size=10, color = "black",face="bold"),
                 legend.text = element_text(size = 10),
@@ -76,6 +96,9 @@ gtheme <- theme(axis.title = element_text(size=12,color="black",face="bold"),
                 axis.text.x = element_text(size = 10,face="bold",color="black"),
                 plot.title = element_text(hjust=0,size=12,face="bold"))
 ```
+
+## ANALYSIS
+
 ```{r load_pharma_list}
    pharma <- read_excel(
      paste0(loc.wd, "/r_data/chemical_lists/DSSTox_PHRMPEND_20170531.xlsx"))
@@ -96,7 +119,8 @@ caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE) &
    save(caco2.perchem, file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements2.RData"))
 ```
 
-# This table has one row per chemical:
+### Create supplemental table with average measurement for each chemical
+This table has one row per chemical:
 ```{r create_supplemental_table_perchemvalues}
 load(file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements2.RData")) 
 
@@ -418,7 +442,8 @@ Qintesttransport <- 0.5
    save(invivo.table, 
         file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))  
 ```   
-# Add in predictions from ADMet Predictor
+
+### Add in predictions from ADMet Predictor
 ```{r load_admet}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
@@ -438,7 +463,7 @@ save(invivo.table,
      file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))  
 ```
 
-# Create supplemental table with all in vivo data and predictions
+### Create supplemental table with all in vivo data and predictions
 ```{r write_suptable_invivodata}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
@@ -448,7 +473,7 @@ write.csv(invivo.table,
           na="")
 ```
 
-# Measured data from Lanevskij and Didziapetris (2019)
+### Measured data from Lanevskij and Didziapetris (2019)
 ```{r make_caco_peff_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
       FigCacoPredPeff <- ggplot(invivo.table)+
@@ -468,7 +493,7 @@ print(FigCacoPredPeff)
     ggsave(FigCacoPredPeff, file = paste0(loc.wd, "/results_for_paper/Fig_CacoPredPeff.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
-# Measured data from Kim et al. (2014)
+### Measured data from Kim et al. (2014)
 ```{r make_Caco_Fbio_kim_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
       FigCacoPredFbioKim <- ggplot(invivo.table)+
@@ -485,7 +510,7 @@ print(FigCacoPredFbioKim)
     ggsave(FigCacoPredFbioKim, file = paste0(loc.wd, "/results_for_paper/Fig_CacoPredFbioKim.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
-# Measured data collected by Varma et al. (2010)
+### Measured data collected by Varma et al. (2010)
 ```{r make_Caco_Fabs_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
 FigCacoPredFabs <- ggplot(invivo.table)+
@@ -503,7 +528,7 @@ print(FigCacoPredFabs)
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-# Evaluate Caco2 Fgut Prediction using measured data collected by Varma et al. (2010)
+### Evaluate Caco2 Fgut Prediction using measured data collected by Varma et al. (2010)
 ```{r make_Caco_Fgut_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   FigCacoPredFgut <- ggplot(invivo.table)+
@@ -521,7 +546,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-# Evaluate ADMet Fgut Prediction using measured data collected by Varma et al. (2010)
+### Evaluate ADMet Fgut Prediction using measured data collected by Varma et al. (2010)
 ```{r make_ADMet_Fgut_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   FigADMetPredFgut <- ggplot(invivo.table)+
@@ -543,7 +568,7 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 summary(lm(vo_Fg ~ Fgut.ADMet, data=invivo.table))
 ```
 
-# Evaluate predicted first-pass hepatic metabolism using measured data collected by Varma et al. (2010) 
+### Evaluate predicted first-pass hepatic metabolism using measured data collected by Varma et al. (2010) 
 ffp=fraction first pass
 ```{r make_httk_Fhep_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
@@ -562,8 +587,8 @@ ffp=fraction first pass
   ggsave(FighttkPredFhep, file = paste0(loc.wd, "/results_for_paper/Fig_httkPredFhep.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
-# Fbio calculated from measured data
-# using first-pass metabolism only (previous httk approach)
+### Fbio calculated from measured data
+Using first-pass metabolism only (previous httk approach)
 ```{r make_httk_FhepFbio_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
 
@@ -597,7 +622,7 @@ ffp=fraction first pass
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-# Fbio calculated from measured data collected by Varma et al. (2010)
+### Fbio calculated from measured data collected by Varma et al. (2010)
 ```{r make_Caco_Fabs_Varma_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
   
@@ -616,7 +641,7 @@ ffp=fraction first pass
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-# Fbio estimated from rats
+### Fbio estimated from rats
 ```{r make_CacoFabsRat_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
@@ -636,7 +661,7 @@ ffp=fraction first pass
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-# Fbio using both Kim et al. (2014) and Varma et al. (2010)
+### Fbio using both Kim et al. (2014) and Varma et al. (2010)
 ```{r make_Caco_Fabs_All_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
@@ -671,7 +696,7 @@ ffp=fraction first pass
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-# Fbio predicted by ADMet Predictor
+### Fbio predicted by ADMet Predictor
 ```{r make_admet_Fabs_fig}
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
 
@@ -706,7 +731,7 @@ ffp=fraction first pass
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 
-# Combine the evalaution figures of the components of Fbio for the paper:
+### Combine the evalaution figures of the components of Fbio for the paper:
 ```{r multipanelfigureforpaper}
 ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FighttkPredFhep, 
           labels = c("A", "B", "C", "D"),
@@ -722,7 +747,6 @@ ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FighttkPredFhep,
 dev.off()
 ```
 ### QSPR Evaluation:
-
 ```{r caco2_qspr_pab_eval_fig}
   load(file=paste0(loc.wd, 
                    "/r_data/processed/caco2dt.RData"))
@@ -1013,7 +1037,7 @@ These calculations should match both the manuscript text and the code in calc_or
                        "/results_for_paper/Fig_QSPRPredFbioVarma.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
-# Fbio using both Kim et al. (2014) and Varma et al. (2010)
+### Fbio using both Kim et al. (2014) and Varma et al. (2010)
 ```{r make_QSPR_Fbio_all_fig}
   load(file=paste0(loc.wd, "/r_data/processed/qspr-invivo-compare2.RData"))
 
