@@ -30,7 +30,7 @@ improves AED estimations used in HT risk prioritization.
 The following [R](https://cran.r-project.org/ "R") [vignettes](https://r-pkgs.org/vignettes.html "Vignettes") were written in [R Markdown](https://rmarkdown.rstudio.com/ "R Markdown") using [RStudio](https://posit.co/downloads/ "Download RStudio"):
 
 1. [Caco-2 Data Organization and Analysis](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette1-MakeDataFigures.Rmd "Caco-2 Data").
-2. [Machine Learning QSPR for Caco-2 Permeability](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette3-CreateQSPR.Rmd "Machine Learning QSPR").
+2. [Machine Learning QSPR for Caco-2 Permeability](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette2-CreateQSPR.Rmd "Machine Learning QSPR").
 3. [Using QSPR for New Chemicals](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette3-UseCaco2QSPRforNewChemicals.Rmd "Using QSPR for New Chemicals").
 4. [Comparison of Oral Absorption Predictions to In Vivo Data](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette3-MakeEvaluationFigures.Rmd "Comparison to In Vivo Data").
 5. [Impact of Bioavailability on Risk Prioritization](https://github.com/USEPA/comptox-expocast-caco2/blob/main/Vignette5-BioactivityExposureRatio.Rmd "Risk Prioritization").
