@@ -4,7 +4,7 @@ author: "Greg Honda and John Wambaugh"
 date: "August 21, 2023"
 output: rmarkdown::html_vignette
 vignette: >
- %\VignetteIndexEntry{Honda et al. (unsubmitted): Machine Learning QSPR}
+ %\VignetteIndexEntry{Honda et al. (unsubmitted): Using QSPR for New Chemicals}
  %\VignetteEngine{knitr::rmarkdown}
  %\VignetteEncoding{UTF-8}
 ---

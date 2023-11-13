@@ -283,7 +283,7 @@ high_rec_co <- 2
 ```
 
 
-#Load raw (unfiltered) data and calculate means across replicates without filtering:
+### Load raw (unfiltered) data and calculate means across replicates without filtering:
 
 ```{r load_raw}
 # No cutoffs:
@@ -306,7 +306,7 @@ high_rec_co <- 2
                  .(chemrank = rank(mPab),casrn)][caco2.dup, on = "casrn"]
 ```
 
-# duplicate measures
+### duplicate measures
 ```{r replicates}
   txt.dt <- unique(caco2.dup[casrn %in% 
     c("66357-35-5", "57460-41-0", "81-81-2"),
@@ -340,7 +340,7 @@ high_rec_co <- 2
     height = 3, width = 3, dpi = 600, compression = "lzw")
   print(FigMeanPabvsPab)
 ```
-# Analysis of Raw Data
+### Analysis of Raw Data
 
 ```{r make_recovery_fraction_histograms}
   load(file = paste0(loc.wd, 
@@ -415,7 +415,7 @@ cat(paste("The Caco-2 assay was attempted for ",
           " had a measurable PappBA.\n",sep="")) 
 ```
 
-# Reload data using cutoffs based on fraction recovered (Frec):
+### Reload data using cutoffs based on fraction recovered (Frec):
 ```{r load_filtered}
 # Low and high cutoffs:
   caco2.filt <- load_caco_dt(low_rec_co=0.4,
@@ -444,11 +444,9 @@ cat(paste("After filtering by Frec, there were a total of ",
           Num.good.Pba,
           " had a usable PappBA.\n",sep="")) 
 ```
-#
-# Analysis of Filtered Data
-#
+## Analysis of Filtered Data
 
-# Stats on adjusting Pab for fraction recovered:
+### Stats on adjusting Pab for fraction recovered:
 ```{r frec_adjustment_stats}
 Pab.thresh <- 10
 
@@ -480,13 +478,15 @@ Pab.thresh <- 10
                                   paste0("R^2: ", signif(lmstat4$r.squared,2))))
 ```
 
+# Divide Papp values > 0 by Frec
+We have chosen to not use a Pab.threshold (value of 10 used in Sup Fig 1), but
+0 used for data processing:
 ```{r adjustforrecovery}
-# Divide Papp values > 0 by Frec:
   caco2.filt <- adjust_for_frec(caco2.filt, 
                                   Pab.thresh=0)
 ```
 
-# recovery vs permeability graphs - S1
+### recovery vs permeability graphs - S1
 ```{r make_recovery_adjustment_figures}
   FigPabvsRecovery <- ggplot(caco2.filt) +
     geom_point(aes(x = rec_ab, y = Pab0), 
@@ -499,9 +499,9 @@ Pab.thresh <- 10
          y = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     lims(x=c(0,2.5),y=c(0,200))+
     theme_bw()+
-    gtheme+
-    annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
-                      ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
+    gtheme#+
+#    annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
+#                      ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   print(FigPabvsRecovery)
   
   FigAdjPabvsRecovery <- ggplot(caco2.filt) +
@@ -514,9 +514,9 @@ Pab.thresh <- 10
     labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("AB")), 
          y = expression(bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
-    gtheme+
-    annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
-                      ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
+    gtheme#+
+  #  annotation_custom(grob = text_grob("a)", hjust = 0, size = 12, face = "bold"), 
+  #                    ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   
   FigPbavsRecovery <- ggplot(caco2.filt) +
     geom_point(aes(x = rec_ba, y = Pba0), 
@@ -529,9 +529,9 @@ Pab.thresh <- 10
     labs(x = expression(bolditalic("F")[bolditalic("rec")]^bolditalic("BA")),
          y = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
-    gtheme+
-    annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
-                      ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
+    gtheme#+
+  #  annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
+ #                     ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   print(FigPbavsRecovery)
   
   FigAdjPbavsRecovery <- ggplot(caco2.filt) +
@@ -544,9 +544,9 @@ Pab.thresh <- 10
     labs(x = expression(bold("Recovery")[bolditalic("BA")]), 
          y = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
     theme_bw()+
-    gtheme+
-    annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
-                      ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
+    gtheme#+
+  #  annotation_custom(grob = text_grob("b)", hjust = 0, size = 12, face = "bold"), 
+  #                    ymin = 150,ymax = 150,xmax = 0.4, xmin = 0.4)
   
   ggsave(FigPabvsRecovery, file = paste0(loc.wd, "/results_for_paper/Fig_recab_v_Pab1.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
@@ -1159,7 +1159,60 @@ ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdj
 dev.off()
 ```
 
-# Permeability histograms
+```{r multipanelrefchemdatasupfigures}
+ggarrange(FigWarfarinPbaAdjHist, FigTalinololPbaAdjHist, FigRanitidinePbaAdjHist, 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom")
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsPba.tiff"),
+         height = 5*200, width = 3*200, compression = "lzw")
+ggarrange(FigWarfarinPbaAdjHist, FigTalinololPbaAdjHist, FigRanitidinePbaAdjHist, 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom"+
+          theme_gray(base_size = 100))
+dev.off()
+
+ggarrange(FigWarfarinEffluxRAdjHist, FigTalinololPabAdjHist, FigRanitidineEffluxRAdjHist, 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom")
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsEfflux.tiff"),
+         height = 5*200, width = 3*200, compression = "lzw")
+ggarrange(FigWarfarinEffluxRAdjHist, FigTalinololPabAdjHist, FigRanitidineEffluxRAdjHist,  
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom"+
+          theme_gray(base_size = 100))
+dev.off()
+
+ggarrange(FigWarfarinFrecabHist, FigTalinololFrecabHist, FigRanitidineFrecabHist, 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom")
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsFrecab.tiff"),
+         height = 5*200, width = 3*200, compression = "lzw")
+ggarrange(FigWarfarinFrecabHist, FigTalinololFrecabHist, FigRanitidineFrecabHist, 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom"+
+          theme_gray(base_size = 100))
+dev.off()
+
+ggarrange(FigWarfarinFrecbaHist, FigTalinololFrecbaHist, FigRanitidineFrecbaHist, 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom")
+tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsFrecba.tiff"),
+         height = 5*200, width = 3*200, compression = "lzw")
+ggarrange(FigWarfarinFrecbaHist, FigTalinololFrecbaHist, FigRanitidineFrecbaHist, 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom"+
+          theme_gray(base_size = 100))
+dev.off()
+```
+### Permeability histograms
 ```{r permeability}
 # load caco2.perchem:
   load(file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements.RData"))
