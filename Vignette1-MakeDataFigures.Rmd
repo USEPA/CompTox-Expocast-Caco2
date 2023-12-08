@@ -1150,7 +1150,7 @@ ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdj
           ncol = 1, nrow = 3,
           common.legend = TRUE, legend = "bottom")
 tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsforPaper.tiff"),
-         height = 5*200, width = 3*200, compression = "lzw")
+         height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdjHist, 
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,
@@ -1165,7 +1165,7 @@ ggarrange(FigWarfarinPbaAdjHist, FigTalinololPbaAdjHist, FigRanitidinePbaAdjHist
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
 tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsPba.tiff"),
-         height = 5*200, width = 3*200, compression = "lzw")
+         height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigWarfarinPbaAdjHist, FigTalinololPbaAdjHist, FigRanitidinePbaAdjHist, 
           labels = c("A", "B", "C"),
           ncol = 2, nrow = 2,
@@ -1178,7 +1178,7 @@ ggarrange(FigWarfarinEffluxRAdjHist, FigTalinololPabAdjHist, FigRanitidineEfflux
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
 tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsEfflux.tiff"),
-         height = 5*200, width = 3*200, compression = "lzw")
+         height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigWarfarinEffluxRAdjHist, FigTalinololPabAdjHist, FigRanitidineEffluxRAdjHist,  
           labels = c("A", "B", "C"),
           ncol = 2, nrow = 2,
@@ -1191,7 +1191,7 @@ ggarrange(FigWarfarinFrecabHist, FigTalinololFrecabHist, FigRanitidineFrecabHist
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
 tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsFrecab.tiff"),
-         height = 5*200, width = 3*200, compression = "lzw")
+         height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigWarfarinFrecabHist, FigTalinololFrecabHist, FigRanitidineFrecabHist, 
           labels = c("A", "B", "C"),
           ncol = 2, nrow = 2,
@@ -1204,7 +1204,7 @@ ggarrange(FigWarfarinFrecbaHist, FigTalinololFrecbaHist, FigRanitidineFrecbaHist
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
 tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsFrecba.tiff"),
-         height = 5*200, width = 3*200, compression = "lzw")
+         height = 3*200, width = 3*200, compression = "lzw")
 ggarrange(FigWarfarinFrecbaHist, FigTalinololFrecbaHist, FigRanitidineFrecbaHist, 
           labels = c("A", "B", "C"),
           ncol = 2, nrow = 2,

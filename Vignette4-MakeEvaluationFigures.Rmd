@@ -269,6 +269,10 @@ caco2.dt$Pab.Pred.High <- sapply(caco2.dt$Pab.Quant.Pred,function(x) as.numeric(
        file=paste0(loc.wd, 
                    "/r_data/processed/caco2dt.RData"))
 ```
+Set ratio of liver:gut metabolism:
+```{r permeability_params}
+LIVER2GUT <- 10
+```
 
 Load all the parameters needed to make calculations:
 ```{r permeability_params}
@@ -393,20 +397,21 @@ Load all the parameters needed to make calculations:
                    .(casrn)]
       
   invivo.table[,cluh_hep:=cluh_us*70] %>% # L/h for 70 kg human
-        .[,cluh_gut:=cluh_hep/100] %>% # approximate ratio of cyp abundances
+        .[,cluh_gut:=cluh_hep/LIVER2GUT] %>% # approximate ratio of cyp abundances
         .[,clur_hep:=clur_us*0.25] %>% # L/h for 0.25 kg rat
-        .[,clur_gut:=clur_hep/100] %>% 
+        .[,clur_gut:=clur_hep/LIVER2GUT] %>% 
         .[,ffph:=ffph_us] %>% 
         .[,ffpr:=ffpr_us]
      save(invivo.table, file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
 ```   
+Define a rate of intestinal transport to compete with absorption for poorly absorbed chemicals:
+```{r set_Qintesttransport} 
+Qintesttransport <- 0.0
+```
+
 These calculations should match both the manuscript text and the code in calc_oral_bioavailability.R
 ```{r Caco_permeability_calcs} 
-# Define a rate of intestinal transport to compete with absorption for poorly
-# absorbed chemicals:
-Qintesttransport <- 0.5
-
-    load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
+  load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
    invivo.table[,use.pab:=Pab]
    invivo.table[,Pab.Type:="Measured"]
    invivo.table[is.na(use.pab),"Pab.Type"] <- "QSPR"
@@ -473,7 +478,7 @@ write.csv(invivo.table,
           na="")
 ```
 
-### Measured data from Lanevskij and Didziapetris (2019)
+### Measured data from Dahlgren et al. (2015)
 ```{r make_caco_peff_fig}
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
       FigCacoPredPeff <- ggplot(invivo.table)+
@@ -878,9 +883,9 @@ Load all the parameters needed to make calculations:
                    .(casrn)]
       
   invivo.table[,cluh_hep:=cluh_us*70] %>% # L/h for 70 kg human
-        .[,cluh_gut:=cluh_hep/100] %>% # approximate ratio of cyp abundances
+        .[,cluh_gut:=cluh_hep/LIVER2GUT] %>% # approximate ratio of cyp abundances
         .[,clur_hep:=clur_us*0.25] %>% # L/h for 0.25 kg rat
-        .[,clur_gut:=clur_hep/100] %>% 
+        .[,clur_gut:=clur_hep/LIVER2GUT] %>% 
         .[,ffph:=ffph_us] %>% 
         .[,ffpr:=ffpr_us]
 ```   
@@ -1094,7 +1099,7 @@ and saved them in different RData files
 ```{r eval_table}
 evaluations <- data.frame()
 evaluations["Peff",c("In Vivo","Predicted","Reference","Data")] <- 
-  c("mpeff_lit","peffh","Lanevskij and Didziapetris (2019)",
+  c("mpeff_lit","peffh","Dahlgren et al. (2015)",
     "/r_data/processed/caco2-invivo-compare2.RData")
 evaluations["Fabs",c("In Vivo","Predicted","Reference","Data")] <- 
   c("vo_Fa","fah_darwichh","Varma et al. (2010)",

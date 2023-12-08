@@ -440,6 +440,10 @@ dim(all.desc)
                 "/results_for_paper/TableAllCaco2PabData_10e-6cmps.txt"), 
               row.names=FALSE,
               sep="\t")
+# Fraction abouve Pab > 5
+dim(subset(all.caco2,Pab>5))[1]/dim(all.caco2)
+# Fraction abouve Pab > 1
+dim(subset(all.caco2,Pab>1))[1]/dim(all.caco2) 
 ```
 
 ```{r qspr_resultsforpaper}
@@ -623,6 +627,43 @@ for (this.model in c(#"Pab2Bin",
 save(classmod, train.set, test.set, reduced.desc, file=paste0(loc.wd,"/r_data/QSPR/classmodels.RData"))
 ```
 
+```{r qspr_regmod_train}
+set.seed(seed)
+regmod <- list()
+for (this.model in c("RegMod"))
+{
+  print(this.model)
+  out <- tuneRF(x=reduced.desc, 
+                y=log10(train.set[,"Pab"]),
+                mtryStart=floor(dim(reduced.desc)[2]^(1/2)), #j is sizes 
+                ntreeTry=500,
+                stepFactor=1.25,
+                improve=0.005,
+                trace=FALSE, 
+                plot=FALSE, 
+                dBest=FALSE)
+  bestmtry <- out[which(out[,2]==min(out[,2])),1]
+  if (length(bestmtry)>1) {bestmtry= max(bestmtry)}
+  tunegrid <- expand.grid(.mtry=bestmtry)
+  set.seed(seed)
+  regmod[[this.model]] <-train(x=reduced.desc,
+                   y=log10(train.set[,"Pab"]), 
+                   method="rf", 
+                   metric="RMSE", 
+                   trControl=control, 
+                   tuneGrid = tunegrid)
+  
+  regmod[[this.model]]$bestTune
+  regmod[[this.model]]$finalModel
+  regmod[[this.model]]$trainingData
+  regmod[[this.model]]$results # the average across all cross-validations and reps
+  hist(regmod[[this.model]]$resample$RMSE)
+  hist(regmod[[this.model]]$resample$Rsquared)
+}
+save(regmod, train.set, test.set, reduced.desc, file=paste0(loc.wd,"/r_data/QSPR/regmodel.RData"))
+```
+
+
 ```{r qspr_testset1}
 load(file=paste0(loc.wd,"/r_data/QSPR/testset.RData"))
 load(file=paste0(loc.wd,"/r_data/QSPR/trainingdata-meansd.RData"))
@@ -644,6 +685,33 @@ for (this.model in names(classmod))
   classmod[[this.model]]$confusion <- confusionMatrix(data = classmod[[this.model]]$testsetpred, reference = test.set[,this.model])
   classmod[[this.model]]$testsummary <- postResample(pred = classmod[[this.model]]$testsetpred,obs = test.set[,this.model])
 }
+for (this.model in names(regmod))
+{
+  regmod[[this.model]]$testsetpred <- predict(regmod[[this.model]],
+                                                test.set[,colnames(reduced.desc)])
+  regmod[[this.model]]$pred.var <- signif((log10(test.set[,"Pab"])-
+    regmod[[this.model]]$testsetpred)^2, 4)
+  regmod[[this.model]]$tot.var <- signif((log10(test.set[,"Pab"])-
+    mean(log10(test.set[,"Pab"])))^2, 4)
+  regmod[[this.model]]$RMSE <- signif((
+    mean(regmod[[this.model]]$pred.var))^(1/2),4)
+  regmod[[this.model]]$rsquared <- signif(1 -
+    sum(regmod[[this.model]]$pred.var) /
+    sum(regmod[[this.model]]$tot.var), 4)
+  regmod[[this.model]]$testsetbinpred <- 
+    rep(2,length(regmod[[this.model]]$testsetpred))
+  regmod[[this.model]]$testsetbinpred[
+    10^(regmod[[this.model]]$testsetpred) > 
+      min(subset(train.set,LogPab3Bin==3)$Pab)] <- 3
+  regmod[[this.model]]$testsetbinpred[
+    10^(regmod[[this.model]]$testsetpred) < 
+      max(subset(train.set,LogPab3Bin==1)$Pab)] <- 1
+  regmod[[this.model]]$testsetbinpred <- as.factor(
+    regmod[[this.model]]$testsetbinpred)
+  regmod[[this.model]]$confusion <- confusionMatrix(
+    data = regmod[[this.model]]$testsetbinpred, 
+    reference = test.set[,"LogPab3Bin"])
+  }
 ```
 
 ### Summarize the results for different data binning strategies:
@@ -671,6 +739,15 @@ for (this.model in colnames(qspr.summary))
              ")")
   }
 }
+regmod.results <- qspr.summary
+regmod.results[,1]<-NA
+regmod.results["Accuracy",1] <- 
+  signif(regmod[[1]]$confusion$overall["Accuracy"], 3)
+regmod.results["Kappa",1] <- 
+  signif(regmod[[1]]$confusion$overall["Kappa"], 3)
+colnames(regmod.results)[1] <- "Continuous"
+qspr.summary <- cbind(regmod.results[,"Continuous"],qspr.summary)
+colnames(qspr.summary)[1] <- "Continuous"
 save(qspr.summary,file=paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
 ```
 
