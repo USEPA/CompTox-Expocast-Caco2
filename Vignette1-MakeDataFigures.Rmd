@@ -1391,3 +1391,61 @@ caco2.perchem[caco2.perchem$dtxsid %in% pharma$DSSTox_Substance_Id,
 
 ```
 
+Consider practical implications of Yu and Amidon (1999) Equation 11:
+```{r fabdistribution}
+# Human fabs factor (s/cm 10^-4):
+human.fabs.factor <- 2*199.2/1.75/7*60/10^4
+
+# Yu and Amidon (1999) Equation 11:
+# here Peff has units of 10^-4 cm / s
+Fabs <- function(Peff, factor=human.fabs.factor){return(1-(1+factor*Peff)^-7)}
+
+# Yu and Amidon (1999) Ketoprofen has Peff = 3.06*10^4/60/60 cm 10^-4/s
+# should give Fabs close to 100%:
+Fabs(Peff=3.06*10^4/60/60)
+
+# Yu and Amidon (1999) Enalaprilat has Peff = 0.079*10^4/60/60 cm 10^-4/s
+# should give Fabs close to 10%:
+Fabs(Peff=0.079*10^4/60/60)
+
+Fabs(Peff=0.53)
+# Peff <= 0.53 cm 10^-4 / s needed for Human Fabs <= 0.5
+
+# Yang 2007 equation 10 for Caco2 pH7.4
+Peff <- function(Caco2.Pab) {return(10^(0.4926 * log10(Caco2.Pab) - 0.1454))}
+Peff(Caco2.Pab=0.55)
+
+# Caco2.Pab <= 0.55 10^-6 cm / s needed for Human Peff <= 0.53
+Fabs(Peff=Peff(Caco2.Pab=0.55))
+Caco2.Pab.thresh.human <- 0.55
+cat(paste0("As a consequence of Equations 5 and 7, ",
+           "for humans we need to observe PappAB <= ",
+           Caco2.Pab.thresh.human,
+           " 10^-6 cm /s to predict Fabs <= 0.5."))
+
+# Caco2.Pab <= 0.55 for Human Fabs <= 0.5
+cat(paste0("Only ",
+           sum(subset(caco2.perchem,!is.na(mPab))$mPab < Caco2.Pab.thresh.human),
+           " chemicals (",
+           100*signif(sum(subset(caco2.perchem,!is.na(mPab))$mPab < 
+                            Caco2.Pab.thresh.human) /
+                        dim(subset(caco2.perchem,!is.na(mPab)))[1],2),
+           "%) have measured Pappab indicating Fabs < 0.5 for humans."))
+
+# Rat fabs factor (s/cm 10^-4):
+rat.fabs.factor <- 2*88/0.18/7*60/10^4
+# Caco2.Pab <= 0.55 10^-6 cm / s needed for Human Peff <= 0.53
+Fabs(Peff=Peff(Caco2.Pab=0.028), factor=rat.fabs.factor)
+Caco2.Pab.thresh.rat <- 0.028
+cat(paste0("For rats the equations predict that we need to observe PappAB <= ",
+           Caco2.Pab.thresh.rat,
+           " 10^-6 cm /s to predict Fabs <= 0.5."))
+
+cat(paste0("Only ",
+           sum(subset(caco2.perchem,!is.na(mPab))$mPab < Caco2.Pab.thresh.rat),
+           " chemicals (",
+           100*signif(sum(subset(caco2.perchem,!is.na(mPab))$mPab < 
+                            Caco2.Pab.thresh.rat) /
+                        dim(subset(caco2.perchem,!is.na(mPab)))[1],2),
+           "%) have measured Pappab indicating Fabs < 0.5 for rat."))
+```
