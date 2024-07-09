@@ -668,6 +668,7 @@ save(regmod, train.set, test.set, reduced.desc, file=paste0(loc.wd,"/r_data/QSPR
 load(file=paste0(loc.wd,"/r_data/QSPR/testset.RData"))
 load(file=paste0(loc.wd,"/r_data/QSPR/trainingdata-meansd.RData"))
 load(file=paste0(loc.wd,"/r_data/QSPR/classmodels.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/regmodel.RData"))
 
 # Replace NA's with mean of training set:
 for (this.col in colnames(train_msd))
@@ -761,6 +762,10 @@ write.csv(qspr.summary,
           file=paste0(loc.wd,"/results_for_paper/Tableqsprbinnumbersummary.csv"))
 ```
 
+## Recursive feature elimination
+
+### Classification Model
+
 Although the models with two bins are the most accurate, the 95% intervals for
 both those bins are quite close, meaning that there is not much power to
 distinguish between the chemicals for those models. The clustered three bin 
@@ -770,9 +775,7 @@ lower and higher bins are distinctly separated from each other. So we will
 focus on making an optimized model using the "LogPab3Bin" categories. We use
 recursive feature elimination to reduce erroneous predictors and making the
 loadings on true key predictors more clear.
-```{r qspr_rfe}
-load(file=paste0(loc.wd,"/r_data/QSPR/classmodels.RData"))
-chosen.model <- "LogPab3Bin"
+```{r rfe_parameters}
 # 5-fold cross-validation performed over ten replicates of allocating the folds:
 ctrl <- suppressMessages(rfeControl(functions = rfFuncs,
                    method = "repeatedcv",
@@ -780,6 +783,11 @@ ctrl <- suppressMessages(rfeControl(functions = rfFuncs,
                    verbose = TRUE,
                    rerank=TRUE,
                    number=5))
+```
+
+```{r qspr_rfe_class}
+load(file=paste0(loc.wd,"/r_data/QSPR/classmodels.RData"))
+chosen.model <- "LogPab3Bin"
 
 # Examine subsets of parameters from 10 to the full set (of reduced descriptors) in increments of 5
 subsets <- c(seq(2,8,2),seq(10,35,5))
@@ -799,8 +807,41 @@ save(chosen.model,
      file=paste0(loc.wd,"/r_data/QSPR/chosen_model.RData"))
 ```
 
+### Regression Model
+
+We have unevenly distributed training data -- most training examples are 
+well-absorbed. The random forest algorithm used does not allow for 
+weighting data. By binning the results we decrease the weight on data in the
+well-absorbed bin and increase the weight on the outlier bins. This produces a
+model that is slightly wore for the most common cases, but is potentially
+better at predicting outliers. To demonstrate this we build an optimized
+regression model weighting all data equally. Potentially, we could also explore 
+replicating the data so that outliers occur more often. Given the size of the
+training set, I feel that categorical models more accurately represent the
+actual confidence based on the avaialble data.
+
+```{r qspr_rfe_reg}
+load(file=paste0(loc.wd,"/r_data/QSPR/regmodel.RData"))
+
+# Examine subsets of parameters from 10 to the full set (of reduced descriptors) in increments of 5
+subsets <- c(seq(2,8,2),seq(10,35,5))
+set.seed(12345)
+rfeReg <- suppressMessages(rfe(x=reduced.desc,
+                y=log10(train.set[,"Pab"]),
+                rfeControl = ctrl,
+                sizes=subsets,
+                metric="Accuracy",
+                maximize=TRUE))
+
+save(rfeReg, train.set, reduced.desc,
+     file=paste0(loc.wd,"/r_data/QSPR/recursive_feature_elimination_reg.RData"))
+```
+
+
 ### Find the optimal number of parameters:
-```{r qspr_parsimony}
+
+#### Classification Model
+```{r qspr_parsimony_class}
 load(paste0(loc.wd,"/r_data/QSPR/recursive_feature_elimination.RData"))
 
 ggplot(rfeClass$results) + 
@@ -822,7 +863,7 @@ FigRFE <- ggplot(rfeClass$results) +
   ylab("Model Accuracy") +
   geom_vline(xintercept=num.opt.desc, color="blue",linetype="dashed")
 ggsave(FigRFE, 
-       file = paste0(loc.wd, "/results_for_paper/Fig_QSPR_RFE.tiff"),
+       file = paste0(loc.wd, "/results_for_paper/Fig_QSPR_RFE_Class.tiff"),
        height = 3, width = 3, dpi = 600, compression = "lzw")
 print(FigRFE)
 
@@ -838,6 +879,48 @@ save(opt.desc,num.opt.desc,
      file=paste0(loc.wd,"/r_data/QSPR/optimal_parameters.RData"))
 ```
 
+#### Regression Model
+```{r qspr_parsimony_reg}
+load(paste0(loc.wd,"/r_data/QSPR/recursive_feature_elimination_reg.RData"))
+
+ggplot(rfeReg$results) + 
+  geom_line(aes(x=Variables, y=RMSE)) +
+  xlab("Number of Descriptors") + 
+  ylab("Regression Model RMSE")#+
+ # geom_vline(xintercept=num.opt.desc, color="blue",linetype="dashed")
+```
+
+We inspect the above graph and make a judgement call to identify what we feel
+is "optimal". We trade accuracy for parsimony (fewer parameters is
+generally more parsimonious).
+```{r qspr_manualrfesize}
+num.opt.desc.reg <- 25 # JFW, June 2023
+
+FigRFE.Reg <- ggplot(rfeReg$results) + 
+  geom_line(aes(x=Variables, y=RMSE)) +
+  xlab("Number of Descriptors") + 
+  ylab("Model RMSE") +
+  geom_vline(xintercept=num.opt.desc, color="blue",linetype="dashed")
+ggsave(FigRFE.Reg, 
+       file = paste0(loc.wd, "/results_for_paper/Fig_QSPR_RFE_Reg.tiff"),
+       height = 3, width = 3, dpi = 600, compression = "lzw")
+print(FigRFE.Reg)
+
+desc.set <- subset(rfeClass$variables,Variables==num.opt.desc)
+#use aggregate to calculate mean ranking score (under column "Overall")
+desc.set <- aggregate(desc.set[, c("Overall")], list(desc.set$var), mean)
+
+#order from highest to low, and select first 10:
+desc.order <- order(desc.set[, c("x")], decreasing = TRUE)[1:num.opt.desc]
+opt.desc <-desc.set[desc.order, 1]
+
+save(opt.desc,num.opt.desc, 
+     file=paste0(loc.wd,"/r_data/QSPR/optimal_parameters_reg.RData"))
+```
+
+### Build optimal QSPR model using parsimonious descriptors
+
+#### Classification model
 ```{r qspr_buildoptmodel}
 load(file=paste0(loc.wd,"/r_data/QSPR/optimal_parameters.RData"))
 #Now, fit classification model with classvars
@@ -870,6 +953,39 @@ save(classmodopt, train.set, reduced.desc, opt.desc, chosen.model,
      file=paste0(loc.wd,"/r_data/QSPR/optimal_model.RData"))
 ```
 
+#### Regression model
+```{r qspr_buildoptmodel_reg}
+load(file=paste0(loc.wd,"/r_data/QSPR/optimal_parameters_reg.RData"))
+
+metric <- "RMSE"
+set.seed(seed)
+out.reg <- suppressMessages(tuneRF(x=reduced.desc[,opt.desc], 
+              y=log10(train.set[,"Pab"]),
+              mtryStart=floor(num.opt.desc^(1/2)), #j is sizes 
+              ntreeTry=1000,
+              stepFactor=1.25,
+              improve=0.005,
+              trace=TRUE, 
+              plot=TRUE, 
+              dBest=FALSE))
+bestmtry <- out.reg[which(out.reg[,2]==min(out.reg[,2])),1]
+if (length(bestmtry)>1)
+{
+  bestmtry= max(bestmtry)
+}
+tunegrid <- expand.grid(.mtry=bestmtry)
+set.seed(12345)
+regmodopt <- suppressMessages(train(
+  x=reduced.desc[,opt.desc],
+  y=log10(train.set[,"Pab"]), 
+  method="rf",  
+  metric=metric, 
+  trControl=control, 
+  tuneGrid = tunegrid))
+save(regmodopt, train.set, reduced.desc, opt.desc,
+     file=paste0(loc.wd,"/r_data/QSPR/optimal_model_reg.RData"))
+```
+
 ### Get optimal model results for paper
 ```{r qspr_optmodelresults}
 load(paste0(loc.wd,"/r_data/QSPR/optimal_model.RData"))
@@ -887,6 +1003,8 @@ dev.off()
 ```
 
 ### Evaluate the optimal model with the test set
+
+#### Classification model
 ```{r qspr_testset2}
 load(file=paste0(loc.wd,"/r_data/QSPR/optimal_model.RData"))
 load(file=paste0(loc.wd,"/r_data/QSPR/testset.RData"))
@@ -943,5 +1061,71 @@ save(opt.testsetpred, opt.confusion, opt.testsummary, test.set, chosen.model,
     ggsave(FigQSPRPredPabTest, 
            file = paste0(loc.wd, 
                          "/results_for_paper/Fig_QSPRPredPabTestOnly.tiff"),
+         height = 3, width = 3, dpi = 600, compression = "lzw")
+```
+
+#### Regression model
+```{r qspr_testset2_reg}
+load(file=paste0(loc.wd,"/r_data/QSPR/optimal_model_reg.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/testset.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/trainingdata-meansd.RData"))
+load(file=paste0(loc.wd,"/r_data/QSPR/qsprbinnumbersummary.RData"))
+
+# Replace NA's with mean of training set:
+for (this.col in colnames(train_msd))
+{
+  if (is.numeric(train_msd[1,this.col]))
+  {
+    test.set[is.na(test.set[,this.col]),this.col] <- train_msd[1,this.col]
+  }
+}
+
+opt.testsetpred.reg <- 10^predict(regmodopt,
+                       test.set[,opt.desc])
+test.set$Pab.Pred <- opt.testsetpred.reg 
+# Convert regressions predictions to bins:
+bin1max <- max(subset(test.set,LogPab3Bin=="1")$Pab)
+bin2max <- max(subset(test.set,LogPab3Bin=="2")$Pab)
+test.set$Pab.RegPredBin <- 3
+test.set[test.set$Pab.Pred < bin2max,"Pab.RegPredBin"] <- 2
+test.set[test.set$Pab.Pred < bin1max,"Pab.RegPredBin"] <- 1
+test.set$Pab.RegPredBin <- as.factor(test.set$Pab.RegPredBin )
+opt.testsetpred.reg <- test.set$Pab.RegPredBin
+```
+
+```{r qspr_confusionmatrix_reg}
+opt.confusion.reg <- confusionMatrix(data = opt.testsetpred.reg,
+                                 reference = test.set[,chosen.model])
+opt.testsummary.reg <- postResample(pred = opt.testsetpred.reg,
+                                obs = test.set[,chosen.model])
+print(opt.confusion.reg)
+
+save(opt.testsetpred.reg, opt.confusion.reg, opt.testsummary.reg, test.set, chosen.model,
+     file=paste0(loc.wd,"/r_data/QSPR/optimal_model_test_set_performance_reg.RData"))                          
+```
+
+```{r caco2_qspr_pab_eval_testonly_fig_reg}
+      FigQSPRPredPabTest.Reg <- ggplot(test.set)+
+      geom_point(aes(x = Pab, 
+                       y = Pab.Pred, 
+                       color=Data.Origin, 
+                       shape=Data.Origin), 
+                   alpha = 0.8,
+                   position = position_jitter(w = 0.0, h = 0.1),
+                   size=3)+
+        geom_abline(slope = 1, linetype = "dashed")+
+        labs(y = expression(bold("QSPR Predicted ")~bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)')),
+             x = expression(bold("Measured ")~bolditalic("P"["app"]^"AB")~bold('(10'^'-6'~'cm/s)')),
+             color = "Data Source",
+             shape = "Data Source")+
+       # lims(x = c(-5,3), y = c(-5,3)) +
+        scale_x_log10(labels=scientific_10)+
+        scale_y_log10(labels=scientific_10)+
+        scale_colour_viridis_d()+
+        gtheme
+  print(FigQSPRPredPabTest.Reg
+    ggsave(FigQSPRPredPabTest.Reg, 
+           file = paste0(loc.wd, 
+                         "/results_for_paper/Fig_QSPRPredPabTestOnly_Reg.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
