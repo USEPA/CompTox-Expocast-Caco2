@@ -1421,7 +1421,7 @@ Caco2.Pab.thresh.human <- 0.55
 cat(paste0("As a consequence of Equations 5 and 7, ",
            "for humans we need to observe PappAB <= ",
            Caco2.Pab.thresh.human,
-           " 10^-6 cm /s to predict Fabs <= 0.5."))
+           " 10^-6 cm /s to predict Fabs <= 0.5.\n"))
 
 # Caco2.Pab <= 0.55 for Human Fabs <= 0.5
 cat(paste0("Only ",
@@ -1430,22 +1430,24 @@ cat(paste0("Only ",
            100*signif(sum(subset(caco2.perchem,!is.na(mPab))$mPab < 
                             Caco2.Pab.thresh.human) /
                         dim(subset(caco2.perchem,!is.na(mPab)))[1],2),
-           "%) have measured Pappab indicating Fabs < 0.5 for humans."))
+           "%) have measured Pappab indicating Fabs < 0.5 for humans.\n"))
 
 # Rat fabs factor (s/cm 10^-4):
 rat.fabs.factor <- 2*88/0.18/7*60/10^4
-# Caco2.Pab <= 0.55 10^-6 cm / s needed for Human Peff <= 0.53
-Fabs(Peff=Peff(Caco2.Pab=0.028), factor=rat.fabs.factor)
-Caco2.Pab.thresh.rat <- 0.028
-cat(paste0("For rats the equations predict that we need to observe PappAB <= ",
-           Caco2.Pab.thresh.rat,
-           " 10^-6 cm /s to predict Fabs <= 0.5."))
 
-cat(paste0("Only ",
-           sum(subset(caco2.perchem,!is.na(mPab))$mPab < Caco2.Pab.thresh.rat),
+peff.human <- Peff(Caco2.Pab=2.4)
+# Wahajudin (2011) Peff.human -> Peff.rat for Peff.human = 0:
+Peff.rat <- (peff.human+.1815)/1.039/10
+Fabs(Peff=Peff.rat, factor=rat.fabs.factor)
+Caco2.Pab.thresh.rat <- 2.4
+
+# Caco2.Pab <= 0.55 for Human Fabs <= 0.5
+cat(paste0(sum(subset(caco2.perchem,!is.na(mPab))$mPab < Caco2.Pab.thresh.rat),
            " chemicals (",
            100*signif(sum(subset(caco2.perchem,!is.na(mPab))$mPab < 
                             Caco2.Pab.thresh.rat) /
                         dim(subset(caco2.perchem,!is.na(mPab)))[1],2),
-           "%) have measured Pappab indicating Fabs < 0.5 for rat."))
+           "%) have measured Pappab indicating Fabs < 0.5 for rats. ",
+           "That is, rats are predicted to absorb some of these chemicals less ",
+           "effectively than humans.\n"))
 ```

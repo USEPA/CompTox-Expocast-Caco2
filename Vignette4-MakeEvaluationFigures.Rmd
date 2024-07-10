@@ -109,7 +109,7 @@ load(file = paste0(loc.wd, "/r_data/processed/MeanChemicalMeasurements.RData"))
 
 caco2.perchem[dtxsid %in% get_cheminfo(info="dtxsid",suppress.messages=TRUE) &
                 !is.na(caco2.perchem$mPab),
-              c("Fbio.oral","Fabs.oral","Fgut.oral","Fhep.oral") :=
+              c("Fbio.oral","Fabs.oral","Fgut.oral","Fhep.oral", "kgutabs") :=
               calc_fbio.oral(dtxsid=dtxsid,
                                suppress.messages=TRUE),
               by=dtxsid]
@@ -269,9 +269,16 @@ caco2.dt$Pab.Pred.High <- sapply(caco2.dt$Pab.Quant.Pred,function(x) as.numeric(
        file=paste0(loc.wd, 
                    "/r_data/processed/caco2dt.RData"))
 ```
+### New Qgut Model Parameters:
+
 Set ratio of liver:gut metabolism:
-```{r permeability_params}
-LIVER2GUT <- 10
+```{r set_liver2gutmetabolism}
+LIVER2GUT <- 100
+```
+
+Define a rate of intestinal transport to compete with absorption for poorly absorbed chemicals:
+```{r set_Qintesttransport} 
+  Qintesttransport <- 0.5
 ```
 
 Load all the parameters needed to make calculations:
@@ -404,11 +411,6 @@ Load all the parameters needed to make calculations:
         .[,ffpr:=ffpr_us]
      save(invivo.table, file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
 ```   
-Define a rate of intestinal transport to compete with absorption for poorly absorbed chemicals:
-```{r set_Qintesttransport} 
-Qintesttransport <- 0.0
-```
-
 These calculations should match both the manuscript text and the code in calc_oral_bioavailability.R
 ```{r Caco_permeability_calcs} 
   load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare1.RData")) 
@@ -419,8 +421,8 @@ These calculations should match both the manuscript text and the code in calc_or
    # Yang 2007 for Caco2 pH7.4
    # peff dimensional 10-4 cm/s
    invivo.table[,peffh:=(10^(0.4926*log10(use.pab)-0.1454))] %>% 
-   # Fagerholm 1996
-        .[,peffr:=peffh/3.6] %>% 
+   # Wahajudin (2011)
+        .[,peffr:=(peffh + 0.1815)/1.039/10] %>% 
    # m2 area intestine -- Yang et al. (2007)
         .[,Asmallintestineh:=0.66] %>% 
         .[,Asmallintestiner:=71/(100^2)] %>%
@@ -437,10 +439,16 @@ These calculations should match both the manuscript text and the code in calc_or
    # Qgut Model -- Yang et al. (2007) equation 5:
         .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut)*Qguth/(Qguth+Qintesttransport)] %>% 
         .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut)*Qguth/(Qguth+Qintesttransport)] %>%
-   # Darwich et al. (2010) Equation 3
-        .[,fah_darwichh:=1 - (1 + 0.54 * peffh)^-7] %>% 
-        .[,fah_darwichr:=1 - (1 + 0.54 * peffr)^-7] %>% 
-   # Darwich et al. (2010) Equation 1
+   # Mean residence time -- Grandoni et al. (2019):
+        .[,MRTh := 199.2] %>% # min
+        .[,MRTr := 88.0] %>% # min
+   # Small intestine radius:
+        .[,Rsih := 1.75] %>% # cm -- Yu et al. (1999)
+        .[,Rsir := 0.18] %>% # cm -- Griffin and O’Driscoll (2008)
+   # Yu and Amidon (1999) Equation 11:
+        .[,fah_darwichh:=1 - (1 + 2 * peffh * MRTh / 7 / Rsih * 60 / 10^4)^-7] %>% 
+        .[,fah_darwichr:=1 - (1 + 2 * peffr * MRTr / 7 / Rsir * 60 / 10^4)^-7] %>% 
+   # Yu and Amidon (1999) Equation 11:
         .[,fbioh:=ffph*fgh_qg*fah_darwichh] %>% 
         .[,fbior:=ffpr*fgr_qg*fah_darwichr]
    
@@ -896,15 +904,15 @@ These calculations should match both the manuscript text and the code in calc_or
    invivo.table[,Pab.Type:="QSPR"]
    # peff dimensional 10-4 cm/s
    invivo.table[,peffh:=(10^(0.4926*log10(use.pab)-0.1454))] %>% 
-   # Fagerholm 1996
-        .[,peffr:=peffh/3.6] %>% 
+   # Wahajudin (2011)
+        .[,peffr:=(peffh + 0.1815)/1.039/10] %>% 
    # m2 area intestine -- Yang et al. (2007)
         .[,Asmallintestineh:=0.66] %>% 
         .[,Asmallintestiner:=71/(100^2)] %>%
    # permeability clearance (CLperm) Yang et al. (2007) equation 8:
    # 10^-4 cm / s * m2 * 1000 L / m^3 / 10^4 * 1 m / 100 cm * 3600 s / h = L / h
-        .[,CLpermh :=peffh * Asmallintestineh * 1000/10^4/100*3600] %>% 
-        .[,CLpermr :=peffr * Asmallintestiner * 1000/10^4/100*3600] %>% 
+        .[,CLpermh:=peffh * Asmallintestineh * 1000/10^4/100*3600] %>%
+        .[,CLpermr:=peffr * Asmallintestiner * 1000/10^4/100*3600] %>%
    # Yang et al. (2007) value of 18 L/h blood flow to microvilli of intestinal lumen
         .[,Qvillih:=18] %>% 
         .[,Qvillir:=0.65] %>%
@@ -914,10 +922,16 @@ These calculations should match both the manuscript text and the code in calc_or
    # Qgut Model -- Yang et al. (2007) equation 5:
         .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut)*Qguth/(Qguth+Qintesttransport)] %>% 
         .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut)*Qguth/(Qguth+Qintesttransport)] %>%
-   # Darwich et al. (2010) Equation 3
-        .[,fah_darwichh:=1 - (1 + 0.54 * peffh)^-7] %>% 
-        .[,fah_darwichr:=1 - (1 + 0.54 * peffr)^-7] %>% 
-   # Darwich et al. (2010) Equation 1
+   # Mean residence time -- Grandoni et al. (2019):
+        .[,MRTh := 199.2] %>% # min
+        .[,MRTr := 88.0] %>% # min
+   # Small intestine radius:
+        .[,Rsih := 1.75] %>% # cm -- Yu et al. (1999)
+        .[,Rsir := 0.18] %>% # cm -- Griffin and O’Driscoll (2008)
+   # Yu and Amidon (1999) Equation 11:
+        .[,fah_darwichh:=1 - (1 + 2 * peffh * MRTh / 7 / Rsih * 60 / 10^4)^-7] %>% 
+        .[,fah_darwichr:=1 - (1 + 2 * peffr * MRTr / 7 / Rsir * 60 / 10^4)^-7] %>% 
+   # Yu and Amidon (1999) Equation 11:
         .[,fbioh:=ffph*fgh_qg*fah_darwichh] %>% 
         .[,fbior:=ffpr*fgr_qg*fah_darwichr]
   
