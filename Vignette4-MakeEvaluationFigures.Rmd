@@ -15,26 +15,28 @@ evaluate various aspects of the models for relating *in vitro* Caco-2 apparent
 permeabilities to fraction orally absorbed.
 
 ## Overall Manuscript Abstract
-Administered equivalent dose (AED) estimation using *in vitro* hazard and high 
-throughput toxicokinetics (HTTK) can be improved by refining assumptions 
-regarding fraction absorbed ($F_{abs}$) through the intestine, a component of 
-oral bioavailability ($F_{bio}$). Although *in vivo* data to inform $F_{abs}$ 
-are often unavailable for non-pharmaceuticals, *in vitro* measures of apparent 
+Performance of pharmacokinetic models developed using *in vitro-to-in vivo* 
+extrapolation (IVIVE) methods may be improved by refining assumptions regarding 
+fraction absorbed ($F_{abs}$) through the intestine, a component of oral 
+bioavailability ($F_{bio}$). Although *in vivo* measures of Fabs are often 
+unavailable for non-pharmaceuticals, *in vitro* measures of apparent 
 permeability ($P_{app}$) using the Caco-2 cell line have been highly correlated 
-with $F_{abs}$ when used in *in vitro-in vivo* extrapolation (IVIVE) modeling. 
-To address data gaps for non-drug chemicals, bidirectional $P_{app}$ was 
-evaluated using the Caco-2 assay for over 400 chemicals. A random forest 
+with $F_{abs}$. We measured bidirectional $P_{app}$ for over 400 
+non-pharmaceutical chemicals using the Caco-2 assay. A random forest 
 quantitative structure-property relationship (QSPR) model was developed using 
 these and peer-reviewed pharmaceutical data. Both Caco-2 data ($R^2$=0.37) and 
-the QSPR model ($R^2$=0.3) were better at predicting human bioavailability 
-compared to *in vivo* rat data ($R^2$=0.2). The httk-predicted plasma steady 
-state concentrations ($C_{ss}$) for IVIVE were updated, leading to modest 
-changes for poorly absorbed chemicals. Experimental data were evaluated for 
-sources of measurement uncertainty, which was then accounted for using the Monte 
-Carlo method. Revised AEDs were subsequently compared with exposure estimates to
-evaluate influence on bioactivity:exposure ratios as a surrogate for risk. 
-Ultimately, $P_{app}$ incorporation to adjust for $F_{bio}$ in httk modeling 
-improves AED estimations used in HT risk prioritization.
+the QSPR model ($R^2$=0.29) were better at predicting human bioavailability 
+compared to *in vivo* rat data ($R^2$=0.23). After incorporation into a high 
+throughput toxicokinetics (HTTK) framework for IVIVE, the Caco-2 data were used 
+to estimate in vivo administered equivalent dose (AED) for bioactivity assessed 
+*in vitro*, The HTTK-predicted plasma steady state concentrations ($C_{ss}$) 
+for IVIVE were revised, with modest changes predicted for poorly absorbed 
+chemicals. Experimental data were evaluated for sources of measurement 
+uncertainty, which were then accounted for using the Monte Carlo method. 
+Revised AEDs were subsequently compared with exposure estimates to evaluate 
+effects on bioactivity:exposure ratios, a surrogate for risk. Only minor 
+changes in the margin between chemical exposure and predicted bioactive doses 
+were observed due to the preponderance of highly absorbed chemicals. 
 
 ## Prepare for session
 
