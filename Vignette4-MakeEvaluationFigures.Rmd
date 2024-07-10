@@ -346,6 +346,7 @@ Load all the parameters needed to make calculations:
                      casrn %in% httk.casrn,cluh_us:=calc_hep_clearance(
                        chem.cas = casrn[1],
                        species = "Human", 
+                       restrictive.clearance = FALSE,
                        hepatic.model = "unscaled",
                        suppress.messages = TRUE),
                    .(casrn)] 
@@ -356,9 +357,11 @@ Load all the parameters needed to make calculations:
                      casrn %in% httk.casrn,
                    clur_us:=calc_hep_clearance(
                      chem.cas = casrn[1],
-                     species = "Rat", 
+                     species = "Rat",
+                     restrictive.clearance=FALSE,
                      hepatic.model = "unscaled",
-                     suppress.messages = TRUE,default.to.human=TRUE),
+                     suppress.messages = TRUE,
+                     default.to.human=TRUE),
                    .(casrn)] 
       invivo.table[!is.na(fupr) & 
                      !is.na(clintr) & 
@@ -437,20 +440,24 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,Qguth:=Qvillih * CLpermh / (Qvillih + CLpermh)] %>% 
         .[,Qgutr:=Qvillir * CLpermr / (Qvillir + CLpermr)] %>%
    # Qgut Model -- Yang et al. (2007) equation 5:
-        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut)*Qguth/(Qguth+Qintesttransport)] %>% 
-        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut)*Qguth/(Qguth+Qintesttransport)] %>%
+        .[, fgh_qg := Qguth / (Qguth + fuph.adj*cluh_gut) * Qguth /
+            (Qguth+Qintesttransport)] %>% 
+        .[, fgr_qg := Qgutr / (Qgutr + fupr.adj*clur_gut) * Qguth /
+            (Qguth+Qintesttransport)] %>%
    # Mean residence time -- Grandoni et al. (2019):
-        .[,MRTh := 199.2] %>% # min
-        .[,MRTr := 88.0] %>% # min
+        .[, MRTh := 199.2] %>% # min
+        .[, MRTr := 88.0] %>% # min
    # Small intestine radius:
-        .[,Rsih := 1.75] %>% # cm -- Yu et al. (1999)
-        .[,Rsir := 0.18] %>% # cm -- Griffin and O’Driscoll (2008)
+        .[, Rsih := 1.75] %>% # cm -- Yu et al. (1999)
+        .[, Rsir := 0.18] %>% # cm -- Griffin and O’Driscoll (2008)
    # Yu and Amidon (1999) Equation 11:
-        .[,fah_darwichh:=1 - (1 + 2 * peffh * MRTh / 7 / Rsih * 60 / 10^4)^-7] %>% 
-        .[,fah_darwichr:=1 - (1 + 2 * peffr * MRTr / 7 / Rsir * 60 / 10^4)^-7] %>% 
-   # Yu and Amidon (1999) Equation 11:
-        .[,fbioh:=ffph*fgh_qg*fah_darwichh] %>% 
-        .[,fbior:=ffpr*fgr_qg*fah_darwichr]
+        .[, fah_darwichh := 1 - 
+            (1 + 2 * peffh * MRTh / 7 / Rsih * 60 / 10^4)^-7] %>% 
+        .[, fah_darwichr := 1 - 
+            (1 + 2 * peffr * MRTr / 7 / Rsir * 60 / 10^4)^-7] %>% 
+   #  Yang et al. (2007) Equation 1:
+        .[, fbioh := ffph*fgh_qg*fah_darwichh] %>% 
+        .[, fbior := ffpr*fgr_qg*fah_darwichr]
    
    save(invivo.table, 
         file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))  
@@ -831,7 +838,8 @@ Load all the parameters needed to make calculations:
                      !is.na(MW) & 
                      casrn %in% httk.casrn,cluh_us:=calc_hep_clearance(
                        chem.cas = casrn[1],
-                       species = "Human", 
+                       species = "Human",
+                       restrictive.clearance=FALSE,
                        hepatic.model = "unscaled",
                        suppress.messages = TRUE),
                    .(casrn)] 
@@ -842,7 +850,8 @@ Load all the parameters needed to make calculations:
                      casrn %in% httk.casrn,
                    clur_us:=calc_hep_clearance(
                      chem.cas = casrn[1],
-                     species = "Rat", 
+                     species = "Rat",
+                     restrictive.clearance=FALSE,
                      hepatic.model = "unscaled",
                      suppress.messages = TRUE,
                      default.to.human=TRUE),
@@ -902,6 +911,7 @@ These calculations should match both the manuscript text and the code in calc_or
 
    invivo.table[,use.pab:=Pab.Pred.Med]
    invivo.table[,Pab.Type:="QSPR"]
+   # Yang 2007 for Caco2 pH7.4
    # peff dimensional 10-4 cm/s
    invivo.table[,peffh:=(10^(0.4926*log10(use.pab)-0.1454))] %>% 
    # Wahajudin (2011)
@@ -920,21 +930,25 @@ These calculations should match both the manuscript text and the code in calc_or
         .[,Qguth:=Qvillih * CLpermh / (Qvillih + CLpermh)] %>% 
         .[,Qgutr:=Qvillir * CLpermr / (Qvillir + CLpermr)] %>%
    # Qgut Model -- Yang et al. (2007) equation 5:
-        .[,fgh_qg:=Qguth/(Qguth+ fuph.adj*cluh_gut)*Qguth/(Qguth+Qintesttransport)] %>% 
-        .[,fgr_qg:=Qgutr/(Qgutr + fupr.adj*clur_gut)*Qguth/(Qguth+Qintesttransport)] %>%
+        .[, fgh_qg := Qguth / (Qguth + fuph.adj*cluh_gut) * Qguth /
+            (Qguth+Qintesttransport)] %>% 
+        .[, fgr_qg := Qgutr / (Qgutr + fupr.adj*clur_gut) * Qguth /
+            (Qguth+Qintesttransport)] %>%
    # Mean residence time -- Grandoni et al. (2019):
-        .[,MRTh := 199.2] %>% # min
-        .[,MRTr := 88.0] %>% # min
+        .[, MRTh := 199.2] %>% # min
+        .[, MRTr := 88.0] %>% # min
    # Small intestine radius:
-        .[,Rsih := 1.75] %>% # cm -- Yu et al. (1999)
-        .[,Rsir := 0.18] %>% # cm -- Griffin and O’Driscoll (2008)
+        .[, Rsih := 1.75] %>% # cm -- Yu et al. (1999)
+        .[, Rsir := 0.18] %>% # cm -- Griffin and O’Driscoll (2008)
    # Yu and Amidon (1999) Equation 11:
-        .[,fah_darwichh:=1 - (1 + 2 * peffh * MRTh / 7 / Rsih * 60 / 10^4)^-7] %>% 
-        .[,fah_darwichr:=1 - (1 + 2 * peffr * MRTr / 7 / Rsir * 60 / 10^4)^-7] %>% 
-   # Yu and Amidon (1999) Equation 11:
-        .[,fbioh:=ffph*fgh_qg*fah_darwichh] %>% 
-        .[,fbior:=ffpr*fgr_qg*fah_darwichr]
-  
+        .[, fah_darwichh := 1 - 
+            (1 + 2 * peffh * MRTh / 7 / Rsih * 60 / 10^4)^-7] %>% 
+        .[, fah_darwichr := 1 - 
+            (1 + 2 * peffr * MRTr / 7 / Rsir * 60 / 10^4)^-7] %>% 
+   #  Yang et al. (2007) Equation 1:
+        .[, fbioh := ffph*fgh_qg*fah_darwichh] %>% 
+        .[, fbior := ffpr*fgr_qg*fah_darwichr]
+
   save(invivo.table, file=paste0(loc.wd, 
                                  "/r_data/processed/qspr-invivo-compare2.RData"))    
 ```   
@@ -1176,7 +1190,7 @@ for (this.evaluation in row.names(evaluations))
     signif(median(R2.samples),2),
     paste(signif(quantile(R2.samples,probs=0.025),2),"-",
           signif(quantile(R2.samples,probs=0.975),2)),
-    signif(median(RMSE.samples),3)
+    signif(median(RMSE.samples),2)
   )
 }
 ```
