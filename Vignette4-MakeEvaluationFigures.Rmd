@@ -1106,27 +1106,9 @@ These calculations should match both the manuscript text and the code in calc_or
          height = 3, width = 3, dpi = 600, compression = "lzw")
 ```
 ### Evaluation Statistics
-```{r adjusted.rsquared.resample}
-resample.adj.rsquared <- function(obs, pred, p=1)
-{
-  N <- length(obs)
-  
-  new.samp<- sample(1:N, N, replace=TRUE)
-  new.obs <- obs[new.samp]
-  new.pred <- pred[new.samp]
-  
-  SS.tot<- sum((new.obs-mean(new.obs))^2)
-  SS.res <- sum((new.obs-new.pred)^2)
-  
-  rsquared <- 1 - SS.res/SS.tot
-  
-  adj.rsquared <- 1 - (1 -rsquared)*(N-1)/(N-p-1)
-}
-```
-
 We made new versions of "invivo.table" combining the Fbio data from Varma and Kim
 and saved them in different RData files
-```{r eval_table}
+```{r build_eval_table}
 evaluations <- data.frame()
 evaluations["Peff",c("In Vivo","Predicted","Reference","Data")] <- 
   c("mpeff_lit","peffh","Dahlgren et al. (2015)",
@@ -1159,6 +1141,23 @@ evaluations["Fbio-PreviousHTTK",c("In Vivo","Predicted","Reference","Data")] <-
   c("invivo_fbioh","ffph","Kim et al. (2014)",
     "/r_data/processed/oldhttk-invivo-compare-fbioall.RData")
 
+save(evaluations, file=paste0(loc.wd,"/r_data/processed/evaltable.RData"))
+```
+
+```{r rmse_funcion}
+rmse <- function(obs,pred, sigfigs = 2)
+{
+  SE <- (obs - pred)^2
+  MSE <- mean(SE)
+  RMSE <- sqrt(MSE)
+  
+  return(signif(RMSE, sigfigs))
+}
+```
+
+# Use bootstrapping to establish a confidence interval on R2
+```{r do_statistics}
+load(paste0(loc.wd,"/r_data/processed/evaltable.RData"))
 eval.table <- data.frame()
 for (this.evaluation in row.names(evaluations))
 {
@@ -1174,26 +1173,51 @@ for (this.evaluation in row.names(evaluations))
   R2.samples <- NULL
   pvalue.samples <- NULL
   RMSE.samples <- NULL
+  RMSE.samples.low <- NULL
+  RMSE.samples.high <- NULL
   obs <- this.data[, evaluations[this.evaluation,"In Vivo"]]
   pred <- this.data[, evaluations[this.evaluation,"Predicted"]]
   for (i in 1:10000)
   {
+# All samples:
     these.samples <- sample(1:length(obs),length(obs),replace=TRUE)  
     this.obs <- obs[these.samples]
     this.pred <- pred[these.samples]
     this.fit <- lm(obs~pred,data=data.frame(obs=this.obs,pred=this.pred))
     R2.samples[i] <- summary(this.fit)$adj.r.squared
     pvalue.samples[i] <- summary(this.fit)$coefficients[2,4]
-    RMSE.samples[i] <- sqrt(mean(this.obs - this.pred)^2)
+    RMSE.samples[i] <- rmse(obs = this.obs, pred=this.pred, sigfigs=3)
+# Low samples:
+    these.obs <- obs[obs <= 0.9]
+    these.pred <- pred[obs <= 0.9]
+    these.samples <- sample(1:length(these.obs),length(these.obs),replace=TRUE)  
+    this.obs <- these.obs[these.samples]
+    this.pred <- these.pred[these.samples]
+    RMSE.samples.low[i] <- rmse(obs = this.obs, pred=this.pred, sigfigs=3)
+# Low samples:
+    these.obs <- obs[obs > 0.9]
+    these.pred <- pred[obs > 0.9]
+    these.samples <- sample(1:length(these.obs),length(these.obs),replace=TRUE)  
+    this.obs <- these.obs[these.samples]
+    this.pred <- these.pred[these.samples]
+    RMSE.samples.high[i] <- rmse(obs = this.obs, pred=this.pred, sigfigs=3)
   }
-  eval.table[this.evaluation,c("N.Chem","Reference","R2","R2.Range","RMSE")] <- c(
+  eval.table[this.evaluation,c("N.Chem",
+                               "Reference",
+                               "R2",
+                               "R2.Range",
+                               "RMSE",
+                               "RMSE.Low",
+                               "RMSE.High")] <- c(
     num.chem,
     evaluations[this.evaluation,"Reference"],
     signif(median(R2.samples),2),
     paste(signif(quantile(R2.samples,probs=0.025),2),"-",
           signif(quantile(R2.samples,probs=0.975),2)),
-    signif(median(RMSE.samples),2)
-  )
+    signif(median(RMSE.samples),2),
+    signif(median(RMSE.samples.low),2),
+    signif(median(RMSE.samples.high),2)
+    )
 }
 ```
 
