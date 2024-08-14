@@ -147,36 +147,38 @@ measplusqspr.chems <- temp$DTXSID[!is.na(temp$Human.Caco2.Pab)]
 length(measplusqspr.chems)
 for(this.cas in temp[regexpr("<",Human.Clint) == -1 &
                      Human.Clint != "ND" &
-                     Human.Funbound.plasma != "NF",CAS]){
-  parameters <- parameterize_steadystate(chem.cas = this.cas,
-                                         suppress.messages=TRUE)
-  temp[CAS == this.cas, adj.fuph := parameters$Funbound.plasma] %>% 
-    .[CAS == this.cas, clinth := parameters$Clint]
+                     Human.Funbound.plasma != "NF",CAS])
+{
+  try(parameters <- parameterize_steadystate(chem.cas = this.cas,
+                                         suppress.messages=TRUE))
+  if (!(is(parameters,"try-error")))
+    temp[CAS == this.cas, adj.fuph := parameters$Funbound.plasma] %>% 
+      .[CAS == this.cas, clinth := parameters$Clint]
   
 }
 use.dt <- temp[!is.na(adj.fuph) & !is.na(clinth), ]
-# Restrict to chemcials with either measured or predicted Caco2:
+# Restrict to chemicals with either measured or predicted Caco2:
 use.dt <- use.dt[DTXSID %in% measplusqspr.chems,]
 dim(use.dt)
 ```
 ### Calculate css for different IVIVE assumptions
 ```{r calc_css}
 set.seed(6252019)
-use.dt[, css_caco2 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
+use.dt[, css_caco2 := .(list(suppressWarnings(try(calc_mc_css(chem.cas = CAS,
                                          which.quantile = c(0.025,0.05,0.25,0.5,
                                                             0.75,0.95,0.975),
                                          Caco2.options = list(overwrite.invivo = TRUE,
                                                               keepit100 = FALSE),
                                          output.units = "uM",
-                                         suppress.messages=TRUE)))),.(CAS)]
+                                         suppress.messages=TRUE))))),.(CAS)]
 set.seed(6252019)
-use.dt[, css_fgutabs100 := .(list(suppressWarnings(calc_mc_css(chem.cas = CAS,
+use.dt[, css_fgutabs100 := .(list(suppressWarnings(try(calc_mc_css(chem.cas = CAS,
                                      which.quantile = c(0.025,0.05,0.25,0.5,
                                                         0.75,0.95,0.975),
                                      Caco2.options = list(overwrite.invivo = TRUE,
                                                           keepit100 = TRUE),
                                      output.units = "uM",
-                                         suppress.messages=TRUE)))),.(CAS)] #%>% 
+                                         suppress.messages=TRUE))))),.(CAS)] #%>% 
  
 save(use.dt, measured.chems, file = paste0(loc.wd, "/r_data/processed/AEDtable.RData"))
 ```
