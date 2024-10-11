@@ -17,6 +17,9 @@ possible we label data generated for pharmaceuticals separately from other,
 non-pharmaceutical chemicals that might be found in commerce and the 
 environment.
 
+All necessary files other than R packages should be available on GitHub at:
+[https://github.com/USEPA/comptox-expocast-caco2](https://github.com/USEPA/comptox-expocast-caco2)
+
 ## Overall Manuscript Abstract
 Performance of pharmacokinetic models developed using *in vitro-to-in vivo* 
 extrapolation (IVIVE) methods may be improved by refining assumptions regarding 

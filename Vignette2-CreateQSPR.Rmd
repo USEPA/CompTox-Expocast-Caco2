@@ -15,6 +15,10 @@ model form apical:basal membrane permeability. The method of random forests is
 applied to a set of measurement data both from literature and newly generated
 for this work.
 
+All necessary files other than R packages should be available on GitHub at:
+[https://github.com/USEPA/comptox-expocast-caco2](https://github.com/USEPA/comptox-expocast-caco2)
+
+
 ## Overall Manuscript Abstract
 Performance of pharmacokinetic models developed using *in vitro-to-in vivo* 
 extrapolation (IVIVE) methods may be improved by refining assumptions regarding 
@@ -908,7 +912,7 @@ ggsave(FigRFE.Reg,
        height = 3, width = 3, dpi = 600, compression = "lzw")
 print(FigRFE.Reg)
 
-desc.set <- subset(rfeClass$variables,Variables==num.opt.desc)
+desc.set <- subset(rfeReg$variables,Variables==num.opt.desc)
 #use aggregate to calculate mean ranking score (under column "Overall")
 desc.set <- aggregate(desc.set[, c("Overall")], list(desc.set$var), mean)
 
@@ -1125,7 +1129,7 @@ save(opt.testsetpred.reg, opt.confusion.reg, opt.testsummary.reg, test.set, chos
         scale_y_log10(labels=scientific_10)+
         scale_colour_viridis_d()+
         gtheme
-  print(FigQSPRPredPabTest.Reg
+  print(FigQSPRPredPabTest.Reg)
     ggsave(FigQSPRPredPabTest.Reg, 
            file = paste0(loc.wd, 
                          "/results_for_paper/Fig_QSPRPredPabTestOnly_Reg.tiff"),
