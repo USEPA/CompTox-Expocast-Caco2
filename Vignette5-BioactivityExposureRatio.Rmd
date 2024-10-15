@@ -473,8 +473,8 @@ ggarrange(FigBERmeas, FigBERall,
           labels = c("A", "B"),
           ncol = 1, nrow = 2,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_BERTwoPanel.tiff"),
-         height = 3*200, width = 3*200, compression = "lzw")
+ggsave(file = paste0(loc.wd, "/results_for_paper/Fig_BERTwoPanel.tiff"),
+         height = 6.8, width = 6.8, dpi=600, compression = "lzw")
 ggarrange(FigBERmeas, FigBERall, 
           labels = c("A", "B"),
           ncol = 1, nrow = 2,

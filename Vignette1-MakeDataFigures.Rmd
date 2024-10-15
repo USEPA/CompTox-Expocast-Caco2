@@ -670,7 +670,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     paste0("SD: ", signif(sdPab,2)),
    # paste0("CV: ", signif(cvPab,2)),
     paste0("Total Count: ", ntotal_ab)),
-                                                   x = 4,
+                                                   x = 3.5,
                                                    y = 0+c(13,11,9#,7
                                                          ))]
   labl.FigWarfarinPabUnadj <- caco2.perchem[casrn == "81-81-2",.(labl = c(
@@ -740,7 +740,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
     labs(title = "Warfarin",
          y = expression(bold("Count")), 
          x = expression(bolditalic("P"["app"]^"BA")~bold('(10'^'-6'~'cm/s)'))) +
-    scale_x_log10(labels=scientific_10,limits=c(10^0.5,10^1.75))+
+    scale_x_log10(labels=scientific_10,limits=c(10^0,10^1.75))+
     theme_bw()+
     gtheme
   #print(g3b)
@@ -992,7 +992,7 @@ cat(paste("Across the newly measured chemicals the mean Pab was ",
    # paste0("CV: ", signif(cvPab,2)),
     paste0("Total Count: ", ntotal_ab)),
                                                    x = 0.01,
-                                                   y = 0+c(8,7,6#,5
+                                                   y = 0+c(8,6,4#,5
                                                            ))]
   labl.dtFigRanitidinePabUnadjHist <- 
   caco2.perchem[casrn == "66357-35-5",.(labl = c(
@@ -1154,8 +1154,8 @@ ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdj
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsforPaper.tiff"),
-         height = 3*200, width = 3*200, compression = "lzw")
+ggsave(file = paste0(loc.wd, "/results_for_paper/Fig_RefChemsforPaper.tiff"),
+         height = 6.8, width = 6.8, dpi=600, compression = "lzw")
 ggarrange(FigWarfarinPabAdjHist, FigTalinololEffluxRAdjHist, FigRanitidinePabAdjHist, 
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,
@@ -1357,8 +1357,8 @@ ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist,
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_CacoDataHists.tiff"),
-         height = 5*200, width = 3*200, compression = "lzw")
+ggsave(file = paste0(loc.wd, "/results_for_paper/Fig_CacoDataHists.tiff"),
+         height = 6.8, width = 6.8, dpi = 600, compression = "lzw")
 ggarrange(FigPabAdjHist, FigPbaAdjHist, FigEffluxRAdjHist, 
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3,

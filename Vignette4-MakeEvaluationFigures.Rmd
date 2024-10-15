@@ -242,8 +242,8 @@ ggarrange(FigPredFabsHist, FigPredFgutHist,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_FbioPredHists.tiff"),
-         height = 3*200, width = 3*200, compression = "lzw")
+ggsave(file = paste0(loc.wd, "/results_for_paper/Fig_FbioPredHists.tiff"),
+         height = 6.8, width = 6.8, dpi=600, compression = "lzw")
 ggarrange(FigPredFabsHist, FigPredFgutHist, 
           FigPredFhepHist, FigPredFbioHist,
           labels = c("A", "B", "C", "D"),
@@ -500,6 +500,8 @@ write.csv(invivo.table,
 
 ### Measured data from Dahlgren et al. (2015)
 ```{r make_caco_peff_fig}
+# gut.data; compiled data table of absorption and permeability data 
+  load(paste0(loc.wd, "/r_data/processed/all_gut_data.RData")) 
 load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))    
       FigCacoPredPeff <- ggplot(invivo.table)+
         geom_point(aes(x = mpeff_lit, y = peffh, color=Class, shape=Class), 
@@ -512,8 +514,8 @@ load(file=paste0(loc.wd, "/r_data/processed/caco2-invivo-compare2.RData"))
         scale_colour_viridis_d()+
           scale_x_log10()+
         scale_y_log10()+
-        gtheme +
-        theme(axis.title = element_text(size = 8)) 
+        gtheme# +
+  #      theme(axis.title = element_text(size = 8)) 
 print(FigCacoPredPeff)
     ggsave(FigCacoPredPeff, file = paste0(loc.wd, "/results_for_paper/Fig_CacoPredPeff.tiff"),
          height = 3, width = 3, dpi = 600, compression = "lzw")
@@ -718,7 +720,7 @@ Using first-pass metabolism only (previous httk approach)
   ggsave(FigCacoPredFbioAll, 
          file = paste0(loc.wd, 
                        "/results_for_paper/Fig_CacoPredFbioAll.tiff"),
-         height = 3, width = 3, dpi = 600, compression = "lzw")
+         height = 6.8, width = 6.8, dpi = 600, compression = "lzw")
 ```
 
 ### Fbio predicted by ADMet Predictor
@@ -762,8 +764,8 @@ ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FighttkPredFhep,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
           common.legend = TRUE, legend = "bottom")
-tiff(file = paste0(loc.wd, "/results_for_paper/Fig_CacoPredFbioComponents.tiff"),
-         height = 3*200, width = 3*200, compression = "lzw")
+ggsave(file = paste0(loc.wd, "/results_for_paper/Fig_CacoPredFbioComponents.tiff"),
+         height = 6.8, width = 6.8, dpi=600, compression = "lzw")
 ggarrange(FigCacoPredPeff, FigCacoPredFabs, FigCacoPredFgut, FighttkPredFhep, 
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2,
